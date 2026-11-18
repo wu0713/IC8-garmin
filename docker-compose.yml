@@ -1,0 +1,10 @@
+services:
+  ic8:
+    build: .
+    container_name: garmin-ic8
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"   # 只開給本機；對外一律走 Tailscale Funnel 的 https
+    env_file: .env
+    volumes:
+      - ./data:/data        # 資料庫與加密金鑰都在這裡，記得備份

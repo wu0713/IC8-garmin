@@ -1,0 +1,515 @@
+{
+ "stage_levels": [
+  1,
+  4,
+  9,
+  16,
+  25
+ ],
+ "species": [
+  {
+   "id": "beast_tamer",
+   "name": "馴獸師",
+   "blurb": "和動物夥伴一起跑，隊伍越跑越壯大。",
+   "stages": [
+    {
+     "name": "小小馴獸者",
+     "en": "Beast Fledgling",
+     "file": "/characters/beast_tamer/1.png",
+     "w": 118,
+     "h": 101
+    },
+    {
+     "name": "見習馴獸師",
+     "en": "Novice Tamer",
+     "file": "/characters/beast_tamer/2.png",
+     "w": 153,
+     "h": 115
+    },
+    {
+     "name": "野獸大師",
+     "en": "Beast Master",
+     "file": "/characters/beast_tamer/3.png",
+     "w": 174,
+     "h": 163
+    },
+    {
+     "name": "大馴獸師",
+     "en": "Grand Tamer",
+     "file": "/characters/beast_tamer/4.png",
+     "w": 223,
+     "h": 155
+    },
+    {
+     "name": "萬獸霸主",
+     "en": "Beast Overlord",
+     "file": "/characters/beast_tamer/5.png",
+     "w": 212,
+     "h": 163
+    }
+   ]
+  },
+  {
+   "id": "spirit",
+   "name": "精靈使",
+   "blurb": "與元素精靈結伴，靠穩定里程累積靈力。",
+   "stages": [
+    {
+     "name": "精靈學徒",
+     "en": "Spirit Initiate",
+     "file": "/characters/spirit/1.png",
+     "w": 75,
+     "h": 94
+    },
+    {
+     "name": "元素見習生",
+     "en": "Elemental Apprentice",
+     "file": "/characters/spirit/2.png",
+     "w": 123,
+     "h": 124
+    },
+    {
+     "name": "精靈召喚師",
+     "en": "Spirit Summoner",
+     "file": "/characters/spirit/3.png",
+     "w": 141,
+     "h": 160
+    },
+    {
+     "name": "元素使者",
+     "en": "Elemental Envoy",
+     "file": "/characters/spirit/4.png",
+     "w": 168,
+     "h": 156
+    },
+    {
+     "name": "太初精靈賢者",
+     "en": "Primordial Spirit Sage",
+     "file": "/characters/spirit/5.png",
+     "w": 169,
+     "h": 160
+    }
+   ]
+  },
+  {
+   "id": "necromancer",
+   "name": "死靈法師",
+   "blurb": "每一次破 PB，都會召喚出更強的亡靈。",
+   "stages": [
+    {
+     "name": "黑暗學徒",
+     "en": "Dark Novice",
+     "file": "/characters/necromancer/1.png",
+     "w": 104,
+     "h": 113
+    },
+    {
+     "name": "盜墓者",
+     "en": "Grave Robber",
+     "file": "/characters/necromancer/2.png",
+     "w": 129,
+     "h": 121
+    },
+    {
+     "name": "靈魂收割者",
+     "en": "Soul Reaper",
+     "file": "/characters/necromancer/3.png",
+     "w": 200,
+     "h": 146
+    },
+    {
+     "name": "死亡使者",
+     "en": "Death Bringer",
+     "file": "/characters/necromancer/4.png",
+     "w": 180,
+     "h": 173
+    },
+    {
+     "name": "死靈君主",
+     "en": "Necromancer Lord",
+     "file": "/characters/necromancer/5.png",
+     "w": 196,
+     "h": 173
+    }
+   ]
+  },
+  {
+   "id": "golem",
+   "name": "魔像",
+   "blurb": "從一顆小石頭開始，一步一步長成森林之王。",
+   "stages": [
+    {
+     "name": "小石魔像",
+     "en": "Pebble Golem",
+     "file": "/characters/golem/1.png",
+     "w": 58,
+     "h": 59
+    },
+    {
+     "name": "青苔巨石",
+     "en": "Mossy Boulder",
+     "file": "/characters/golem/2.png",
+     "w": 111,
+     "h": 93
+    },
+    {
+     "name": "樹根魔像",
+     "en": "Root Golem",
+     "file": "/characters/golem/3.png",
+     "w": 156,
+     "h": 131
+    },
+    {
+     "name": "遠古守衛",
+     "en": "Ancient Sentinel",
+     "file": "/characters/golem/4.png",
+     "w": 139,
+     "h": 150
+    },
+    {
+     "name": "森林王魔像",
+     "en": "Forest King Golem",
+     "file": "/characters/golem/5.png",
+     "w": 175,
+     "h": 163
+    }
+   ]
+  },
+  {
+   "id": "demon",
+   "name": "惡魔",
+   "blurb": "越操越強的熱血系，強度課是牠的燃料。",
+   "stages": [
+    {
+     "name": "小惡魔",
+     "en": "Imp",
+     "file": "/characters/demon/1.png",
+     "w": 108,
+     "h": 94
+    },
+    {
+     "name": "低階惡魔",
+     "en": "Lesser Demon",
+     "file": "/characters/demon/2.png",
+     "w": 120,
+     "h": 115
+    },
+    {
+     "name": "地獄領主",
+     "en": "Hell Lord",
+     "file": "/characters/demon/3.png",
+     "w": 240,
+     "h": 160
+    },
+    {
+     "name": "深淵領主",
+     "en": "Pit Lord",
+     "file": "/characters/demon/4.png",
+     "w": 136,
+     "h": 154
+    },
+    {
+     "name": "惡魔使節",
+     "en": "Demon Envoy",
+     "file": "/characters/demon/5.png",
+     "w": 154,
+     "h": 154
+    }
+   ]
+  },
+  {
+   "id": "succubus",
+   "name": "魅魔",
+   "blurb": "優雅又堅持，用規律訓練征服每一條路線。",
+   "stages": [
+    {
+     "name": "誘惑者",
+     "en": "Temptress",
+     "file": "/characters/succubus/1.png",
+     "w": 81,
+     "h": 121
+    },
+    {
+     "name": "見習魅魔",
+     "en": "Succubus Initiate",
+     "file": "/characters/succubus/2.png",
+     "w": 80,
+     "h": 140
+    },
+    {
+     "name": "吸血魅魔",
+     "en": "Vampiress Succubus",
+     "file": "/characters/succubus/3.png",
+     "w": 110,
+     "h": 173
+    },
+    {
+     "name": "緋紅繆思",
+     "en": "Crimson Muse",
+     "file": "/characters/succubus/4.png",
+     "w": 163,
+     "h": 166
+    },
+    {
+     "name": "慾望女王",
+     "en": "Queen of Desire",
+     "file": "/characters/succubus/5.png",
+     "w": 128,
+     "h": 173
+    }
+   ]
+  },
+  {
+   "id": "orc",
+   "name": "獸人",
+   "blurb": "耐操的力量型，長距離是牠的戰場。",
+   "stages": [
+    {
+     "name": "獸人步兵",
+     "en": "Orc Grunt",
+     "file": "/characters/orc/1.png",
+     "w": 80,
+     "h": 81
+    },
+    {
+     "name": "獸人掠奪者",
+     "en": "Orc Raider",
+     "file": "/characters/orc/2.png",
+     "w": 116,
+     "h": 105
+    },
+    {
+     "name": "獸人狂戰士",
+     "en": "Orc Berserker",
+     "file": "/characters/orc/3.png",
+     "w": 148,
+     "h": 122
+    },
+    {
+     "name": "獸人督軍",
+     "en": "Orc Warlord",
+     "file": "/characters/orc/4.png",
+     "w": 167,
+     "h": 143
+    },
+    {
+     "name": "獸人酋長",
+     "en": "Orc Warchief",
+     "file": "/characters/orc/5.png",
+     "w": 180,
+     "h": 154
+    }
+   ]
+  },
+  {
+   "id": "sea_dragon",
+   "name": "天海神龍",
+   "blurb": "錦鯉躍龍門：跑得越遠，越接近天空。",
+   "stages": [
+    {
+     "name": "靈錦鯉",
+     "en": "Spirit Koi",
+     "file": "/characters/sea_dragon/1.png",
+     "w": 90,
+     "h": 92
+    },
+    {
+     "name": "角河魚",
+     "en": "Horned River Fish",
+     "file": "/characters/sea_dragon/2.png",
+     "w": 121,
+     "h": 77
+    },
+    {
+     "name": "水蛟龍",
+     "en": "Water Jiaolong",
+     "file": "/characters/sea_dragon/3.png",
+     "w": 132,
+     "h": 130
+    },
+    {
+     "name": "騰雲龍",
+     "en": "Cloud Ascendant Dragon",
+     "file": "/characters/sea_dragon/4.png",
+     "w": 148,
+     "h": 138
+    },
+    {
+     "name": "天海神龍",
+     "en": "Celestial Sea Dragon",
+     "file": "/characters/sea_dragon/5.png",
+     "w": 160,
+     "h": 150
+    }
+   ]
+  },
+  {
+   "id": "fox_spirit",
+   "name": "九尾狐",
+   "blurb": "每過一個門檻就多長出幾條尾巴。",
+   "stages": [
+    {
+     "name": "小狐狸",
+     "en": "Fox Kit",
+     "file": "/characters/fox_spirit/1.png",
+     "w": 75,
+     "h": 67
+    },
+    {
+     "name": "三尾狐仙",
+     "en": "Three-Tailed Fox Spirit",
+     "file": "/characters/fox_spirit/2.png",
+     "w": 85,
+     "h": 131
+    },
+    {
+     "name": "六尾魅狐",
+     "en": "Six-Tailed Enchantress",
+     "file": "/characters/fox_spirit/3.png",
+     "w": 144,
+     "h": 158
+    },
+    {
+     "name": "九尾妖狐",
+     "en": "Nine-Tailed Seductress",
+     "file": "/characters/fox_spirit/4.png",
+     "w": 159,
+     "h": 150
+    },
+    {
+     "name": "九尾天狐",
+     "en": "Celestial Nine-Tailed Goddess",
+     "file": "/characters/fox_spirit/5.png",
+     "w": 163,
+     "h": 162
+    }
+   ]
+  },
+  {
+   "id": "goblin",
+   "name": "哥布林",
+   "blurb": "小個子大野心，從撿樹枝一路當上國王。",
+   "stages": [
+    {
+     "name": "哥布林幼崽",
+     "en": "Goblin Whelp",
+     "file": "/characters/goblin/1.png",
+     "w": 80,
+     "h": 81
+    },
+    {
+     "name": "哥布林盜賊",
+     "en": "Goblin Rogue",
+     "file": "/characters/goblin/2.png",
+     "w": 87,
+     "h": 96
+    },
+    {
+     "name": "哥布林戰士",
+     "en": "Goblin Warrior",
+     "file": "/characters/goblin/3.png",
+     "w": 93,
+     "h": 115
+    },
+    {
+     "name": "哥布林首領",
+     "en": "Goblin Chieftain",
+     "file": "/characters/goblin/4.png",
+     "w": 99,
+     "h": 124
+    },
+    {
+     "name": "哥布林王",
+     "en": "Goblin King",
+     "file": "/characters/goblin/5.png",
+     "w": 161,
+     "h": 163
+    }
+   ]
+  },
+  {
+   "id": "paladin",
+   "name": "聖騎士",
+   "blurb": "守紀律的騎士，照課表完成就是最好的修行。",
+   "stages": [
+    {
+     "name": "見習侍從",
+     "en": "Young Squire",
+     "file": "/characters/paladin/1.png",
+     "w": 64,
+     "h": 96
+    },
+    {
+     "name": "王國騎士",
+     "en": "Kingdom Knight",
+     "file": "/characters/paladin/2.png",
+     "w": 88,
+     "h": 103
+    },
+    {
+     "name": "聖殿騎士",
+     "en": "Templar Knight",
+     "file": "/characters/paladin/3.png",
+     "w": 107,
+     "h": 111
+    },
+    {
+     "name": "光輝聖騎士",
+     "en": "Radiant Paladin",
+     "file": "/characters/paladin/4.png",
+     "w": 133,
+     "h": 122
+    },
+    {
+     "name": "熾天使聖騎士",
+     "en": "Divine Seraph Paladin",
+     "file": "/characters/paladin/5.png",
+     "w": 191,
+     "h": 144
+    }
+   ]
+  },
+  {
+   "id": "flame_dragon",
+   "name": "火龍",
+   "blurb": "從一顆蛋開始，最後成為噴火的末日古龍。",
+   "stages": [
+    {
+     "name": "龍蛋",
+     "en": "Hatchling",
+     "file": "/characters/flame_dragon/1.png",
+     "w": 48,
+     "h": 63
+    },
+    {
+     "name": "幼龍",
+     "en": "Fledgling Drake",
+     "file": "/characters/flame_dragon/2.png",
+     "w": 174,
+     "h": 81
+    },
+    {
+     "name": "成年火龍",
+     "en": "Adult Flame Dragon",
+     "file": "/characters/flame_dragon/3.png",
+     "w": 194,
+     "h": 131
+    },
+    {
+     "name": "熔岩霸龍",
+     "en": "Magma Overlord Dragon",
+     "file": "/characters/flame_dragon/4.png",
+     "w": 193,
+     "h": 143
+    },
+    {
+     "name": "末日古龍",
+     "en": "Apocalypse Ancient Dragon",
+     "file": "/characters/flame_dragon/5.png",
+     "w": 229,
+     "h": 132
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,13 @@
+{
+  "name": "跑課 · Garmin-IC8",
+  "short_name": "跑課",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ECEEF8",
+  "theme_color": "#ECEEF8",
+  "lang": "zh-Hant",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

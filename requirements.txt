@@ -1,0 +1,10 @@
+# Garmin 非官方開源套件（https://github.com/cyberjunky/python-garminconnect）
+# Garmin 改登入方式時，通常只要升級這一行：pip install -U garminconnect
+garminconnect>=0.3.20
+fastapi>=0.115
+uvicorn[standard]>=0.30
+icalendar>=6.0
+APScheduler>=3.10,<4
+cryptography>=42
+pydantic>=2.6
+pywebpush>=2.0
