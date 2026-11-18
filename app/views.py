@@ -5,7 +5,7 @@ import json
 from datetime import date, datetime, timedelta
 from statistics import mean
 
-from . import analysis, auth, db, game, metrics, sync
+from . import analysis, auth, db, game, metrics, strength, sync
 from .config import TZ
 from .garmin_client import DemoGarmin, RealGarmin, today_local
 from .metrics import fmt_pace
@@ -60,7 +60,8 @@ def daily_values(user_id: int, key: str, start: date, end: date) -> dict[str, fl
         s0 = start - timedelta(days=120)
         acts = db.q("SELECT * FROM activities WHERE user_id=? AND date BETWEEN ? AND ?", (user_id, s0.isoformat(), end.isoformat()))
         daily = db.q("SELECT * FROM daily WHERE user_id=? AND date BETWEEN ? AND ? ORDER BY date", (user_id, s0.isoformat(), end.isoformat()))
-        rows = {r["date"]: r["ctl"] for r in metrics.pmc(metrics.daily_loads(acts, daily, prefs, s0, end))}
+        cross = db.q("SELECT * FROM cross_activities WHERE user_id=? AND date BETWEEN ? AND ?", (user_id, s0.isoformat(), end.isoformat()))
+        rows = {r["date"]: r["ctl"] for r in metrics.pmc(metrics.daily_loads(acts, daily, prefs, s0, end, cross))}
         return {d: rows.get(d) for d in days}
     rows = _daily_rows(user_id, start, end)
     return {d: (rows.get(d) or {}).get(m["col"]) for d in days}
@@ -153,6 +154,17 @@ def _latest(user_id: int, col: str, days: int = 3):
     return (row["v"], row["date"]) if row else (None, None)
 
 
+def _strength_today(user_id: int, today, plan_today: dict) -> dict | None:
+    if plan_today.get("kind") not in (None, "rest", "strength") or not db.get_prefs(user_id).get("strength_enabled", True):
+        return None
+    w0 = today - timedelta(days=today.weekday())
+    prev = db.q1("SELECT data FROM plan WHERE user_id=? AND date=?", (user_id, (w0 - timedelta(days=1)).isoformat()))
+    rmap = strength.plan_week(strength.week_kinds(user_id, w0), json.loads(prev["data"]).get("kind") if prev else None)
+    logged = strength.done_dates(user_id, today.isoformat(), today.isoformat())
+    rid = logged.get(today.isoformat()) or rmap.get(today.isoformat()) or "core"
+    return {**strength.summary_for(rid), "done": today.isoformat() in logged, "date": today.isoformat()}
+
+
 def summary(user_id: int) -> dict:
     user = db.q1("SELECT * FROM users WHERE id=?", (user_id,))
     prefs = db.get_prefs(user_id)
@@ -207,6 +219,7 @@ def summary(user_id: int) -> dict:
     return {
         "device": device, "provider": user["provider"], "last_sync": user["last_sync"],
         "last_sync_error": user["last_sync_error"], "rings": rings, "today": dash["plan"]["days"][0],
+        "strength_today": _strength_today(user_id, today, dash["plan"]["days"][0]),
         "readiness": dash["readiness"], "novice": dash.get("novice"), "cards": cards, "card_options": CARD_LABELS,
         "dashboard": prefs.get("dashboard") or DEFAULT_CARDS,
         "today_activity": (db.q1("SELECT activity_id FROM activities WHERE user_id=? AND date=? ORDER BY start_local DESC LIMIT 1",
@@ -226,37 +239,119 @@ def _act_row(a, max_hr):
             "zone": analysis.classify(a.get("avg_hr"), max_hr)}
 
 
+def _cross_row(a):
+    km = (a.get("distance_m") or 0) / 1000
+    return {"id": a["activity_id"], "date": a["date"], "start": a.get("start_local"), "name": a.get("name") or a.get("sport_label"),
+            "km": round(km, 2) if km else None, "minutes": round((a.get("duration_s") or 0) / 60), "pace": None,
+            "avg_hr": a.get("avg_hr") and round(a["avg_hr"]), "kcal": a.get("calories") and round(a["calories"]),
+            "cross": True, "sport": a.get("sport"), "sport_label": a.get("sport_label"), "group": a.get("sport_group") or "other"}
+
+
+def load_verdict(ratio: float | None, partial: bool = False) -> dict | None:
+    """近 7 天總負荷 ÷ 前 4 週平均週負荷。0.8–1.3 是一般認為比較安全的加量範圍，超過 1.5 受傷風險明顯變高。"""
+    if ratio is None:
+        return None
+    if ratio > 1.5:
+        return {"level": "bad", "label": "過多", "text": "比平常多一半以上，容易累積疲勞或受傷，接下來幾天建議減量。"}
+    if ratio > 1.3:
+        return {"level": "warn", "label": "偏多", "text": "比平常多 3 成以上，注意睡眠和恢復，別再額外加課。"}
+    if ratio < 0.8:
+        return {"level": "low", "label": "偏少" if not partial else "還在累積", "text": "比平常少，如果不是刻意減量，可以照課表慢慢補回來。" if not partial else "這週還沒結束，先看近 7 天的總量。"}
+    return {"level": "ok", "label": "適中", "text": "活動量在平常的範圍內。"}
+
+
 def activity_overview(user_id: int, before: str | None = None, limit: int = 40) -> dict:
     prefs = db.get_prefs(user_id)
     today = today_local()
     w0 = today - timedelta(days=today.weekday())
     since = w0 - timedelta(weeks=12)
     acts = db.q("SELECT * FROM activities WHERE user_id=? AND date>=? ORDER BY date", (user_id, since.isoformat()))
+    cross = db.q("SELECT * FROM cross_activities WHERE user_id=? AND date>=? ORDER BY date", (user_id, since.isoformat()))
     daily = db.q("SELECT * FROM daily WHERE user_id=? AND date>=? ORDER BY date", (user_id, since.isoformat()))
     max_hr = metrics.estimate_max_hr(acts, prefs)
     rest = metrics.estimate_rest_hr(daily)
+    sex = prefs.get("sex", "M")
     weeks = []
     for i in range(12, -1, -1):
         ws = w0 - timedelta(weeks=i)
         we = ws + timedelta(days=6)
         wa = [a for a in acts if ws.isoformat() <= a["date"] <= we.isoformat()]
-        load = sum(metrics.trimp(a.get("duration_s"), a.get("avg_hr"), rest, max_hr, prefs.get("sex", "M")) for a in wa)
+        wc = [a for a in cross if ws.isoformat() <= a["date"] <= we.isoformat()]
+        run_load = sum(metrics.trimp(a.get("duration_s"), a.get("avg_hr"), rest, max_hr, sex) for a in wa)
+        other_load = sum(metrics.cross_trimp(a, rest, max_hr, sex) for a in wc)
         weeks.append({"week_start": ws.isoformat(), "km": round(sum((a["distance_m"] or 0) for a in wa) / 1000, 1),
-                      "minutes": round(sum((a["duration_s"] or 0) for a in wa) / 60), "runs": len(wa), "load": round(load)})
+                      "minutes": round(sum((a["duration_s"] or 0) for a in wa) / 60), "runs": len(wa),
+                      "other_minutes": round(sum((a["duration_s"] or 0) for a in wc) / 60), "others": len(wc),
+                      "run_load": round(run_load), "other_load": round(other_load), "load": round(run_load + other_load)})
     for i, w in enumerate(weeks):
         prev = weeks[max(0, i - 4):i]
         w["baseline"] = round(mean(p["load"] for p in prev)) if len(prev) == 4 else None
     this = weeks[-1]
-    q = "SELECT * FROM activities WHERE user_id=?" + (" AND date<?" if before else "") + " ORDER BY date DESC, start_local DESC LIMIT ?"
+
+    # 近 7 天（含今天）總活動量 vs 前 4 週平均：週中也能比較
+    d7 = (today - timedelta(days=6)).isoformat()
+    last7 = sum(metrics.trimp(a.get("duration_s"), a.get("avg_hr"), rest, max_hr, sex) for a in acts if a["date"] >= d7) + \
+        sum(metrics.cross_trimp(a, rest, max_hr, sex) for a in cross if a["date"] >= d7)
+    base4 = [w["load"] for w in weeks[-5:-1]]
+    first = db.q1("SELECT MIN(d) d FROM (SELECT MIN(date) d FROM activities WHERE user_id=? UNION ALL "
+                  "SELECT MIN(date) FROM cross_activities WHERE user_id=?)", (user_id, user_id))["d"]
+    enough = bool(first) and (today - date.fromisoformat(first)).days >= 35 and mean(base4) > 0
+    ratio = round(last7 / mean(base4), 2) if enough else None
+    by_sport: dict[str, dict] = {}
+    for a in cross:
+        if a["date"] >= w0.isoformat():
+            s = by_sport.setdefault(a.get("sport_label") or "其他", {"label": a.get("sport_label") or "其他",
+                                                                     "group": a.get("sport_group") or "other", "minutes": 0, "count": 0})
+            s["minutes"] += round((a.get("duration_s") or 0) / 60)
+            s["count"] += 1
+    volume = {"last7_load": round(last7), "baseline": round(mean(base4)) if enough else None, "ratio": ratio,
+              "verdict": load_verdict(ratio), "run_minutes": this["minutes"], "other_minutes": this["other_minutes"],
+              "run_share": round(this["run_load"] / this["load"] * 100) if this["load"] else None,
+              "sports": sorted(by_sport.values(), key=lambda s: -s["minutes"])}
+
+    lim = (" AND date<?" if before else "")
     args = (user_id, before, limit) if before else (user_id, limit)
-    lst = [_act_row(a, max_hr) for a in db.q(q, args)]
-    return {"weeks": weeks, "this_week": this, "activities": lst,
+    rows = [{**_act_row(a, max_hr), "cross": False} for a in db.q(
+        "SELECT * FROM activities WHERE user_id=?" + lim + " ORDER BY date DESC, start_local DESC LIMIT ?", args)]
+    rows += [_cross_row(a) for a in db.q(
+        "SELECT * FROM cross_activities WHERE user_id=?" + lim + " ORDER BY date DESC, start_local DESC LIMIT ?", args)]
+    rows.sort(key=lambda r: (r["date"], r.get("start") or ""), reverse=True)
+    rows = rows[:limit]
+    return {"weeks": weeks, "this_week": this, "activities": rows, "volume": volume,
             "load_change": round(this["load"] / this["baseline"] - 1, 2) if this.get("baseline") else None}
+
+
+def cross_detail(user_id: int, a: dict) -> dict:
+    prefs = db.get_prefs(user_id)
+    acts = db.q("SELECT max_hr FROM activities WHERE user_id=?", (user_id,))
+    daily = db.q("SELECT rhr FROM daily WHERE user_id=? ORDER BY date DESC LIMIT 60", (user_id,))
+    max_hr = metrics.estimate_max_hr(acts, prefs)
+    rest = metrics.estimate_rest_hr(daily)
+    load = metrics.cross_trimp(a, rest, max_hr, prefs.get("sex", "M"))
+    run_loads = [metrics.trimp(r.get("duration_s"), r.get("avg_hr"), rest, max_hr, prefs.get("sex", "M")) for r in db.q(
+        "SELECT duration_s, avg_hr FROM activities WHERE user_id=? AND date>=?", (user_id, (date.fromisoformat(a["date"]) - timedelta(days=28)).isoformat()))]
+    easy_ref = sorted(run_loads)[len(run_loads) // 3] if run_loads else None
+    pct = a["avg_hr"] / max_hr if a.get("avg_hr") and max_hr else None
+    if pct is None:
+        effect = "沒有心率資料，負荷是用時間粗估的。"
+    elif pct < 0.65:
+        effect = "心率很低，屬於恢復性質，對跑步課表的影響很小。"
+    elif pct < 0.8:
+        effect = "中低強度，算進有氧量。隔天如果有強度課，照常跑沒問題。"
+    else:
+        effect = "心率偏高，會增加疲勞；如果隔天是強度課或長跑，留意狀態，必要時降一級。"
+    return {**_cross_row(a), "max_hr": a.get("max_hr") and round(a["max_hr"]),
+            "elevation_gain": a.get("elevation_gain"), "load": round(load),
+            "load_vs_easy_run": round(load / easy_ref, 1) if easy_ref else None,
+            "hr_pct": round(pct * 100) if pct else None, "effect": effect}
 
 
 def activity_detail(user_id: int, activity_id: str) -> dict:
     a = db.q1("SELECT * FROM activities WHERE user_id=? AND activity_id=?", (user_id, activity_id))
     if not a:
+        c = db.q1("SELECT * FROM cross_activities WHERE user_id=? AND activity_id=?", (user_id, activity_id))
+        if c:
+            return cross_detail(user_id, c)
         raise KeyError(activity_id)
     prefs = db.get_prefs(user_id)
     acts = db.q("SELECT max_hr FROM activities WHERE user_id=?", (user_id,))
@@ -507,6 +602,16 @@ def this_week(user_id: int) -> dict:
                                                                "pace_range", "phase")},
                     "actual": da, "status": status, "is_today": ds == today.isoformat(),
                     "editable": ds >= today.isoformat()})
+    # 休息日（和匯入課表的肌力日）的肌力／伸展菜單
+    if prefs.get("strength_enabled", True):
+        prev = db.q1("SELECT data FROM plan WHERE user_id=? AND date=?", (user_id, (w0 - timedelta(days=1)).isoformat()))
+        rmap = strength.plan_week([{"date": x["date"], "kind": (x["plan"] or {}).get("kind")} for x in out],
+                                  json.loads(prev["data"]).get("kind") if prev else None)
+        logged = strength.done_dates(user_id, w0.isoformat(), days_[-1].isoformat())
+        for x in out:
+            rid = logged.get(x["date"]) or rmap.get(x["date"])
+            if rid and not x["actual"]:
+                x["strength"] = {**strength.summary_for(rid), "done": x["date"] in logged}
     run_days = [x for x in out if x["plan"] and x["plan"]["kind"] not in ("rest", "done", "event", "race", "strength")]
     planned_km = sum(x["plan"].get("distance_km") or 0 for x in run_days)
     actual_km = sum(a["km"] for x in out for a in x["actual"])

@@ -45,6 +45,7 @@ function weekHtml(w) {
           <span>
             <span class="wt"><span class="int ${p && p.kind !== "rest" ? p.intensity : "rest"}"></span>${p && p.steps?.length && d.status !== "done" ? `<button data-detail="${d.date}" aria-label="看${esc(p.title)}的內容">${esc(p.title)}</button>` : esc(p && p.kind !== "done" ? p.title : act ? act.name : p ? p.title : "休息日")}
               ${txt ? `<span class="badge ${cls}">${txt}</span>` : ""}${p?.override ? `<span class="badge edit">已調整</span>` : ""}
+              ${(isRest || p?.kind === "strength") && d.strength ? `<button class="mini st-chip ${d.strength.done ? "done" : ""}" data-go="#/strength/${d.date}">${ico(d.strength.done ? "check" : "gym")}${esc(d.strength.title)} ${d.strength.minutes} 分</button>` : ""}
               ${isRest && d.editable ? `<button class="mini" data-adjust="${d.date}">想跑？排一堂</button>` : ""}</span>
             ${p && p.minutes && d.status !== "done" ? `<span class="ws">${p.time ? `${p.time}，` : ""}${p.distance_km ? `${fmt(p.distance_km, 1)} km、` : ""}約 ${p.minutes} 分${p.hr_cap ? `，心率 ≤ ${p.hr_cap}` : ""}</span>` : ""}
             ${d.actual.map((x) => `<button class="text-btn" data-go="#/workout/${encodeURIComponent(x.id)}" style="padding:2px 0;min-height:0;display:block;text-align:left">
@@ -64,7 +65,7 @@ function monthHtml(m) {
       <button class="icon-btn" id="pm-prev" aria-label="上個月">${ico("back")}</button>
       <h3 style="font-size:1.125rem">${y} 年 ${mo} 月</h3>
       <button class="icon-btn" id="pm-next" aria-label="下個月" style="transform:scaleX(-1)">${ico("back")}</button></div>
-    <p class="muted" style="text-align:center;margin-bottom:8px">已跑 ${m.runs} 次、${fmt(m.total_km, 1)} 公里；還有 ${m.planned_runs} 堂、約 ${fmt(m.planned_km, 0)} 公里</p>
+    <p class="muted" style="text-align:center;margin-bottom:8px">已跑 ${m.runs} 次、${fmt(m.total_km, 1)} 公里${m.others ? `，其他運動 ${m.others} 次` : ""}；還有 ${m.planned_runs} 堂、約 ${fmt(m.planned_km, 0)} 公里</p>
     <div class="cal plan-cal" role="grid">
       ${WD.map((d) => `<div class="cal-wd" role="columnheader">${d}</div>`).join("")}${"<div></div>".repeat(lead)}
       ${m.days.map((d) => {
@@ -72,13 +73,14 @@ function monthHtml(m) {
         const label = d.actual_km ? `${d.actual_km}` : k ? SHORT[k] || "" : "";
         const cls = d.actual_km ? "ran" : k && k !== "rest" ? `k-${d.race ? (k === "event" ? "event" : "race") : p.intensity}` : "";
         return `<button class="cal-d ${cls} ${d.is_today ? "today" : ""} ${p?.projected ? "proj" : ""}" data-day="${d.date}" role="gridcell"
-          aria-label="${d.date}${d.actual_km ? `，跑了 ${d.actual_km} 公里` : ""}${p ? `，${esc(p.title)}` : ""}">
-          <span class="n">${+d.date.slice(8)}${p?.override ? "·" : ""}</span><b>${label}</b>
+          aria-label="${d.date}${d.actual_km ? `，跑了 ${d.actual_km} 公里` : ""}${otherAria(d)}${p ? `，${esc(p.title)}` : ""}">
+          <span class="n">${+d.date.slice(8)}${p?.override ? "·" : ""}</span>${otherIcons(d)}<b>${label}</b>
           ${!d.actual_km && p?.distance_km && !d.race ? `<small class="num">${fmt(p.distance_km, 0)}k</small>` : d.actual_km ? `<small>km</small>` : ""}</button>`;
       }).join("")}
     </div>
     <div class="legend"><span><i style="background:var(--c-run)"></i>已跑</span><span><i style="background:#DCEFD8"></i>輕鬆</span>
-      <span><i style="background:#FCE9C2"></i>中強度</span><span><i style="background:#FBDAD5"></i>強度課</span><span><i style="background:var(--ink)"></i>比賽</span></div>
+      <span><i style="background:#FCE9C2"></i>中強度</span><span><i style="background:#FBDAD5"></i>強度課</span><span><i style="background:var(--ink)"></i>比賽</span>
+      <span class="lg-ox">${sportIco("bike")}其他運動</span></div>
     <p class="muted" style="margin-top:8px">點任一天可以看內容或自己改課。${anyProj ? "虛線框是預估：真的到那一週，會再依當時的身體狀態微調；你手動改過的會保留。" : ""}</p>
     <div class="btn-row"><button class="btn small tonal" data-go="#/me/settings">${m.mode === "manual" ? "修改我的每週課表" : m.mode === "imported" ? "匯入的課表" : "排課方式與比賽"}</button>
       <button class="btn small outline" data-go="#/season">整季規劃</button></div>`;
@@ -149,6 +151,7 @@ async function viewAnalysis() {
       <p style="margin-top:8px">${esc(p.summary || "")}</p>
       ${p.why ? `<p class="why-line">為什麼排這堂：${esc(p.why)}</p>` : ""}
       <ul class="steps-list">${stepsHtml(p.steps)}</ul>
+      <p style="margin-top:8px">${learnLink(p.kind === "long_m" ? "long" : p.kind === "test" ? "race_pace" : p.kind, `${p.title}是什麼？怎麼跑？`)}</p>
       <p class="muted" style="margin-top:8px">右邊是配速（每公里）和心率上限。心率上限是硬規則：到上限前 2 下就放慢。開啟「把課表推到 Garmin 手錶」後，輕鬆跑會用心率當目標、強度課用配速。</p>
       <div class="btn-row"><button class="btn tonal" id="d-adj">調整這堂課</button><button class="btn outline" id="d-x">關閉</button></div>`, (box, close) => {
       box.querySelector("#d-x").onclick = close;

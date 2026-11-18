@@ -101,6 +101,60 @@ CREATE TABLE IF NOT EXISTS plan_overrides (
     minutes REAL,
     PRIMARY KEY (user_id, date)
 );
+CREATE TABLE IF NOT EXISTS cross_activities (
+    user_id INTEGER NOT NULL,
+    activity_id TEXT NOT NULL,
+    date TEXT NOT NULL,
+    start_local TEXT,
+    sport TEXT,
+    sport_label TEXT,
+    sport_group TEXT,
+    name TEXT,
+    distance_m REAL,
+    duration_s REAL,
+    avg_hr REAL,
+    max_hr REAL,
+    calories REAL,
+    elevation_gain REAL,
+    training_load REAL,
+    PRIMARY KEY (user_id, activity_id)
+);
+CREATE INDEX IF NOT EXISTS idx_cross_user_date ON cross_activities(user_id, date);
+CREATE TABLE IF NOT EXISTS briefs (
+    user_id INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    data TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    pushed INTEGER DEFAULT 0,
+    PRIMARY KEY (user_id, date, kind)
+);
+CREATE TABLE IF NOT EXISTS runner_metrics (
+    user_id INTEGER PRIMARY KEY,
+    data TEXT NOT NULL,
+    updated_at TEXT
+);
+CREATE TABLE IF NOT EXISTS strength_log (
+    user_id INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    routine TEXT NOT NULL,
+    done_at TEXT,
+    PRIMARY KEY (user_id, date)
+);
+CREATE TABLE IF NOT EXISTS apple_link (
+    user_id INTEGER PRIMARY KEY,
+    token TEXT NOT NULL UNIQUE,
+    created_at TEXT,
+    last_at TEXT,
+    last_summary TEXT
+);
+CREATE TABLE IF NOT EXISTS push_subs (
+    user_id INTEGER NOT NULL,
+    endpoint TEXT NOT NULL,
+    data TEXT NOT NULL,
+    created_at TEXT,
+    PRIMARY KEY (user_id, endpoint)
+);
 CREATE TABLE IF NOT EXISTS imported_plan (
     user_id INTEGER NOT NULL,
     date TEXT NOT NULL,
@@ -148,7 +202,8 @@ def conn() -> sqlite3.Connection:
 
 
 MIGRATIONS = {
-    "daily": {"steps": "REAL", "steps_goal": "REAL", "active_kcal": "REAL", "intensity_min": "REAL"},
+    "daily": {"steps": "REAL", "steps_goal": "REAL", "active_kcal": "REAL", "intensity_min": "REAL",
+              "bb_now": "REAL", "bb_low": "REAL"},
     "activities": {"calories": "REAL", "elevation_gain": "REAL", "avg_cadence": "REAL",
                    "hr_drift": "REAL", "temp_c": "REAL", "humidity": "REAL", "weather_checked": "INTEGER"},
     "checkins": {"pain": "TEXT"},

@@ -45,11 +45,42 @@ def _find(obj: Any, keys: tuple[str, ...], depth: int = 0):
     return None
 
 
+# 其他運動：名稱與分類（分類決定圖示顏色；沒列到的用 Garmin 的英文名）
+SPORTS = {
+    "cycling": ("騎車", "bike"), "road_biking": ("公路車", "bike"), "indoor_cycling": ("室內車", "bike"),
+    "virtual_ride": ("虛擬騎乘", "bike"), "mountain_biking": ("登山車", "bike"), "gravel_cycling": ("礫石車", "bike"),
+    "e_bike_fitness": ("電輔車", "bike"), "lap_swimming": ("游泳（泳池）", "swim"), "open_water_swimming": ("開放水域游泳", "swim"),
+    "swimming": ("游泳", "swim"), "strength_training": ("重量訓練", "gym"), "hiit": ("HIIT", "gym"), "cardio": ("有氧器材", "gym"),
+    "indoor_cardio": ("室內有氧", "gym"), "fitness_equipment": ("健身器材", "gym"), "elliptical": ("滑步機", "gym"),
+    "stair_climbing": ("爬樓梯", "gym"), "indoor_rowing": ("划船機", "gym"), "rowing": ("划船", "swim"),
+    "yoga": ("瑜珈", "calm"), "pilates": ("皮拉提斯", "calm"), "breathwork": ("呼吸練習", "calm"),
+    "walking": ("走路", "walk"), "hiking": ("登山健行", "walk"), "mountaineering": ("登山", "walk"),
+    "tennis": ("網球", "ball"), "badminton": ("羽球", "ball"), "basketball": ("籃球", "ball"), "soccer": ("足球", "ball"),
+    "table_tennis": ("桌球", "ball"), "volleyball": ("排球", "ball"), "pickleball": ("匹克球", "ball"), "golf": ("高爾夫", "ball"),
+}
+
+
+def sport_info(type_key: str) -> tuple[str, str]:
+    return SPORTS.get(type_key) or (type_key.replace("_", " ").title() if type_key else "其他運動", "other")
+
+
+def is_run(type_key: str) -> bool:
+    return type_key in RUN_TYPES or "run" in (type_key or "")
+
+
 def normalize_activity(a: dict) -> dict | None:
+    """跑步回傳跑步紀錄；其他運動回傳 cross=True 的紀錄（另存一張表，算進活動量但不算跑量）。"""
     t = (a.get("activityType") or {}).get("typeKey", "")
-    if t not in RUN_TYPES and "run" not in t:
-        return None
     start = a.get("startTimeLocal") or ""
+    if not is_run(t):
+        label, group = sport_info(t)
+        return {
+            "cross": True, "activity_id": str(a.get("activityId")), "date": start[:10], "start_local": start,
+            "sport": t or "other", "sport_label": label, "sport_group": group, "name": a.get("activityName") or label,
+            "distance_m": a.get("distance"), "duration_s": a.get("movingDuration") or a.get("duration"),
+            "avg_hr": a.get("averageHR"), "max_hr": a.get("maxHR"), "calories": a.get("calories"),
+            "elevation_gain": a.get("elevationGain"), "training_load": a.get("activityTrainingLoad"),
+        }
     return {
         "activity_id": str(a.get("activityId")),
         "date": start[:10],
@@ -172,7 +203,7 @@ class RealGarmin:
     def fetch(self, start: date, end: date) -> tuple[list[dict], list[dict]]:
         api = self.api
         s, e = start.isoformat(), end.isoformat()
-        raw = api.get_activities_by_date(s, e, "running") or []
+        raw = api.get_activities_by_date(s, e) or []   # 全部運動：跑步算跑量，其他運動算進活動量
         acts = [x for x in (normalize_activity(a) for a in raw) if x]
 
         days: dict[str, dict] = {}
@@ -223,6 +254,10 @@ class RealGarmin:
                 d["steps"] = us.get("totalSteps") or d.get("steps")
                 if us.get("bodyBatteryMostRecentValue") is not None and not d.get("body_battery"):
                     d["body_battery"] = us.get("bodyBatteryHighestValue")
+                d["bb_now"] = us.get("bodyBatteryMostRecentValue")
+                d["bb_low"] = us.get("bodyBatteryLowestValue")
+                if us.get("restingHeartRate") and not d.get("rhr"):
+                    d["rhr"] = us.get("restingHeartRate")
             d0 += timedelta(days=1)
 
         return acts, [d for k, d in days.items() if k]
@@ -338,6 +373,34 @@ class RealGarmin:
     def fetch_series(self, activity_id: str) -> dict:
         return parse_series(self.api.get_activity_details(activity_id, maxchart=1500, maxpoly=0))
 
+    def fetch_metrics(self) -> dict:
+        """成績預測、最大攝氧量、乳酸閾值心率（手錶有算才會有）。"""
+        api, out = self.api, {}
+        rp = self._safe("race_predictions", api.get_race_predictions) if hasattr(api, "get_race_predictions") else None
+        if isinstance(rp, list):
+            rp = rp[-1] if rp else None
+        if isinstance(rp, dict):
+            p = {"5k": rp.get("time5K"), "10k": rp.get("time10K"), "half": rp.get("timeHalfMarathon"), "full": rp.get("timeMarathon")}
+            p = {k: v for k, v in p.items() if v}
+            if p:
+                out["predictions"] = p
+        if hasattr(api, "get_max_metrics"):
+            for back in (0, 3, 10):
+                mm = self._safe("max_metrics", api.get_max_metrics, (today_local() - timedelta(days=back)).isoformat())
+                for e in (mm if isinstance(mm, list) else [mm] if mm else []):
+                    gen = (e or {}).get("generic") or {}
+                    v = gen.get("vo2MaxPreciseValue") or gen.get("vo2MaxValue")
+                    if v:
+                        out["vo2max"] = v
+                if out.get("vo2max"):
+                    break
+        if hasattr(api, "get_lactate_threshold"):
+            lt = self._safe("lactate_threshold", api.get_lactate_threshold)
+            shr = (lt or {}).get("speed_and_heart_rate") if isinstance(lt, dict) else None
+            if isinstance(shr, dict) and shr.get("heartRate"):
+                out["lt_hr"] = shr["heartRate"]
+        return out
+
     def fetch_weather(self, activity_id: str, act: dict | None = None) -> dict | None:
         """Garmin Connect 每趟活動附的氣象站資料。溫度欄位是華氏（實測帳號後再確認）。"""
         w = self.api.connectapi(f"/activity-service/activity/{activity_id}/weather")
@@ -424,6 +487,22 @@ class DemoGarmin:
                 "active_kcal": round(300 + rnd.uniform(-150, 250)),
                 "intensity_min": round(rnd.uniform(5, 45)),
             })
+            bbh = days[-1]["body_battery"]
+            days[-1]["bb_low"] = round(max(5, bbh - 45 - rnd.uniform(0, 20)))
+            days[-1]["bb_now"] = round(max(days[-1]["bb_low"], bbh - 30 - rnd.uniform(0, 15))) if d < end else round(bbh - rnd.uniform(5, 20))
+            # 其他運動：週一重訓、週三騎車（隔週）、週五偶爾瑜珈
+            cross = {0: ("strength_training", 45, 112), 2: ("indoor_cycling", 60, 132), 4: ("yoga", 40, 92)}
+            if wd in cross and d < end and rnd.random() > (0.25 if wd == 0 else 0.5):
+                sk, cm, chr_ = cross[wd]
+                label, group = sport_info(sk)
+                cm = cm * rnd.uniform(0.8, 1.2)
+                acts.append({
+                    "cross": True, "activity_id": f"demo-x-{ds}", "date": ds, "start_local": f"{ds} 19:30:00",
+                    "sport": sk, "sport_label": label, "sport_group": group, "name": label,
+                    "distance_m": round(cm * 400) if sk == "indoor_cycling" else None, "duration_s": round(cm * 60),
+                    "avg_hr": round(chr_ + rnd.uniform(-6, 6)), "max_hr": round(chr_ + 30), "calories": round(cm * 7),
+                    "elevation_gain": None, "training_load": None,
+                })
             plan = {1: ("easy", 40), 3: ("tempo", 45), 5: ("easy", 35), 6: ("long", 85)}
             if wd in plan and rnd.random() > 0.12:
                 kind, mins = plan[wd]

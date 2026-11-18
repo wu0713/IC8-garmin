@@ -8,14 +8,14 @@ import json
 import logging
 import re
 from contextlib import asynccontextmanager
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import analysis, auth, db, game, plan_import, planner, season, sync, views
+from . import analysis, apple_ingest, auth, briefs, db, game, pet_voice, plan_import, planner, push, runner, season, strength, sync, views
 from .config import ALLOW_DEMO, INVITE_CODE, PUBLIC_BASE_URL, SYNC_HOURS, TZ, WEB_DIR
 from .garmin_client import MfaRequired, RealGarmin, today_local
 from .ics import build_ics
@@ -44,8 +44,9 @@ async def lifespan(app: FastAPI):
         sched = BackgroundScheduler(timezone=TZ)
         sched.add_job(sync.sync_all, "cron", hour=",".join(map(str, SYNC_HOURS)), minute=7,
                       id="sync_all", max_instances=1, coalesce=True)
+        sched.add_job(briefs.tick, "cron", minute="*/10", id="briefs", max_instances=1, coalesce=True)
         sched.start()
-        log.info("每日自動同步時間：%s 點", SYNC_HOURS)
+        log.info("每日自動同步時間：%s 點；晨報、晚報、週報每 10 分鐘檢查一次", SYNC_HOURS)
     yield
     if sched:
         sched.shutdown(wait=False)
@@ -138,7 +139,7 @@ class MfaIn(BaseModel):
     code: str
 
 
-DATA_TABLES = ("activities", "daily", "plan", "plan_meta", "checkins", "records", "device", "activity_series", "plan_overrides", "season_state")
+DATA_TABLES = ("activities", "cross_activities", "briefs", "runner_metrics", "strength_log", "daily", "plan", "plan_meta", "checkins", "records", "device", "activity_series", "plan_overrides", "season_state")
 
 
 def _wipe(c, uid: int):
@@ -242,6 +243,64 @@ def garmin_push_test_delete(workout_id: str, user=Depends(auth.current_user)):
     return {"ok": True}
 
 
+# ───────────────────────────── Apple Watch（iPhone 捷徑上傳） ─────────────────────────────
+
+def _apple_info(user_id: int, request: Request) -> dict:
+    row = apple_ingest.link(user_id)
+    base = (PUBLIC_BASE_URL or str(request.base_url)).rstrip("/")
+    last = json.loads(row["last_summary"]) if row.get("last_summary") else None
+    return {"url": f"{base}/api/ingest/apple/{row['token']}", "last_at": row.get("last_at"), "last": last,
+            "https": base.startswith("https://")}
+
+
+@app.post("/api/apple/link")
+def apple_link(request: Request, user=Depends(auth.current_user)):
+    """改用 Apple Watch：清掉其他來源的資料，產生專屬上傳網址。"""
+    with db.tx() as c:
+        if user["provider"] != "apple":
+            _wipe(c, user["id"])
+        c.execute("UPDATE users SET provider='apple', garmin_email=NULL, garmin_tokens=NULL, mfa_state=NULL WHERE id=?",
+                  (user["id"],))
+    return _apple_info(user["id"], request)
+
+
+@app.get("/api/apple")
+def apple_get(request: Request, user=Depends(auth.current_user)):
+    if user["provider"] != "apple":
+        raise HTTPException(400, "還沒選擇 Apple Watch")
+    return _apple_info(user["id"], request)
+
+
+@app.post("/api/apple/rotate")
+def apple_rotate(request: Request, user=Depends(auth.current_user)):
+    if user["provider"] != "apple":
+        raise HTTPException(400, "還沒選擇 Apple Watch")
+    apple_ingest.link(user["id"], rotate=True)
+    return _apple_info(user["id"], request)
+
+
+@app.post("/api/ingest/apple/{token}")
+async def apple_upload(token: str, request: Request):
+    """iPhone 捷徑送資料進來。不需要登入，靠網址裡的密鑰辨識是誰。"""
+    uid = apple_ingest.user_for_token(token)
+    if not uid:
+        raise HTTPException(404, "上傳網址不正確或已經換新，請到 App 的「Apple Watch 設定」複製新網址")
+    raw = await request.body()
+    if len(raw) > 2_000_000:
+        raise HTTPException(413, "資料太大，請只送最近幾天")
+    try:
+        payload = json.loads(raw or b"{}")
+    except ValueError:
+        raise HTTPException(400, "收到的不是 JSON。捷徑的「取得 URL 內容」要選「要求本文：JSON」")
+    try:
+        s = apple_ingest.ingest(uid, payload)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    parts = [f"{len(s['days'])} 天身體資料" if s["days"] else "", f"{s['runs']} 筆跑步" if s["runs"] else "",
+             f"{s['others']} 筆其他運動" if s["others"] else ""]
+    return {"ok": True, "message": "已收到：" + "、".join(p for p in parts if p), **s}
+
+
 @app.post("/api/garmin/unlink")
 def unlink(user=Depends(auth.current_user)):
     with db.tx() as c:
@@ -339,8 +398,11 @@ def put_prefs(body: dict, user=Depends(auth.current_user)):
         prefs["age"] = max(10, min(95, int(prefs["age"])))
     if prefs.get("dashboard") is not None:
         prefs["dashboard"] = [k for k in prefs["dashboard"] if k in views.CARD_LABELS][:16]
-    if not re.fullmatch(r"\d{1,2}:\d{2}", prefs.get("run_time") or ""):
-        raise HTTPException(400, "時間格式請用 HH:MM")
+    for k in ("run_time", "brief_morning", "brief_evening", "brief_weekly"):
+        if not re.fullmatch(r"([01]?\d|2[0-3]):[0-5]\d", prefs.get(k) or ""):
+            raise HTTPException(400, "時間格式請用 HH:MM")
+    for k in ("brief_enabled", "strength_enabled", "weekly_review"):
+        prefs[k] = bool(prefs.get(k, True))
     db.save_prefs(user["id"], prefs)
     if user["provider"] != "none":
         sync.replan(user["id"])
@@ -498,6 +560,110 @@ def get_activity(activity_id: str, user=Depends(auth.current_user)):
         raise HTTPException(404, "找不到這筆活動")
 
 
+# ───────────────────────────── 晨報、晚報、推播 ─────────────────────────────
+
+@app.get("/api/brief/{kind}")
+def get_brief(kind: str, refresh: bool = False, user=Depends(auth.current_user)):
+    _need_link(user)
+    if kind not in briefs.BUILDERS:
+        raise HTTPException(404, "沒有這種報告")
+    if refresh:
+        try:
+            sync.sync_user(user["id"])
+        except Exception as e:
+            log.warning("報告前同步失敗: %s", e)
+    ds = (briefs.review_week(today_local()) + timedelta(days=6)).isoformat() if kind == "weekly" else None
+    b = None if refresh else briefs.get(user["id"], kind, ds)
+    stale = b and (datetime.now(TZ) - datetime.fromisoformat(b["generated_at"])).total_seconds() > 600
+    if b is None or stale:
+        b = briefs.build_and_save(user["id"], kind)
+    g = game.compute(user["id"])
+    b["chat"] = {**pet_voice.chat(b, g["character"]), "stage": g["stage"]}
+    prefs = db.get_prefs(user["id"])
+    b["schedule"] = {"enabled": prefs.get("brief_enabled", True), "morning": prefs.get("brief_morning"), "evening": prefs.get("brief_evening"),
+                     "weekly": prefs.get("brief_weekly") if prefs.get("weekly_review", True) else None}
+    return b
+
+
+@app.post("/api/brief/morning/apply")
+def apply_morning(user=Depends(auth.current_user)):
+    _need_link(user)
+    b = briefs.get(user["id"], "morning") or briefs.build_and_save(user["id"], "morning")
+    s = b.get("suggestion")
+    if not s:
+        raise HTTPException(400, "今天沒有需要調整的地方")
+    with db.tx() as c:
+        c.execute("INSERT INTO plan_overrides(user_id, date, kind, minutes, km) VALUES(?,?,?,?,?) "
+                  "ON CONFLICT(user_id, date) DO UPDATE SET kind=excluded.kind, minutes=excluded.minutes, km=excluded.km",
+                  (user["id"], b["date"], s["kind"], s.get("minutes"), s.get("km")))
+    sync.replan(user["id"])
+    return {"ok": True, "applied": s}
+
+
+# ───────────────────────────── 休息日肌力／伸展 ─────────────────────────────
+
+@app.get("/api/strength/{ds}")
+def get_strength(ds: str, routine: str | None = None, user=Depends(auth.current_user)):
+    try:
+        d = date.fromisoformat(ds)
+    except ValueError:
+        raise HTTPException(400, "日期格式不對")
+    logged = strength.done_dates(user["id"], ds, ds)
+    if routine not in strength.ROUTINES:
+        w0 = d - timedelta(days=d.weekday())
+        routine = logged.get(ds) or strength.plan_week(strength.week_kinds(user["id"], w0)).get(ds) or "core"
+    return {**strength.detail(routine), "date": ds, "done": ds in logged, "xp": strength.XP_STRENGTH,
+            "others": [strength.summary_for(k) for k in strength.ROUTINES if k != routine]}
+
+
+class StrengthIn(BaseModel):
+    routine: str
+    done: bool = True
+
+
+@app.post("/api/strength/{ds}")
+def done_strength(ds: str, body: StrengthIn, user=Depends(auth.current_user)):
+    try:
+        date.fromisoformat(ds)
+        strength.mark(user["id"], ds, body.routine, body.done)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return {"ok": True}
+
+
+@app.get("/api/push")
+def push_info(user=Depends(auth.current_user)):
+    return {"available": push.available(), "key": push.public_key(), "devices": push.count(user["id"]),
+            "https": PUBLIC_BASE_URL.startswith("https://") if PUBLIC_BASE_URL else None}
+
+
+class PushSubIn(BaseModel):
+    subscription: dict
+
+
+@app.post("/api/push/subscribe")
+def push_subscribe(body: PushSubIn, user=Depends(auth.current_user)):
+    try:
+        push.subscribe(user["id"], body.subscription)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return {"devices": push.count(user["id"])}
+
+
+@app.delete("/api/push/subscribe")
+def push_unsubscribe(endpoint: str | None = None, user=Depends(auth.current_user)):
+    push.unsubscribe(user["id"], endpoint)
+    return {"devices": push.count(user["id"])}
+
+
+@app.post("/api/push/test")
+def push_test(user=Depends(auth.current_user)):
+    n = push.send(user["id"], "跑課測試通知", "收到這則就代表晨報和晚報會準時送到。", "/#/brief/morning")
+    if not n:
+        raise HTTPException(400, "沒有送出：這支手機還沒開啟通知，或推播套件沒安裝")
+    return {"sent": n}
+
+
 @app.get("/api/week")
 def get_week(user=Depends(auth.current_user)):
     _need_link(user)
@@ -598,6 +764,12 @@ def swap_days(body: SwapIn, user=Depends(auth.current_user)):
                       "ON CONFLICT(user_id, date) DO UPDATE SET kind=excluded.kind, minutes=excluded.minutes, km=excluded.km",
                       (user["id"], d, kind_of(p), None, p.get("distance_km") or None))
     return views.this_week(user["id"])
+
+
+@app.get("/api/runner")
+def runner_profile(user=Depends(auth.current_user)):
+    _need_link(user)
+    return runner.profile(user["id"])
 
 
 @app.get("/api/profile")
