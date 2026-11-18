@@ -6,6 +6,7 @@ from datetime import date, datetime, timedelta
 from statistics import mean
 
 from . import analysis, auth, db, game, metrics, sync
+from . import strength
 from .config import TZ
 from .garmin_client import DemoGarmin, RealGarmin, today_local
 from .metrics import fmt_pace
@@ -154,6 +155,17 @@ def _latest(user_id: int, col: str, days: int = 3):
     return (row["v"], row["date"]) if row else (None, None)
 
 
+def _strength_today(user_id: int, today, plan_today: dict) -> dict | None:
+    if plan_today.get("kind") not in (None, "rest") or not db.get_prefs(user_id).get("strength_enabled", True):
+        return None
+    w0 = today - timedelta(days=today.weekday())
+    prev = db.q1("SELECT data FROM plan WHERE user_id=? AND date=?", (user_id, (w0 - timedelta(days=1)).isoformat()))
+    rmap = strength.plan_week(strength.week_kinds(user_id, w0), json.loads(prev["data"]).get("kind") if prev else None)
+    logged = strength.done_dates(user_id, today.isoformat(), today.isoformat())
+    rid = logged.get(today.isoformat()) or rmap.get(today.isoformat()) or "core"
+    return {**strength.summary_for(rid), "done": today.isoformat() in logged, "date": today.isoformat()}
+
+
 def summary(user_id: int) -> dict:
     user = db.q1("SELECT * FROM users WHERE id=?", (user_id,))
     prefs = db.get_prefs(user_id)
@@ -209,6 +221,7 @@ def summary(user_id: int) -> dict:
     return {
         "device": device, "provider": user["provider"], "last_sync": user["last_sync"],
         "last_sync_error": user["last_sync_error"], "rings": rings, "today": dash["plan"]["days"][0],
+        "strength_today": _strength_today(user_id, today, dash["plan"]["days"][0]),
         "readiness": dash["readiness"], "novice": dash.get("novice"), "cards": cards, "card_options": CARD_LABELS,
         "dashboard": prefs.get("dashboard") or DEFAULT_CARDS,
         "today_activity": (db.q1("SELECT activity_id FROM activities WHERE user_id=? AND date=? ORDER BY start_local DESC LIMIT 1",
@@ -591,6 +604,16 @@ def this_week(user_id: int) -> dict:
                        if (sk_ := _skipped(checks.get(ds))) else {}),
                     "actual": da, "status": status, "is_today": ds == today.isoformat(),
                     "editable": ds >= today.isoformat()})
+    # 休息日的肌力／伸展
+    if prefs.get("strength_enabled", True):
+        prev = db.q1("SELECT data FROM plan WHERE user_id=? AND date=?", (user_id, (w0 - timedelta(days=1)).isoformat()))
+        rmap = strength.plan_week([{"date": x["date"], "kind": (x["plan"] or {}).get("kind")} for x in out],
+                                  json.loads(prev["data"]).get("kind") if prev else None)
+        logged = strength.done_dates(user_id, w0.isoformat(), days_[-1].isoformat())
+        for x in out:
+            rid = logged.get(x["date"]) or rmap.get(x["date"])
+            if rid and not x["actual"]:
+                x["strength"] = {**strength.summary_for(rid), "done": x["date"] in logged}
     planned_min = sum((x["plan"] or {}).get("minutes") or 0 for x in out)
     actual_min = sum(a["minutes"] for x in out for a in x["actual"])
     tips = week_tips(out, done, planned_n, missed, too_hard, planned_min, actual_min, dash, today)

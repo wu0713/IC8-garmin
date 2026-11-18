@@ -332,11 +332,11 @@ def evening(user_id: int, today: date | None = None, now: datetime | None = None
 
 # ───────────────────────────── 儲存、排程、推播 ─────────────────────────────
 
-BUILDERS = {"morning": morning, "evening": evening}
+BUILDERS = {"morning": morning, "evening": evening}   # weekly 另外加在檔案最後
 
 
 def build_and_save(user_id: int, kind: str, today: date | None = None, now: datetime | None = None) -> dict:
-    data = BUILDERS[kind](user_id, today, now) if kind == "evening" else BUILDERS[kind](user_id, today)
+    data = BUILDERS[kind](user_id, today, now) if kind in ("evening", "weekly") else BUILDERS[kind](user_id, today)
     stamp = (now or datetime.now(TZ)).isoformat(timespec="seconds")
     with db.tx() as c:
         c.execute("INSERT INTO briefs(user_id, date, kind, data, created_at, pushed) VALUES(?,?,?,?,?,0) "
@@ -386,7 +386,10 @@ def tick(now: datetime | None = None, do_sync=None, do_push=None):
         prefs = db.get_prefs(uid)
         if not prefs.get("brief_enabled", True):
             continue
-        for kind, key, default in (("morning", "brief_morning", "07:30"), ("evening", "brief_evening", "21:30")):
+        jobs = [("morning", "brief_morning", "07:30"), ("evening", "brief_evening", "21:30")]
+        if now.weekday() == 6 and prefs.get("weekly_review", True):
+            jobs.append(("weekly", "brief_weekly", "20:30"))
+        for kind, key, default in jobs:
             h, m = _hm(prefs.get(key), default)
             due = now.replace(hour=h, minute=m, second=0, microsecond=0)
             if now < due:
@@ -414,3 +417,112 @@ def tick(now: datetime | None = None, do_sync=None, do_push=None):
                     log.warning("推播失敗 user=%s: %s", uid, e)
             with db.tx() as c:
                 c.execute("UPDATE briefs SET pushed=1 WHERE user_id=? AND date=? AND kind=?", (uid, ds, kind))
+
+
+# ───────────────────────────── 每週回顧 ─────────────────────────────
+
+def review_week(today: date) -> date:
+    """週日看這一週；其他天看上一個完整的週。回傳週一。"""
+    w0 = today - timedelta(days=today.weekday())
+    return w0 if today.weekday() == 6 else w0 - timedelta(days=7)
+
+
+def _runs(user_id, a, b):
+    return db.q("SELECT * FROM activities WHERE user_id=? AND date BETWEEN ? AND ? ORDER BY date", (user_id, a, b))
+
+
+def weekly(user_id: int, today: date | None = None, now: datetime | None = None) -> dict:
+    from . import game, strength
+
+    now = now or datetime.now(TZ)
+    today = today or now.date()
+    w0 = review_week(today)
+    w6 = w0 + timedelta(days=6)
+    a, b = w0.isoformat(), w6.isoformat()
+    runs = _runs(user_id, a, b)
+    prev = _runs(user_id, (w0 - timedelta(days=7)).isoformat(), (w0 - timedelta(days=1)).isoformat())
+    four = _runs(user_id, (w0 - timedelta(days=28)).isoformat(), (w0 - timedelta(days=1)).isoformat())
+    km = lambda rs: round(sum((r.get("distance_m") or 0) for r in rs) / 1000, 1)  # noqa: E731
+    mins = lambda rs: round(sum((r.get("duration_s") or 0) for r in rs) / 60)       # noqa: E731
+    this_km, prev_km, avg4 = km(runs), km(prev), round(km(four) / 4, 1)
+
+    plans = {r["date"]: json.loads(r["data"]) for r in db.q(
+        "SELECT date, data FROM plan WHERE user_id=? AND date BETWEEN ? AND ?", (user_id, a, b))}
+    planned = [ds for ds, p in plans.items() if p.get("kind") not in (None, "rest")]
+    ran_days = {r["date"] for r in runs}
+    done = [ds for ds in planned if ds in ran_days]
+
+    # 本週亮點：最長的一趟、最快的一趟（3 公里以上）
+    longest = max(runs, key=lambda r: r.get("distance_m") or 0, default=None)
+    paced = [r for r in runs if (r.get("distance_m") or 0) >= 3000 and r.get("duration_s")]
+    fastest = min(paced, key=lambda r: r["duration_s"] / r["distance_m"], default=None)
+
+    def pace(r):
+        s = r["duration_s"] / (r["distance_m"] / 1000)
+        return f"{int(s // 60)}'{int(s % 60):02d}\""
+
+    cross = db.q("SELECT * FROM cross_activities WHERE user_id=? AND date BETWEEN ? AND ?", (user_id, a, b))
+    sports: dict[str, int] = {}
+    for c in cross:
+        sports[c.get("sport_label") or "其他運動"] = sports.get(c.get("sport_label") or "其他運動", 0) + round((c.get("duration_s") or 0) / 60)
+
+    st_done = strength.done_dates(user_id, a, b)
+    rest_days = [ds for ds in (w0 + timedelta(days=i) for i in range(7)) if ds.isoformat() not in ran_days]
+    daily = {r["date"]: r for r in db.q("SELECT date, rhr FROM daily WHERE user_id=? AND date BETWEEN ? AND ?",
+                                         (user_id, (w0 - timedelta(days=7)).isoformat(), b))}
+    rhr_this = _avg([daily.get((w0 + timedelta(days=i)).isoformat(), {}).get("rhr") for i in range(7)], 3)
+    rhr_prev = _avg([daily.get((w0 - timedelta(days=7 - i)).isoformat(), {}).get("rhr") for i in range(7)], 3)
+
+    loads, *_ = _loads(user_id, w6)
+    ratio = _ratio(loads, w6, include_today=True)
+    vol = views.load_verdict(ratio)
+
+    g = game.compute(user_id)
+    xp_week = sum(x for d, x in g.get("xp_by_day", {}).items() if a <= d <= b)
+
+    # 下週：從現在的排程抓下週一到週日
+    from . import sync
+    n0, n6 = w6 + timedelta(days=1), w6 + timedelta(days=7)
+    nxt_days = [d for d in sync.replan(user_id)["plan"]["days"] if n0.isoformat() <= d["date"] <= n6.isoformat()]
+    stored = {r["date"]: json.loads(r["data"]) for r in db.q(
+        "SELECT date, data FROM plan WHERE user_id=? AND date BETWEEN ? AND ?", (user_id, n0.isoformat(), n6.isoformat()))}
+    for ds, p in stored.items():
+        if not any(d["date"] == ds for d in nxt_days):
+            nxt_days.append(p)
+    nxt_runs = [d for d in nxt_days if d.get("kind") not in (None, "rest", "done")]
+    key = [f"{['週一','週二','週三','週四','週五','週六','週日'][date.fromisoformat(d['date']).weekday()]} {d.get('title')}"
+           for d in sorted(nxt_runs, key=lambda d: d["date"]) if d.get("intensity") in ("hard", "moderate", "race") or d.get("kind") == "long"]
+
+    rate = round(len(done) / len(planned) * 100) if planned else None
+    if not runs:
+        level, headline = "warn", "這週沒有跑步紀錄"
+    elif rate is not None and rate >= 80 and (not vol or vol["level"] in ("ok", "low")):
+        level, headline = "good", "這週練得很扎實"
+    elif vol and vol["level"] in ("warn", "bad"):
+        level, headline = "warn", "這週量衝太快，下週收一點"
+    elif rate is not None and rate < 50:
+        level, headline = "warn", "這週課表完成不到一半"
+    else:
+        level, headline = "good", "這週穩穩前進"
+
+    return {
+        "kind": "weekly", "date": b, "week_start": a, "level": level, "headline": headline,
+        "run": {"count": len(runs), "km": this_km, "minutes": mins(runs), "prev_km": prev_km, "avg4_km": avg4,
+                "change": round((this_km - prev_km) / prev_km * 100) if prev_km else None},
+        "plan": {"planned": len(planned), "done": len(done), "rate": rate},
+        "longest": longest and (longest.get("distance_m") or 0) > 0 and {"id": longest["activity_id"], "date": longest["date"],
+                                                                         "km": round(longest["distance_m"] / 1000, 1)},
+        "fastest": fastest and {"id": fastest["activity_id"], "date": fastest["date"], "km": round(fastest["distance_m"] / 1000, 1),
+                                "pace": pace(fastest)},
+        "others": [{"label": k, "minutes": v} for k, v in sorted(sports.items(), key=lambda kv: -kv[1])],
+        "strength": {"done": len(st_done), "rest_days": len(rest_days)},
+        "rhr": {"this": rhr_this and round(rhr_this, 1), "prev": rhr_prev and round(rhr_prev, 1)},
+        "volume": vol, "ratio": ratio, "xp": xp_week, "level_now": g["level"],
+        "next": {"runs": len(nxt_runs), "minutes": round(sum(d.get("minutes") or 0 for d in nxt_runs)), "key": key[:4],
+                 "label": "這週" if today >= n0 else "下週"},
+        "sunday": today.weekday() == 6,
+        "generated_at": datetime.now(TZ).isoformat(timespec="minutes"),
+    }
+
+
+BUILDERS["weekly"] = weekly

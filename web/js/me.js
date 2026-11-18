@@ -54,7 +54,7 @@ async function viewMe() {
     <section class="section"><div class="card" style="padding:4px 12px">
       ${[["#/me/settings", "flag", "目標與課表偏好", "比賽、可跑日、強度、喜歡的課"],
          ["#/me/health", "shield", "健康參考範圍", "心率區間、配速、各項指標參考值"],
-         ["#/me/briefs", "bell", "晨報與晚報", "每天早晚的身體狀況報告與手機通知"],
+         ["#/me/briefs", "bell", "晨報、晚報、週報", "報告時間、手機通知、休息日肌力伸展"],
          ["#/me/calendar", "cal", "放進 iPhone 行事曆", "訂閱網址，課表變動自動更新"],
          ["#/me/device", "watch", "手錶與資料來源", S.me.provider === "demo" ? "目前使用範例資料" : S.me.provider === "none" ? "尚未連結，點這裡開始" : `Garmin：${S.me.garmin_email || ""}`]]
         .map(([to, ic, t, sub]) => `<button class="row" data-go="${to}"><span class="ri">${ico(ic)}</span><span><b>${t}</b><small>${esc(sub)}</small></span><span class="rv">${ico("chevron")}</span></button>`).join("")}

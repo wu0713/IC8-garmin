@@ -469,3 +469,27 @@ details.card h3 { font-size: 1rem; }
 .ap-act { display: inline-block; background: #E6EEFC; border: 1.5px solid #2F6FD6; color: #1d4fa8; border-radius: 6px; padding: 0 6px; font-weight: 700; font-size: .9375rem; }
 .ap-step code, .ap-pre { background: var(--surface-hi); border-radius: 4px; padding: 0 4px; font-size: .875rem; }
 .ap-pre { display: block; padding: 10px; overflow-x: auto; margin-top: 10px; white-space: pre; }
+
+/* ── 休息日肌力／伸展 ── */
+.st-switch { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.st-list { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 10px; }
+.st-item { display: grid; grid-template-columns: 36px 1fr; gap: 10px; align-items: start; }
+.st-check { width: 36px; height: 36px; position: relative; cursor: pointer; }
+.st-check input { position: absolute; opacity: 0; width: 36px; height: 36px; margin: 0; cursor: pointer; }
+.st-check span { display: block; width: 30px; height: 30px; margin: 3px; border: var(--edge); border-radius: 6px; background: #fff; }
+.st-check input:checked + span { background: var(--ok) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/20px no-repeat; }
+.st-check input:focus-visible + span { outline: 3px solid var(--primary); outline-offset: 2px; }
+.st-body b { font-size: 1.0625rem; }
+.st-dose { display: inline-block; margin-left: 8px; font-weight: 700; color: var(--primary); }
+.st-body p { margin-top: 4px; line-height: 1.6; }
+.st-timer { margin-top: 8px; }
+.st-chip { display: inline-flex; gap: 4px; align-items: center; }
+.st-chip svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.2; }
+.st-chip.done { background: #DDF3E7; }
+.st-today { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: center; width: 100%; text-align: left; margin-top: 14px; cursor: pointer; }
+.st-today .st-ico { width: 44px; height: 44px; border: var(--edge); border-radius: 8px; display: grid; place-items: center; background: #FAEAE4; color: #B5502F; }
+.st-today .st-ico svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; }
+.st-today small { display: block; color: var(--ink-3); font-weight: 700; }
+.st-today b { display: block; font-size: 1.0625rem; }
+.st-today .muted { display: block; font-size: .875rem; }
+.st-switch .mini { min-height: 40px; }

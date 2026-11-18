@@ -50,6 +50,8 @@ def chat(brief: dict, pet: dict | None, seed: str = "") -> dict:
     lines: list[str] = []
     actions: list[dict] = []
 
+    if brief["kind"] == "weekly":
+        return {"name": _name(pet), "species": sp, "lines": _weekly_lines(brief, v, I), "actions": []}
     if brief["kind"] == "morning":
         lines.append(v["gm"])
         m = {x["key"]: x for x in brief["metrics"]}
@@ -134,12 +136,67 @@ def chat(brief: dict, pet: dict | None, seed: str = "") -> dict:
             lines.extend(brief.get("tips", []))
             lines.append(v["night"])
 
-    name = (pet or {}).get("nickname") or (pet or {}).get("species_name") or "還沒孵化的蛋"
-    return {"name": name, "species": sp, "lines": lines, "actions": actions}
+    return {"name": _name(pet), "species": sp, "lines": lines, "actions": actions}
+
+
+def _name(pet):
+    return (pet or {}).get("nickname") or (pet or {}).get("species_name") or "還沒孵化的蛋"
+
+
+def _weekly_lines(b: dict, v: dict, I: str) -> list[str]:
+    W = ["週一", "週二", "週三", "週四", "週五", "週六", "週日"]
+    wd = lambda ds: W[__import__("datetime").date.fromisoformat(ds).weekday()]  # noqa: E731
+    r, p = b["run"], b["plan"]
+    period = "這週" if b.get("sunday") else "上週"
+    before = "上週" if b.get("sunday") else "前一週"
+    upcoming = "下週" if b.get("sunday") else "這週"
+    lines = [f"{v['wow']}，一週過去了！{I}來幫你整理{period}（{b['week_start'][5:].replace('-', '/')} 起）。" if b.get("sunday")
+             else f"{v['wow']}，{I}幫你回顧上週（{b['week_start'][5:].replace('-', '/')} 起）。"]
+    if r["count"]:
+        cmp = ""
+        if r["change"] is not None:
+            cmp = f"，比{before}{'多' if r['change'] >= 0 else '少'} {abs(r['change'])}%" if abs(r["change"]) >= 5 else f"，跟{before}差不多"
+        lines.append(f"{period}跑了 {r['count']} 次、{r['km']} 公里、{r['minutes']} 分鐘{cmp}。")
+    else:
+        lines.append(f"{period}沒有跑步紀錄。忙的話沒關係，{upcoming}從輕鬆跑慢慢接回來就好。")
+    if p["planned"]:
+        rate = p["rate"]
+        tail = "，太棒了！" if rate >= 80 else "，還不錯。" if rate >= 50 else "。課表可能排太滿，要不要到設定裡少排一天？"
+        lines.append(f"課表排了 {p['planned']} 堂，完成 {p['done']} 堂（{rate}%）{tail}")
+    hi = []
+    if b.get("longest"):
+        hi.append(f"{wd(b['longest']['date'])}跑了最長的 {b['longest']['km']} 公里")
+    if b.get("fastest") and (not b.get("longest") or b["fastest"]["id"] != b["longest"]["id"]):
+        hi.append(f"{wd(b['fastest']['date'])}的 {b['fastest']['km']} 公里配速最快（{b['fastest']['pace']}）")
+    if hi:
+        lines.append(f"{period}亮點：" + "；".join(hi) + "。")
+    if b.get("others"):
+        lines.append("其他運動：" + "、".join(f"{o['label']} {o['minutes']} 分" for o in b["others"][:3]) + "。")
+    s = b["strength"]
+    if s["done"]:
+        lines.append(f"休息日的肌力伸展做了 {s['done']} 次，{I}看到了！")
+    elif s["rest_days"]:
+        lines.append(f"{period} {s['rest_days']} 天休息日都沒做肌力伸展，{upcoming}挑一天做 12 分鐘就好。")
+    rh = b["rhr"]
+    if rh["this"] and rh["prev"]:
+        d = rh["this"] - rh["prev"]
+        if d >= 3:
+            lines.append(f"{period}安靜心率平均 {round(rh['this'])}，比{before}高 {round(d)} 下，身體有點累，{upcoming}多睡一點。")
+        elif d <= -2:
+            lines.append(f"{period}安靜心率平均 {round(rh['this'])}，比{before}低，體能在進步。")
+    if b.get("volume") and b["volume"]["level"] in ("warn", "bad"):
+        lines.append(f"不過這 7 天的總活動量是平常的 {round(b['ratio'] * 100)}%，{b['volume']['label']}了，{upcoming}別再加量。")
+    if b["xp"]:
+        lines.append(f"{period}{I}拿到 {b['xp']} 點經驗值，現在是 Lv {b['level_now']}。")
+    n = b["next"]
+    if n["runs"]:
+        lines.append(f"{n.get('label', '下週')}排了 {n['runs']} 堂、約 {n['minutes']} 分鐘" + (f"，重點是{ '、'.join(n['key']) }。" if n["key"] else "，都是輕鬆跑。"))
+    lines.append(v["night"] if b.get("sunday") else v["go"])
+    return lines
 
 
 def push_text(brief: dict, pet: dict | None) -> tuple[str, str]:
     c = chat(brief, pet)
-    title = f"{c['name']}：{'晨報' if brief['kind'] == 'morning' else '晚報'}"
+    title = f"{c['name']}：{ {'morning': '晨報', 'evening': '晚報', 'weekly': '每週回顧'}[brief['kind']] }"
     body = " ".join(c["lines"][1:3]) if len(c["lines"]) > 2 else " ".join(c["lines"])
     return title, body[:180]

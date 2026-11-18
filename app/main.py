@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import analysis, auth, db, game, season, sync, views
-from . import apple_ingest, briefs, pet_voice, push
+from . import apple_ingest, briefs, pet_voice, push, strength
 from .config import ALLOW_DEMO, INVITE_CODE, PUBLIC_BASE_URL, SYNC_HOURS, TZ, WEB_DIR
 from .garmin_client import MfaRequired, RealGarmin, today_local
 from .ics import build_ics
@@ -373,10 +373,12 @@ def put_prefs(body: dict, user=Depends(auth.current_user)):
     prefs["races"] = sorted(races, key=lambda r: r["date"])
     if prefs.get("dashboard") is not None:
         prefs["dashboard"] = [k for k in prefs["dashboard"] if k in views.CARD_LABELS][:16]
-    for k in ("run_time", "brief_morning", "brief_evening"):
+    for k in ("run_time", "brief_morning", "brief_evening", "brief_weekly"):
         if not re.fullmatch(r"([01]?\d|2[0-3]):[0-5]\d", prefs.get(k) or ""):
             raise HTTPException(400, "時間格式請用 HH:MM")
     prefs["brief_enabled"] = bool(prefs.get("brief_enabled", True))
+    for k in ("strength_enabled", "weekly_review"):
+        prefs[k] = bool(prefs.get(k, True))
     db.save_prefs(user["id"], prefs)
     if user["provider"] != "none":
         sync.replan(user["id"])
@@ -508,14 +510,16 @@ def get_brief(kind: str, refresh: bool = False, user=Depends(auth.current_user))
             sync.sync_user(user["id"])
         except Exception as e:
             log.warning("報告前同步失敗: %s", e)
-    b = None if refresh else briefs.get(user["id"], kind)
+    ds = (briefs.review_week(today_local()) + timedelta(days=6)).isoformat() if kind == "weekly" else None
+    b = None if refresh else briefs.get(user["id"], kind, ds)
     stale = b and (datetime.now(TZ) - datetime.fromisoformat(b["generated_at"])).total_seconds() > 600
     if b is None or stale:
         b = briefs.build_and_save(user["id"], kind)
     g = game.compute(user["id"])
     b["chat"] = {**pet_voice.chat(b, g["character"]), "stage": g["stage"]}
     prefs = db.get_prefs(user["id"])
-    b["schedule"] = {"enabled": prefs.get("brief_enabled", True), "morning": prefs.get("brief_morning"), "evening": prefs.get("brief_evening")}
+    b["schedule"] = {"enabled": prefs.get("brief_enabled", True), "morning": prefs.get("brief_morning"), "evening": prefs.get("brief_evening"),
+                     "weekly": prefs.get("brief_weekly") if prefs.get("weekly_review", True) else None}
     return b
 
 
@@ -532,6 +536,37 @@ def apply_morning(user=Depends(auth.current_user)):
                   (user["id"], b["date"], s["kind"], s.get("minutes")))
     sync.replan(user["id"])
     return {"ok": True, "applied": s}
+
+
+# ───────────────────────────── 休息日肌力／伸展 ─────────────────────────────
+
+@app.get("/api/strength/{ds}")
+def get_strength(ds: str, routine: str | None = None, user=Depends(auth.current_user)):
+    try:
+        d = date.fromisoformat(ds)
+    except ValueError:
+        raise HTTPException(400, "日期格式不對")
+    logged = strength.done_dates(user["id"], ds, ds)
+    if routine not in strength.ROUTINES:
+        w0 = d - timedelta(days=d.weekday())
+        routine = logged.get(ds) or strength.plan_week(strength.week_kinds(user["id"], w0)).get(ds) or "core"
+    return {**strength.detail(routine), "date": ds, "done": ds in logged, "xp": strength.XP_STRENGTH,
+            "others": [strength.summary_for(k) for k in strength.ROUTINES if k != routine]}
+
+
+class StrengthIn(BaseModel):
+    routine: str
+    done: bool = True
+
+
+@app.post("/api/strength/{ds}")
+def done_strength(ds: str, body: StrengthIn, user=Depends(auth.current_user)):
+    try:
+        date.fromisoformat(ds)
+        strength.mark(user["id"], ds, body.routine, body.done)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return {"ok": True}
 
 
 @app.get("/api/push")

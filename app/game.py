@@ -122,6 +122,11 @@ def compute(user_id: int) -> dict:
             current[k] = r
             raw.append((r["date"], PB_XP[k], f"{RECORD_LABEL[k]} 破 PB！", "pb"))
 
+    # 休息日肌力／伸展
+    for r in db.q("SELECT date, routine FROM strength_log WHERE user_id=?", (user_id,)):
+        from .strength import ROUTINES, XP_STRENGTH
+        raw.append((r["date"], XP_STRENGTH, f"休息日{ROUTINES.get(r['routine'], {}).get('title', '肌力')}", "strength"))
+
     history_xp = sum(x for d, x, _, _ in raw if d < hatch)
     events = [e for e in raw if e[0] >= hatch]
     gift = min(HATCH_GIFT_CAP, round(history_xp * HATCH_GIFT_RATE))
@@ -161,6 +166,7 @@ def compute(user_id: int) -> dict:
         "total_km": round(total_km, 1),
         "last_run": acts[-1]["date"] if acts else None,
         "hatch_date": hatch,
+        "xp_by_day": {d: sum(e[1] for e in events if e[0] == d) for d in {e[0] for e in events}},
     }
 
 

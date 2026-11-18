@@ -3,7 +3,12 @@
 
 const BRIEF_V = { good: ["done", "很好"], ok: ["", "正常"], warn: ["warn", "注意"], bad: ["missed", "偏差"], none: ["", "還沒同步"] };
 const LEVEL_TONE = { go: "good", reduce: "warn", rest: "bad", good: "good", warn: "warn", bad: "bad" };
-const briefKindNow = () => (new Date().getHours() < 15 ? "morning" : "evening");
+const briefKindNow = () => {
+  const n = new Date();
+  if (n.getDay() === 0 && n.getHours() >= 20) return "weekly";
+  return n.getHours() < 15 ? "morning" : "evening";
+};
+const BRIEF_NAME = { morning: "晨報", evening: "晚報", weekly: "週報" };
 
 // 今天頁最上面的小卡：夥伴的一句話
 async function briefCard() {
@@ -12,14 +17,14 @@ async function briefCard() {
   if (!b) return "";
   const c = b.chat, tone = LEVEL_TONE[b.level];
   const line = c.lines.find((l, i) => i > 0 && /安靜心率|今天.{0,4}做了|沒有運動/.test(l)) || c.lines[1] || c.lines[0];
-  return `<button class="card brief-card tone-${tone}" data-go="#/brief/${kind}" style="margin-bottom:14px" aria-label="${kind === "morning" ? "晨報" : "晚報"}：${esc(b.headline)}">
+  return `<button class="card brief-card tone-${tone}" data-go="#/brief/${kind}" style="margin-bottom:14px" aria-label="${BRIEF_NAME[kind]}：${esc(b.headline)}">
     <span class="bc-pet">${c.species ? charImg(c.species, c.stage, 52) : ico("paw")}</span>
-    <span><small>${ico(kind === "morning" ? "sun" : "moon")}${esc(c.name)}的${kind === "morning" ? "晨報" : "晚報"}</small>
+    <span><small>${ico(kind === "morning" ? "sun" : kind === "weekly" ? "cal" : "moon")}${esc(c.name)}的${BRIEF_NAME[kind]}</small>
       <span class="bc-bubble">${esc(line)}</span><b class="bc-cta">${esc(b.headline)}，點我聽完整報告</b></span></button>`;
 }
 
 async function viewBrief(kind) {
-  $app.innerHTML = `${appbar(kind === "morning" ? "晨報" : "晚報", { back: true })}<p class="muted">整理中…</p>`;
+  $app.innerHTML = `${appbar(BRIEF_NAME[kind], { back: true })}<p class="muted">整理中…</p>`;
   const [b] = await Promise.all([api(`/api/brief/${kind}`), loadChars()]);
   renderBrief(b);
 }
@@ -32,10 +37,22 @@ function renderBrief(b) {
   sessionStorage.setItem(seenKey, "1");
   const tabs = `<div class="seg brief-seg" style="margin-bottom:14px">
     <button aria-pressed="${kind === "morning"}" data-go="#/brief/morning">${ico("sun")}晨報</button>
-    <button aria-pressed="${kind === "evening"}" data-go="#/brief/evening">${ico("moon")}晚報</button></div>`;
+    <button aria-pressed="${kind === "evening"}" data-go="#/brief/evening">${ico("moon")}晚報</button>
+    <button aria-pressed="${kind === "weekly"}" data-go="#/brief/weekly">${ico("cal")}週報</button></div>`;
 
   let detail = "";
-  if (kind === "morning") {
+  if (kind === "weekly") {
+    const tile = (k, v, u = "") => `<div class="tile"><p class="k">${k}</p><p class="v num">${v}<small>${u}</small></p></div>`;
+    detail += `<h3>${b.week_start.slice(5).replace("-", "/")} 那一週</h3>
+      <div class="tiles two" style="margin-top:8px">
+        ${tile("跑步", b.run.km, "km")}${tile("次數", b.run.count, "次")}
+        ${tile("比前一週", b.run.change == null ? "–" : `${b.run.change > 0 ? "+" : ""}${b.run.change}`, b.run.change == null ? "" : "%")}${tile("前 4 週平均", b.run.avg4_km, "km")}
+        ${tile("課表完成", b.plan.rate == null ? "–" : b.plan.rate, b.plan.rate == null ? "" : "%")}${tile("肌力伸展", b.strength.done, "次")}
+        ${tile("安靜心率", b.rhr.this ? Math.round(b.rhr.this) : "–", "bpm")}${tile("經驗值", `+${b.xp}`)}
+      </div>
+      ${b.longest ? `<button class="strip" data-go="#/workout/${encodeURIComponent(b.longest.id)}" style="margin-top:10px">${ico("run")}<span><b>最長：${b.longest.km} 公里</b><small>${b.longest.date.slice(5).replace("-", "/")}</small></span>${ico("chevron")}</button>` : ""}
+      ${b.fastest ? `<button class="strip" data-go="#/workout/${encodeURIComponent(b.fastest.id)}" style="margin-top:8px">${ico("bolt")}<span><b>最快：${b.fastest.pace}/km</b><small>${b.fastest.date.slice(5).replace("-", "/")} · ${b.fastest.km} 公里</small></span>${ico("chevron")}</button>` : ""}`;
+  } else if (kind === "morning") {
     detail += `<h3>今天早上 vs 昨天 vs 平常</h3>
       <table class="cmp num"><thead><tr><th></th><th>今天</th><th>昨天</th><th>平常</th></tr></thead><tbody>
       ${b.metrics.map((m) => `<tr><th scope="row">${esc(m.label)}${m.verdict !== "ok" ? ` <span class="badge ${BRIEF_V[m.verdict][0]}">${BRIEF_V[m.verdict][1]}</span>` : ""}</th>
@@ -53,7 +70,7 @@ function renderBrief(b) {
   }
 
   const sch = b.schedule || {};
-  $app.innerHTML = `${appbar(kind === "morning" ? "晨報" : "晚報", { back: true, actions: `<button class="icon-btn" id="rf" aria-label="同步並更新">${ico("sync")}</button>` })}
+  $app.innerHTML = `${appbar(BRIEF_NAME[kind], { back: true, actions: `<button class="icon-btn" id="rf" aria-label="同步並更新">${ico("sync")}</button>` })}
     ${tabs}
     <section class="chat-stage tone-${tone}" aria-label="${esc(c.name)}">
       <span class="pet chat-pet">${c.species ? charImg(c.species, c.stage, 96) : `<span class="egg">${ico("paw")}</span>`}<span class="pet-shadow"></span></span>
@@ -63,7 +80,7 @@ function renderBrief(b) {
     <div class="chat-actions" id="acts"></div>
     <details class="card" style="margin-top:16px"><summary>看詳細數字</summary><div style="margin-top:10px">${detail}</div></details>
     <button class="strip" data-go="#/me/briefs" style="margin-top:14px">${ico("bell")}
-      <span><b>${sch.enabled ? `每天 ${sch.morning} 晨報、${sch.evening} 晚報` : "晨報、晚報推播已關閉"}</b><small>設定時間與手機通知</small></span>${ico("chevron")}</button>`;
+      <span><b>${sch.enabled ? `每天 ${sch.morning} 晨報、${sch.evening} 晚報${sch.weekly ? `，週日 ${sch.weekly} 週報` : ""}` : "晨報、晚報推播已關閉"}</b><small>設定時間與手機通知</small></span>${ico("chevron")}</button>`;
   bindCommon();
 
   const box = document.getElementById("chat"), acts = document.getElementById("acts");
@@ -126,13 +143,16 @@ async function viewBriefSettings() {
   else if (perm === "denied") pushHelp = "通知被封鎖了。到 iPhone「設定 → 通知 → 跑課」重新允許。";
   else pushHelp = info.devices ? `已經有 ${info.devices} 台裝置會收到通知。` : "還沒開啟。按下面的按鈕，手機會問你要不要允許通知。";
 
-  $app.innerHTML = `${appbar("晨報與晚報", { back: true })}
+  $app.innerHTML = `${appbar("報告與休息日", { back: true })}
     <section class="card form">
       <label class="check" style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="en" ${prefs.brief_enabled !== false ? "checked" : ""}>每天自動產生並推播</label>
       <div class="tiles" style="margin-top:12px;grid-template-columns:1fr 1fr">
         <label class="tile"><span class="k">${ico("sun")} 晨報時間</span><input type="time" id="mt" value="${esc(prefs.brief_morning || "07:30")}"></label>
         <label class="tile"><span class="k">${ico("moon")} 晚報時間</span><input type="time" id="et" value="${esc(prefs.brief_evening || "21:30")}"></label>
       </div>
+      <label class="check" style="display:flex;gap:10px;align-items:center;margin-top:14px"><input type="checkbox" id="wk" ${prefs.weekly_review !== false ? "checked" : ""}>週日晚上的每週回顧</label>
+      <label class="tile" style="margin-top:8px;display:block"><span class="k">${ico("cal")} 週報時間（週日）</span><input type="time" id="wt" value="${esc(prefs.brief_weekly || "20:30")}"></label>
+      <label class="check" style="display:flex;gap:10px;align-items:center;margin-top:14px"><input type="checkbox" id="st" ${prefs.strength_enabled !== false ? "checked" : ""}>休息日排肌力或伸展（10–15 分鐘）</label>
       <p class="muted" style="margin-top:8px">晨報會等抓到今天的安靜心率才送出（手錶要先同步到手機的 Garmin Connect），最晚延後 3 小時。</p>
       <button class="btn block" id="save" style="margin-top:12px">儲存</button>
     </section>
@@ -145,7 +165,9 @@ async function viewBriefSettings() {
   bindCommon();
   document.getElementById("save").onclick = (e) => busy(e.currentTarget, async () => {
     await api("/api/prefs", { method: "PUT", body: { brief_enabled: document.getElementById("en").checked,
-      brief_morning: document.getElementById("mt").value, brief_evening: document.getElementById("et").value } });
+      brief_morning: document.getElementById("mt").value, brief_evening: document.getElementById("et").value,
+      weekly_review: document.getElementById("wk").checked, brief_weekly: document.getElementById("wt").value,
+      strength_enabled: document.getElementById("st").checked } });
     toast("已儲存");
   });
   const sub = document.getElementById("sub");

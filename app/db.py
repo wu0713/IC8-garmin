@@ -77,6 +77,13 @@ CREATE TABLE IF NOT EXISTS briefs (
     pushed INTEGER DEFAULT 0,
     PRIMARY KEY (user_id, date, kind)
 );
+CREATE TABLE IF NOT EXISTS strength_log (
+    user_id INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    routine TEXT NOT NULL,
+    done_at TEXT,
+    PRIMARY KEY (user_id, date)
+);
 CREATE TABLE IF NOT EXISTS apple_link (
     user_id INTEGER PRIMARY KEY,
     token TEXT NOT NULL UNIQUE,

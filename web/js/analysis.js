@@ -31,6 +31,7 @@ function weekHtml(w) {
           <span>
             <span class="wt"><span class="int ${p && p.kind !== "rest" ? p.intensity : "rest"}"></span>${p && p.steps?.length && d.status !== "done" ? `<button data-detail="${d.date}" aria-label="看${esc(p.title)}的內容">${esc(p.title)}</button>` : esc(p && p.kind !== "done" ? p.title : act ? act.name : p ? p.title : "休息日")}
               ${txt ? `<span class="badge ${cls}">${txt}</span>` : ""}${p?.override ? `<span class="badge edit">已調整</span>` : ""}
+              ${isRest && d.strength ? `<button class="mini st-chip ${d.strength.done ? "done" : ""}" data-go="#/strength/${d.date}">${ico(d.strength.done ? "check" : "gym")}${esc(d.strength.title)} ${d.strength.minutes} 分</button>` : ""}
               ${isRest && d.editable ? `<button class="mini" data-adjust="${d.date}">想跑？排一堂</button>` : ""}</span>
             ${p && p.minutes && d.status !== "done" ? `<span class="ws">${p.time ? `${p.time}，` : ""}約 ${p.minutes} 分${p.distance_km ? `、${p.distance_km} km` : ""}</span>` : ""}
             ${d.actual.map((x) => `<button class="text-btn" data-go="#/workout/${encodeURIComponent(x.id)}" style="padding:2px 0;min-height:0;display:block;text-align:left">

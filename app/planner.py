@@ -53,6 +53,9 @@ def default_prefs() -> dict:
         "template": {},                 # 自己安排時的每週課表 {"1": {"kind": "easy", "minutes": 40}, ...}
         "races": [],                    # 其他比賽 [{name, date, distance_km, target_time}]
         "dashboard": None,              # 摘要頁儀表板卡片（None = 預設）
+        "strength_enabled": True,       # 休息日排肌力／伸展
+        "weekly_review": True,          # 週日晚上的每週回顧
+        "brief_weekly": "20:30",
         "brief_enabled": True,          # 每日晨報、晚報
         "brief_morning": "07:30",
         "brief_evening": "21:30",

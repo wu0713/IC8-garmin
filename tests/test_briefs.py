@@ -163,3 +163,40 @@ def test_month_lists_other_sports(ctx):
     c, h, uid = ctx
     m = c.get(f"/api/month?ym={today_local().isoformat()[:7]}", headers=h).json()
     assert "others" in m and any(d["others"] for d in m["days"]) == (m["others"] > 0)
+
+
+def test_strength_on_rest_days_and_xp(ctx):
+    from app import strength
+    c, h, uid = ctx
+    week = c.get("/api/week", headers=h).json()
+    rest = [d for d in week["days"] if d.get("strength")]
+    assert rest, "休息日應該要排肌力或伸展"
+    # 前一天是重課 → 伸展
+    m = strength.plan_week([{"date": "2026-11-16", "kind": "long"}, {"date": "2026-11-17", "kind": "rest"},
+                            {"date": "2026-11-18", "kind": "easy"}, {"date": "2026-11-19", "kind": "rest"}])
+    assert m["2026-11-17"] == "mobility" and m["2026-11-19"] in ("core", "legs", "mobility")
+    ds = rest[0]["date"]
+    r = c.get(f"/api/strength/{ds}", headers=h).json()
+    assert r["items"] and r["done"] is False and len(r["others"]) == 2
+    from app import game
+    ds = today_local().isoformat()          # 選角色當天之後的才算經驗值
+    before = game.compute(uid)["xp"]
+    assert c.post(f"/api/strength/{ds}", headers=h, json={"routine": r["id"]}).status_code == 200
+    assert c.get(f"/api/strength/{ds}", headers=h).json()["done"]
+    assert game.compute(uid)["xp"] == before + strength.XP_STRENGTH
+    c.post(f"/api/strength/{ds}", headers=h, json={"routine": r["id"], "done": False})
+    assert game.compute(uid)["xp"] == before
+    assert c.post(f"/api/strength/{ds}", headers=h, json={"routine": "nope"}).status_code == 400
+
+
+def test_weekly_review(ctx):
+    c, h, uid = ctx
+    w = c.get("/api/brief/weekly?refresh=true", headers=h).json()
+    assert w["kind"] == "weekly" and w["run"]["count"] >= 1 and w["plan"]["planned"] >= 1
+    lines = w["chat"]["lines"]
+    assert any("跑了" in l and "公里" in l for l in lines)
+    from app import briefs
+    sunday = datetime.now(TZ)
+    sunday = (sunday + timedelta(days=(6 - sunday.weekday()))).replace(hour=21)
+    b = briefs.weekly(uid, sunday.date(), sunday)
+    assert b["sunday"] and b["week_start"] == (sunday.date() - timedelta(days=6)).isoformat()
