@@ -53,7 +53,9 @@ async function viewMe() {
 
     <section class="section"><div class="card" style="padding:4px 12px">
       ${[["#/me/settings", "flag", "目標與課表偏好", "目標賽、固定行程、可跑日"],
-         ["#/me/health", "shield", "配速與心率上限", "E/M/T/I/R 區間、和手錶 Z2 的差別"],
+         ["#/me/health", "shield", "配速與心率上限", "區間、個人最佳、成績預測、最大攝氧量"],
+         ["#/learn", "book", "跑步小教室", "課表怎麼跑、心率怎麼看、名詞說明"],
+         ["#/me/briefs", "bell", "晨報、晚報、週報", "報告時間、手機通知、休息日肌力伸展"],
          ["#/me/calendar", "cal", "放進 iPhone 行事曆", "訂閱網址，課表變動自動更新"],
          ["#/me/device", "watch", "手錶與資料來源", S.me.provider === "demo" ? "目前使用範例資料" : S.me.provider === "none" ? "尚未連結，點這裡開始" : `Garmin：${S.me.garmin_email || ""}`]]
         .map(([to, ic, t, sub]) => `<button class="row" data-go="${to}"><span class="ri">${ico(ic)}</span><span><b>${t}</b><small>${esc(sub)}</small></span><span class="rv">${ico("chevron")}</span></button>`).join("")}
@@ -320,7 +322,7 @@ async function viewHealth() {
       <button class="btn block" data-go="#/summary">去連結</button></div>`;
     return bindCommon();
   }
-  const h = await api("/api/health");
+  const [h, rn] = await Promise.all([api("/api/health"), api("/api/runner").catch(() => null)]);
   $app.innerHTML = `
     ${appbar("配速與心率上限", { back: true })}
     <section class="card"><h2>你的訓練區間</h2>
@@ -329,7 +331,9 @@ async function viewHealth() {
         ${h.zones.map((z) => `<tr><td>${esc(z.name)}${z.note ? `<br><small class="muted">${esc(z.note)}</small>` : ""}</td><td class="n">${z.pace.replaceAll(":", "'")}</td>
           <td class="cap">${z.hr_cap ? `≤ ${z.hr_cap}<br><small class="muted">${z.alert} 開始提醒</small>` : "—"}</td></tr>`).join("")}</tbody></table>
       ${h.zone_notes.map((n) => `<p class="why-line">${esc(n)}</p>`).join("")}
-      <p class="muted" style="margin-top:8px">輕鬆跑個人化校正：${h.model?.active ? `已用 ${h.model.sample_count} 趟輕鬆跑的心率資料校正` : esc(h.model?.reason || "資料不足")}。</p></section>
+      <p class="muted" style="margin-top:8px">輕鬆跑個人化校正：${h.model?.active ? `已用 ${h.model.sample_count} 趟輕鬆跑的心率資料校正` : esc(h.model?.reason || "資料不足")}。</p>
+      <p>${learnLink("hrcap", "心率上限怎麼看？")}</p></section>
+    ${rn ? `<div style="margin-top:12px">${runnerHtml(rn)}</div>` : ""}
     <section class="card warm" style="margin-top:12px"><h2>為什麼和手錶的區間不一樣</h2>
       <p style="margin-top:6px">${esc(h.garmin_note)}</p>
       <p class="muted" style="margin-top:6px">跑步時看的是上面這些 bpm 數字，不是百分比：跑的時候沒辦法做除法。</p></section>
@@ -380,8 +384,9 @@ async function viewDevice() {
       <div class="btn-row"><button class="btn" id="sync">${ico("sync")}立即同步</button><button class="btn outline" id="full">重新抓一年資料</button></div>
     </section>` : ""}
     <section class="card" style="margin-top:12px"><h2>資料來源</h2>
-      <p class="muted" style="margin-top:4px">${me.provider === "garmin" ? `Garmin Connect：${esc(me.garmin_email)}` : me.provider === "demo" ? "目前使用範例資料" : "尚未連結"}</p>
-      <p style="color:var(--ink-2);font-size:.9375rem;margin-top:8px">手錶先同步到 Garmin Connect App，這裡再從 Garmin Connect 抓資料，每天自動 3 次。</p>
+      <p class="muted" style="margin-top:4px">${me.provider === "garmin" ? `Garmin Connect：${esc(me.garmin_email)}` : me.provider === "demo" ? "目前使用範例資料" : me.provider === "apple" ? "Apple Watch（iPhone 捷徑上傳）" : "尚未連結"}</p>
+      <p style="color:var(--ink-2);font-size:.9375rem;margin-top:8px">${me.provider === "apple" ? "資料由你 iPhone 上的捷徑送過來：每天早上一次身體資料，跑完一次運動紀錄。" : "手錶先同步到 Garmin Connect App，這裡再從 Garmin Connect 抓資料，每天自動 3 次。"}</p>
+      ${me.provider === "apple" ? `<button class="btn tonal block" data-go="#/me/apple" style="margin-top:10px">${ico("watch")}Apple Watch 上傳設定與狀態</button>` : ""}
       ${me.provider === "demo" ? `<div class="note-card" style="margin-top:10px">${ico("bolt")}<span><b>現在看到的不是你的手錶。</b>這個帳號目前是範例資料，所以顯示「Forerunner 165（範例）」。按下面的「連結 Garmin」登入後，才會換成你自己的手錶和資料。</span></div>` : ""}
       <div class="btn-row">
         ${me.provider !== "garmin" ? `<button class="btn" id="link">${ico("link")}連結 Garmin</button>` : ""}

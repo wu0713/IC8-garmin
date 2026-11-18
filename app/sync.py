@@ -19,7 +19,17 @@ def _lock(uid):
 
 
 def store(user_id: int, acts: list[dict], days: list[dict]):
+    cross = [a for a in acts if a.get("cross")]
+    acts = [a for a in acts if not a.get("cross")]
     with db.tx() as c:
+        for a in cross:   # 其他運動（騎車、重訓…）：算進活動量，不算跑量
+            c.execute(
+                """INSERT OR REPLACE INTO cross_activities(user_id, activity_id, date, start_local, sport, sport_label, sport_group,
+                       name, distance_m, duration_s, avg_hr, max_hr, calories, elevation_gain, training_load)
+                   VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (user_id, a["activity_id"], a["date"], a.get("start_local"), a.get("sport"), a.get("sport_label"),
+                 a.get("sport_group"), a.get("name"), a.get("distance_m"), a.get("duration_s"), a.get("avg_hr"),
+                 a.get("max_hr"), a.get("calories"), a.get("elevation_gain"), a.get("training_load")))
         for a in acts:
             c.execute(
                 """INSERT INTO activities(user_id, activity_id, date, start_local, type, name, distance_m,
@@ -35,7 +45,7 @@ def store(user_id: int, acts: list[dict], days: list[dict]):
                  a.get("training_load"), a.get("avg_speed"), a.get("calories"), a.get("elevation_gain"),
                  a.get("avg_cadence")))
         cols = ["rhr", "hrv_avg", "hrv_weekly", "hrv_status", "sleep_score", "sleep_hours", "body_battery", "stress_avg",
-                "steps", "steps_goal", "active_kcal", "intensity_min"]
+                "steps", "steps_goal", "active_kcal", "intensity_min", "bb_now", "bb_low"]
         for d in days:
             vals = [d.get(k) for k in cols]
             # 只覆寫有值的欄位（不同端點分批回來）
@@ -58,7 +68,8 @@ def compute(user_id: int, today=None) -> dict:
     """算出儀表板需要的所有東西 + 新課表（不寫入）。排課策略在 season.daily_plan（規格書九層）。"""
     prefs = db.get_prefs(user_id)
     today, start, acts, daily = load_state(user_id, today)
-    loads = metrics.daily_loads(acts, daily, prefs, start, today)
+    cross = db.q("SELECT * FROM cross_activities WHERE user_id=? AND date>=?", (user_id, start.isoformat()))
+    loads = metrics.daily_loads(acts, daily, prefs, start, today, cross)   # 其他運動也算進疲勞
     rows = metrics.pmc(loads)
     checkins = {r["date"]: r for r in db.q("SELECT * FROM checkins WHERE user_id=? AND date>=?",
                                              (user_id, today.isoformat()))}
@@ -141,6 +152,11 @@ def replan(user_id: int, api=None) -> dict:
 def sync_user(user_id: int, full: bool = False) -> dict:
     with _lock(user_id):
         user = db.q1("SELECT * FROM users WHERE id=?", (user_id,))
+        if user["provider"] == "apple":
+            # Apple 沒有雲端可以抓，資料是 iPhone 捷徑送進來的；這裡只依現有資料重排課表
+            result = replan(user_id)
+            result["synced"] = {"activities": 0, "other_activities": 0, "days": 0, "apple": True}
+            return result
         tokens = auth.decrypt(user["garmin_tokens"])
         try:
             prov = provider_for(user, tokens)
@@ -167,6 +183,12 @@ def sync_user(user_id: int, full: bool = False) -> dict:
                 with db.tx() as c:
                     c.execute("INSERT INTO device(user_id, data) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET data=excluded.data",
                               (user_id, json.dumps(dev, ensure_ascii=False)))
+            if hasattr(prov, "fetch_metrics"):
+                from . import runner
+                try:
+                    runner.save_metrics(user_id, prov.fetch_metrics())
+                except Exception as e:
+                    log.warning("跑者數值抓取失敗: %s", e)
             recs = prov.fetch_records() if hasattr(prov, "fetch_records") else None
             if recs:
                 with db.tx() as c:
@@ -182,7 +204,8 @@ def sync_user(user_id: int, full: bool = False) -> dict:
             with db.tx() as c:
                 c.execute("UPDATE users SET last_sync=?, last_sync_error=NULL WHERE id=?",
                           (datetime.now(TZ).isoformat(timespec="seconds"), user_id))
-            result["synced"] = {"activities": len(acts), "days": len(days)}
+            result["synced"] = {"activities": sum(1 for a in acts if not a.get("cross")),
+                                "other_activities": sum(1 for a in acts if a.get("cross")), "days": len(days)}
             return result
         except Exception as e:
             log.exception("同步失敗 user=%s", user_id)
@@ -192,7 +215,7 @@ def sync_user(user_id: int, full: bool = False) -> dict:
 
 
 def sync_all():
-    for u in db.q("SELECT id FROM users WHERE provider IN ('garmin','demo')"):
+    for u in db.q("SELECT id FROM users WHERE provider IN ('garmin','demo','apple')"):
         try:
             sync_user(u["id"])
         except Exception:

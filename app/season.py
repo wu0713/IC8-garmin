@@ -405,6 +405,26 @@ def projected_days(uid: int, upto: date) -> dict[str, dict]:
     return out
 
 
+def _month_totals(acts, cross) -> list[dict]:
+    """這個月各運動的合計：有距離的顯示公里，沒距離的（重訓、瑜珈）顯示時間。"""
+    out = []
+    if acts:
+        out.append({"group": "run", "label": "跑步", "count": len(acts),
+                    "km": round(sum((a.get("distance_m") or 0) for a in acts) / 1000, 1),
+                    "minutes": round(sum((a.get("duration_s") or 0) for a in acts) / 60)})
+    by: dict[str, dict] = {}
+    for c in cross:
+        k = c.get("sport_label") or "其他運動"
+        t = by.setdefault(k, {"group": c.get("sport_group") or "other", "label": k, "count": 0, "km": 0.0, "minutes": 0})
+        t["count"] += 1
+        t["km"] += (c.get("distance_m") or 0) / 1000
+        t["minutes"] += round((c.get("duration_s") or 0) / 60)
+    for t in by.values():
+        t["km"] = round(t["km"], 1) or None
+        out.append(t)
+    return out
+
+
 def month(user_id: int, ym: str) -> dict:
     y, m = (int(x) for x in ym.split("-"))
     first = date(y, m, 1)
@@ -421,6 +441,8 @@ def month(user_id: int, ym: str) -> dict:
         for ds, d in projected_days(user_id, last).items():
             if first.isoformat() <= ds:
                 plans[ds] = d
+    cross = db.q("SELECT activity_id, date, sport_label, sport_group, name, duration_s, distance_m FROM cross_activities "
+                 "WHERE user_id=? AND date BETWEEN ? AND ? ORDER BY start_local", (user_id, first.isoformat(), last.isoformat()))
     keys = ("kind", "title", "minutes", "distance_km", "intensity", "summary", "time", "override", "projected", "why", "steps",
             "hr_cap", "pace_range")
     days = []
@@ -436,6 +458,11 @@ def month(user_id: int, ym: str) -> dict:
             "actual_km": round(sum((a.get("distance_m") or 0) for a in da) / 1000, 1) if da else None,
             "actual_min": round(sum((a.get("duration_s") or 0) for a in da) / 60) if da else None,
             "activity_id": da[0]["activity_id"] if da else None,
+            "runs": [{"id": a["activity_id"], "km": round((a.get("distance_m") or 0) / 1000, 1),
+                      "minutes": round((a.get("duration_s") or 0) / 60)} for a in da],
+            "others": [{"id": c["activity_id"], "label": c.get("sport_label") or "其他運動", "group": c.get("sport_group") or "other",
+                        "name": c.get("name"), "minutes": round((c.get("duration_s") or 0) / 60),
+                        "km": round((c.get("distance_m") or 0) / 1000, 1) or None} for c in cross if c["date"] == ds],
             "plan": {k: p.get(k) for k in keys} if show else None,
             "past": ds < today, "is_today": ds == today,
             "editable": today <= ds <= (td + timedelta(days=60)).isoformat(),
@@ -446,6 +473,8 @@ def month(user_id: int, ym: str) -> dict:
     total = round(sum((a.get("distance_m") or 0) for a in acts) / 1000, 1)
     fut = [x for x in days if x["plan"] and not x["past"] and x["plan"]["kind"] not in ("rest", "race", "event")]
     return {"month": ym, "days": days, "total_km": total, "runs": len(acts),
+            "others": len(cross), "other_minutes": round(sum((c.get("duration_s") or 0) for c in cross) / 60),
+            "totals": _month_totals(acts, cross),
             "planned_runs": len(fut), "planned_km": round(sum(x["plan"]["distance_km"] or 0 for x in fut), 1),
             "mode": prefs.get("plan_mode", "auto")}
 

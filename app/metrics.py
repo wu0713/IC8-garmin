@@ -38,7 +38,14 @@ def estimate_rest_hr(daily: list[dict]) -> float:
     return median(vals) if vals else 55.0
 
 
-def daily_loads(activities, daily, prefs, start: date, end: date) -> dict[str, float]:
+def cross_trimp(a: dict, rest: float, mx: float, sex: str = "M") -> float:
+    """其他運動的負荷。有心率就照心率算；沒心率（例如沒戴錶的瑜珈）用較低的係數粗估。"""
+    if not a.get("avg_hr"):
+        return (a.get("duration_s") or 0) / 60 * 0.5
+    return trimp(a.get("duration_s"), a.get("avg_hr"), rest, mx, sex)
+
+
+def daily_loads(activities, daily, prefs, start: date, end: date, cross=None) -> dict[str, float]:
     rest = estimate_rest_hr(daily)
     mx = estimate_max_hr(activities, prefs)
     sex = prefs.get("sex", "M")
@@ -46,6 +53,9 @@ def daily_loads(activities, daily, prefs, start: date, end: date) -> dict[str, f
     for a in activities:
         if a["date"] in loads:
             loads[a["date"]] += trimp(a.get("duration_s"), a.get("avg_hr"), rest, mx, sex)
+    for a in cross or []:
+        if a["date"] in loads:
+            loads[a["date"]] += cross_trimp(a, rest, mx, sex)
     return loads
 
 

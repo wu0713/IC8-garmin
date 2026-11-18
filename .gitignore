@@ -1,4 +1,8 @@
 data/
+data-*/
+*.sqlite3
+*.pem
+secret.key
 .env
 __pycache__/
 *.pyc

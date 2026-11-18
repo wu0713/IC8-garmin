@@ -65,6 +65,21 @@ const ICON = {
   list: '<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
   grid: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
   chevron: '<path d="M9 5l7 7-7 7"/>',
+  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+  heart: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+  book: '<path d="M5 4.5h9a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h9"/>',
+  bike: '<circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l4-7h5l3 7M10 9l3 7h-7M13 6h3"/>',
+  swim: '<circle cx="16" cy="6" r="1.8"/><path d="M3 18c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 4.5 0 3-1 4.5 0M6 14l4-4 3 2 3-3"/>',
+  gym: '<path d="M6 8v8M18 8v8M3 10v4M21 10v4M6 12h12"/>',
+  calm: '<circle cx="12" cy="5.5" r="1.8"/><path d="M12 8v5M6 11l6 2 6-2M8 20l4-7 4 7"/>',
+  walk: '<circle cx="13" cy="4.5" r="1.8"/><path d="M10 21l2-6 3 3v3M9 12l2-4 3 1 2 3M12 15l-1-5"/>',
+  ball: '<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c3 3 3 13 0 16M12 4c-3 3-3 13 0 16"/>',
+  other: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/>',
+  moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+  bell: '<path d="M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15zM10 21h4"/>',
   up: '<path d="M6 15l6-6 6 6"/>', down: '<path d="M6 9l6 6 6-6"/>',
   cal: '<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
   flag: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
@@ -153,9 +168,13 @@ function niceMax(v) {
 }
 
 // 長條圖：pts=[{label,value}], 可畫平均虛線、目標線、趨勢線
-function barChart(pts, { color = "var(--c-run)", avg = null, goal = null, trend = false, h = 220, highlightLast = false } = {}) {
+const SPORT_COLOR = { run: "var(--c-run)", bike: "#2B8A8F", swim: "#2F6FD6", gym: "#B5502F", calm: "#7A5BC7", walk: "#5C8A33", ball: "#C27A12", other: "#6B6F8A" };
+const sportIco = (g) => ico(ICON[g] ? g : "other");
+
+// 長條圖；點可以帶 stack（疊在上面的第二段，例如其他運動）
+function barChart(pts, { color = "var(--c-run)", avg = null, goal = null, trend = false, h = 220, highlightLast = false, stackColor = "#6B6F8A" } = {}) {
   const W = 360, H = h, L = 8, R = 40, T = 12, B = 24;
-  const vals = pts.map((p) => p.value || 0);
+  const vals = pts.map((p) => (p.value || 0) + (p.stack || 0));
   const max = niceMax(Math.max(...vals, goal || 0, avg || 0) * 1.05);
   const n = pts.length, bw = (W - L - R) / n;
   const y = (v) => T + (1 - v / max) * (H - T - B);
@@ -166,7 +185,9 @@ function barChart(pts, { color = "var(--c-run)", avg = null, goal = null, trend 
   });
   pts.forEach((p, i) => {
     const v = p.value || 0, x = L + i * bw + bw * 0.18, w = bw * 0.64;
-    if (v > 0) s += `<rect x="${x}" y="${y(v)}" width="${w}" height="${y(0) - y(v)}" rx="${Math.min(4, w / 3)}" fill="${color}" opacity="${highlightLast && i < n - 1 ? 0.55 : 1}"/>`;
+    const op = highlightLast && i < n - 1 ? 0.55 : 1;
+    if (v > 0) s += `<rect x="${x}" y="${y(v)}" width="${w}" height="${y(0) - y(v)}" rx="${Math.min(4, w / 3)}" fill="${color}" opacity="${op}"/>`;
+    if (p.stack > 0) s += `<rect x="${x}" y="${y(v + p.stack)}" width="${w}" height="${y(v) - y(v + p.stack)}" rx="${Math.min(4, w / 3)}" fill="${stackColor}" opacity="${op}"/>`;
     if (i % every === 0 || i === n - 1) s += `<text x="${L + i * bw + bw / 2}" y="${H - 6}" text-anchor="middle">${esc(p.label)}</text>`;
   });
   if (avg) s += `<line x1="${L}" x2="${W - R}" y1="${y(avg)}" y2="${y(avg)}" stroke="${color}" stroke-dasharray="4 4" opacity=".8"/>`;
@@ -283,7 +304,7 @@ async function render() {
     await loadChars();
     if (!S.token) { setNav(null); return viewGate(h === "#/register" ? "register" : "login"); }
     S.me = await api("/api/me");
-    if (S.me.provider === "none" && !h.startsWith("#/me")) { setNav(null); return viewLink(); }
+    if (S.me.provider === "none" && !h.startsWith("#/me") && !h.startsWith("#/learn")) { setNav(null); return viewLink(); }
     for (const r of ROUTES) {
       const m = h.match(r.re);
       if (m) { setNav(r.tab); window.scrollTo(0, 0); return await r.fn(...m.slice(1)); }

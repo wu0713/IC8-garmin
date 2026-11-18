@@ -89,7 +89,8 @@ def analyze(user_id: int) -> dict:
                      "zone": zone, "ef": round(e, 3) if e else None, "notes": notes})
 
     # ── 負荷與恢復趨勢 ──
-    loads = metrics.daily_loads(acts, daily, prefs, since, today)
+    cross = db.q("SELECT * FROM cross_activities WHERE user_id=? AND date>=?", (user_id, since.isoformat()))
+    loads = metrics.daily_loads(acts, daily, prefs, since, today, cross)   # 其他運動也算進負荷
     lv = [loads[k] for k in sorted(loads)]
     acute = sum(lv[-7:])
     chronic = sum(lv[-28:]) / 4 if len(lv) >= 28 else None

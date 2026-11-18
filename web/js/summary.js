@@ -48,6 +48,9 @@ function viewLink() {
       <p class="err" id="e2" hidden></p>
       <button class="btn block" type="submit">送出</button>
     </form>
+    <div class="card"><div class="device" style="grid-template-columns:56px 1fr"><div class="watch">${ico("watch")}</div>
+        <div><b>我用 Apple Watch</b><small>透過 iPhone 的「捷徑」App 每天自動上傳，不用另外裝 App。</small></div></div>
+      <button class="btn outline block" id="apple" style="margin-top:10px">改用 Apple Watch</button></div>
     ${S.meta?.allow_demo ? `<div class="card"><h2>先用範例資料看看</h2><p class="muted" style="margin-top:4px">不連手錶，用一年份的擬真資料體驗所有功能。</p>
       <button class="btn tonal block" id="demo">使用範例資料</button></div>` : ""}
     <div class="card"><h2>還沒有手錶資料也能先逛</h2><p class="muted" style="margin-top:4px">先選一隻夥伴、看看朋友的排行，之後再回來連結。</p>
@@ -73,6 +76,9 @@ function viewLink() {
     try { await busy(e.submitter, () => api("/api/garmin/mfa", { method: "POST", body: Object.fromEntries(new FormData(e.target)) })); await after(); }
     catch (x) { err.textContent = x.message; err.hidden = false; }
   };
+  document.getElementById("apple").onclick = (e) => busy(e.currentTarget, async () => {
+    await api("/api/apple/link", { method: "POST" }); S.me.provider = "apple"; go("#/me/apple");
+  });
   const demo = document.getElementById("demo");
   if (demo) demo.onclick = () => busy(demo, async () => { await api("/api/garmin/demo", { method: "POST" }); await after(); });
 }
@@ -94,7 +100,7 @@ async function syncNow(btn) {
 
 // ───────────────────── 摘要 ─────────────────────
 async function viewSummary() {
-  const d = await api("/api/summary");
+  const [d, bc] = await Promise.all([api("/api/summary"), briefCard()]);
   const dev = d.device, t = d.today, r = d.readiness;
   const listMode = localStorage.getItem("ic8_cards") === "list";
   const avatar = d.partner.species ? charThumb(d.partner.species, d.partner.stage) : ico("paw");
@@ -105,6 +111,7 @@ async function viewSummary() {
       ` })}
     ${d.last_sync_error ? `<div class="note-card" style="margin-bottom:12px">${ico("bolt")}<span>上次同步失敗：${esc(d.last_sync_error)}。按上面的同步再試一次；一直失敗就到「我的 → 手錶與資料來源」重新連結。</span></div>` : ""}
 
+    ${bc}
     <button class="card quest" data-go="${d.today_activity ? `#/workout/${encodeURIComponent(d.today_activity)}` : "#/analysis"}" aria-label="今天的任務：${esc(t.title)}">
       <span class="quest-top">
         <span><span class="tag">今日任務 ${new Date().getMonth() + 1}/${new Date().getDate()}</span>
@@ -118,7 +125,11 @@ async function viewSummary() {
         <span style="color:var(--primary);font-weight:700">${d.today_activity ? "看今天的訓練報告" : t.steps?.length ? "看課表內容與調整" : "看本週課表"}</span>
       </span>
     </button>
-    ${d.novice ? `<div class="note-card" style="margin-top:14px">${ico("flag")}<span><b>先把頻率固定下來</b>：紀錄還不多，所以前幾週只排輕鬆跑、不加量，先把「每週跑幾次」養成習慣，之後才依分期加入節奏跑和間歇。體能趨勢這類數字也要幾週後才會準。</span></div>` : ""}
+    ${d.strength_today ? `<button class="card st-today" data-go="#/strength/${d.strength_today.date}">
+      <span class="st-ico">${ico(d.strength_today.done ? "check" : "gym")}</span>
+      <span><small>休息日任務</small><b>${esc(d.strength_today.title)} · ${d.strength_today.minutes} 分鐘</b>
+        <span class="muted">${d.strength_today.done ? "今天做完了，夥伴拿到經驗值" : "不用器材，做完夥伴 +15 經驗值"}</span></span>${ico("chevron")}</button>` : ""}
+    ${d.novice ? `<div class="note-card" style="margin-top:14px">${ico("flag")}<span><b>先把頻率固定下來</b>：紀錄還不多，所以前幾週只排輕鬆跑、不加量，先把「每週跑幾次」養成習慣，之後才依分期加入節奏跑和間歇。體能趨勢這類數字也要幾週後才會準。${learnLink("start", "新手先看這裡")}</span></div>` : ""}
 
     <section class="card" style="margin-top:18px" aria-label="今天與本週的進度">
       <div class="goals">${d.rings.map((x) => `<div class="goal"><b>${x.label}</b>

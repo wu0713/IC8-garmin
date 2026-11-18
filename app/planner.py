@@ -45,6 +45,12 @@ def default_prefs() -> dict:
         "template": {},
         "events": [],                   # 固定事件 [{type, name, date, end_date?, distance_km?, target_time?}]
         "dashboard": None,
+        "brief_enabled": True,          # 每日晨報、晚報
+        "brief_morning": "07:30",
+        "brief_evening": "21:30",
+        "weekly_review": True,          # 週日晚上的每週回顧
+        "brief_weekly": "20:30",
+        "strength_enabled": True,       # 休息日排肌力／伸展
         "step_goal": None, "kcal_goal": 500, "sleep_goal": 8,
         "calendar_alarm_min": 30,
         "sex": "M", "age": None, "max_hr": None,
