@@ -130,6 +130,11 @@ def replan(user_id: int, api=None) -> dict:
 def sync_user(user_id: int, full: bool = False) -> dict:
     with _lock(user_id):
         user = db.q1("SELECT * FROM users WHERE id=?", (user_id,))
+        if user["provider"] == "apple":
+            # Apple 沒有雲端可以抓，資料是 iPhone 捷徑送進來的；這裡只依現有資料重排課表
+            result = replan(user_id)
+            result["synced"] = {"activities": 0, "other_activities": 0, "days": 0, "apple": True}
+            return result
         tokens = auth.decrypt(user["garmin_tokens"])
         try:
             prov = provider_for(user, tokens)
@@ -181,7 +186,7 @@ def sync_user(user_id: int, full: bool = False) -> dict:
 
 
 def sync_all():
-    for u in db.q("SELECT id FROM users WHERE provider IN ('garmin','demo')"):
+    for u in db.q("SELECT id FROM users WHERE provider IN ('garmin','demo','apple')"):
         try:
             sync_user(u["id"])
         except Exception:

@@ -77,6 +77,13 @@ CREATE TABLE IF NOT EXISTS briefs (
     pushed INTEGER DEFAULT 0,
     PRIMARY KEY (user_id, date, kind)
 );
+CREATE TABLE IF NOT EXISTS apple_link (
+    user_id INTEGER PRIMARY KEY,
+    token TEXT NOT NULL UNIQUE,
+    created_at TEXT,
+    last_at TEXT,
+    last_summary TEXT
+);
 CREATE TABLE IF NOT EXISTS push_subs (
     user_id INTEGER NOT NULL,
     endpoint TEXT NOT NULL,

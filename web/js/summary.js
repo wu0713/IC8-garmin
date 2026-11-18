@@ -48,6 +48,9 @@ function viewLink() {
       <p class="err" id="e2" hidden></p>
       <button class="btn block" type="submit">送出</button>
     </form>
+    <div class="card"><div class="device" style="grid-template-columns:56px 1fr"><div class="watch">${ico("watch")}</div>
+        <div><b>我用 Apple Watch</b><small>透過 iPhone 的「捷徑」App 每天自動上傳，不用另外裝 App。</small></div></div>
+      <button class="btn outline block" id="apple" style="margin-top:10px">改用 Apple Watch</button></div>
     ${S.meta?.allow_demo ? `<div class="card"><h2>先用範例資料看看</h2><p class="muted" style="margin-top:4px">不連手錶，用一年份的擬真資料體驗所有功能。</p>
       <button class="btn tonal block" id="demo">使用範例資料</button></div>` : ""}
     <div class="card"><h2>還沒有手錶資料也能先逛</h2><p class="muted" style="margin-top:4px">先選一隻夥伴、看看朋友的排行，之後再回來連結。</p>
@@ -73,6 +76,9 @@ function viewLink() {
     try { await busy(e.submitter, () => api("/api/garmin/mfa", { method: "POST", body: Object.fromEntries(new FormData(e.target)) })); await after(); }
     catch (x) { err.textContent = x.message; err.hidden = false; }
   };
+  document.getElementById("apple").onclick = (e) => busy(e.currentTarget, async () => {
+    await api("/api/apple/link", { method: "POST" }); S.me.provider = "apple"; go("#/me/apple");
+  });
   const demo = document.getElementById("demo");
   if (demo) demo.onclick = () => busy(demo, async () => { await api("/api/garmin/demo", { method: "POST" }); await after(); });
 }

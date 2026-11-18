@@ -381,7 +381,7 @@ def tick(now: datetime | None = None, do_sync=None, do_push=None):
     do_sync = do_sync or sync.sync_user
     do_push = do_push or push.send
     ds = now.date().isoformat()
-    for u in db.q("SELECT id FROM users WHERE provider IN ('garmin','demo')"):
+    for u in db.q("SELECT id FROM users WHERE provider IN ('garmin','demo','apple')"):
         uid = u["id"]
         prefs = db.get_prefs(uid)
         if not prefs.get("brief_enabled", True):

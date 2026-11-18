@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import analysis, auth, db, game, season, sync, views
-from . import briefs, pet_voice, push
+from . import apple_ingest, briefs, pet_voice, push
 from .config import ALLOW_DEMO, INVITE_CODE, PUBLIC_BASE_URL, SYNC_HOURS, TZ, WEB_DIR
 from .garmin_client import MfaRequired, RealGarmin, today_local
 from .ics import build_ics
@@ -241,6 +241,64 @@ def garmin_push_test_delete(workout_id: str, user=Depends(auth.current_user)):
     except Exception as e:
         raise HTTPException(400, f"刪除失敗：{e}")
     return {"ok": True}
+
+
+# ───────────────────────────── Apple Watch（iPhone 捷徑上傳） ─────────────────────────────
+
+def _apple_info(user_id: int, request: Request) -> dict:
+    row = apple_ingest.link(user_id)
+    base = (PUBLIC_BASE_URL or str(request.base_url)).rstrip("/")
+    last = json.loads(row["last_summary"]) if row.get("last_summary") else None
+    return {"url": f"{base}/api/ingest/apple/{row['token']}", "last_at": row.get("last_at"), "last": last,
+            "https": base.startswith("https://")}
+
+
+@app.post("/api/apple/link")
+def apple_link(request: Request, user=Depends(auth.current_user)):
+    """改用 Apple Watch：清掉其他來源的資料，產生專屬上傳網址。"""
+    with db.tx() as c:
+        if user["provider"] != "apple":
+            _wipe(c, user["id"])
+        c.execute("UPDATE users SET provider='apple', garmin_email=NULL, garmin_tokens=NULL, mfa_state=NULL WHERE id=?",
+                  (user["id"],))
+    return _apple_info(user["id"], request)
+
+
+@app.get("/api/apple")
+def apple_get(request: Request, user=Depends(auth.current_user)):
+    if user["provider"] != "apple":
+        raise HTTPException(400, "還沒選擇 Apple Watch")
+    return _apple_info(user["id"], request)
+
+
+@app.post("/api/apple/rotate")
+def apple_rotate(request: Request, user=Depends(auth.current_user)):
+    if user["provider"] != "apple":
+        raise HTTPException(400, "還沒選擇 Apple Watch")
+    apple_ingest.link(user["id"], rotate=True)
+    return _apple_info(user["id"], request)
+
+
+@app.post("/api/ingest/apple/{token}")
+async def apple_upload(token: str, request: Request):
+    """iPhone 捷徑送資料進來。不需要登入，靠網址裡的密鑰辨識是誰。"""
+    uid = apple_ingest.user_for_token(token)
+    if not uid:
+        raise HTTPException(404, "上傳網址不正確或已經換新，請到 App 的「Apple Watch 設定」複製新網址")
+    raw = await request.body()
+    if len(raw) > 2_000_000:
+        raise HTTPException(413, "資料太大，請只送最近幾天")
+    try:
+        payload = json.loads(raw or b"{}")
+    except ValueError:
+        raise HTTPException(400, "收到的不是 JSON。捷徑的「取得 URL 內容」要選「要求本文：JSON」")
+    try:
+        s = apple_ingest.ingest(uid, payload)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    parts = [f"{len(s['days'])} 天身體資料" if s["days"] else "", f"{s['runs']} 筆跑步" if s["runs"] else "",
+             f"{s['others']} 筆其他運動" if s["others"] else ""]
+    return {"ok": True, "message": "已收到：" + "、".join(p for p in parts if p), **s}
 
 
 @app.post("/api/garmin/unlink")

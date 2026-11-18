@@ -456,3 +456,16 @@ details.card h3 { font-size: 1rem; }
 .tc svg { width: 26px; height: 26px; stroke: currentColor; fill: none; stroke-width: 2; }
 .tc b { display: block; font-size: 1.25rem; color: var(--ink); line-height: 1.1; }
 .tc small { display: block; font-size: .75rem; color: var(--ink-2); }
+
+/* ── Apple Watch 捷徑設定 ── */
+.ap-url { margin-top: 10px; border: var(--edge); border-radius: 8px; background: var(--surface-hi); padding: 10px 12px; overflow-wrap: anywhere; }
+.ap-url code { font-size: .875rem; }
+.ap-steps { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 14px; }
+.ap-step { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; }
+.ap-n { width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-weight: 700; }
+.ap-step b { display: block; font-size: 1.0625rem; }
+.ap-step p, .ap-step ul { margin: 4px 0 0; line-height: 1.65; }
+.ap-step ul { padding-left: 1.1em; }
+.ap-act { display: inline-block; background: #E6EEFC; border: 1.5px solid #2F6FD6; color: #1d4fa8; border-radius: 6px; padding: 0 6px; font-weight: 700; font-size: .9375rem; }
+.ap-step code, .ap-pre { background: var(--surface-hi); border-radius: 4px; padding: 0 4px; font-size: .875rem; }
+.ap-pre { display: block; padding: 10px; overflow-x: auto; margin-top: 10px; white-space: pre; }

@@ -16,6 +16,7 @@ route(/^#\/me\/health$/, viewHealth, "me");
 route(/^#\/me\/calendar$/, viewCalendar, "me");
 route(/^#\/me\/device$/, viewDevice, "me");
 route(/^#\/me\/briefs$/, viewBriefSettings, "me");
+route(/^#\/me\/apple$/, viewApple, "me");
 route(/^#\/brief\/(morning|evening)$/, viewBrief, "summary");
 
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
