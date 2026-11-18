@@ -1,5 +1,5 @@
 // 只快取 App 外殼，讓主畫面圖示在網路不穩時也打得開；API 一律走網路。
-const CACHE = "ic8-shell-v8";
+const CACHE = "ic8-shell-v9";
 const SHELL = ["/", "/style.css", "/js/core.js", "/js/summary.js", "/js/activity.js", "/js/analysis.js",
   "/js/me.js", "/js/brief.js", "/js/main.js", "/manifest.webmanifest", "/characters/manifest.json", "/icons/apple-touch-icon.png"];
 
