@@ -67,6 +67,9 @@ const ICON = {
   chevron: '<path d="M9 5l7 7-7 7"/>',
   clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+  heart: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+  book: '<path d="M5 4.5h9a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h9"/>',
   bike: '<circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l4-7h5l3 7M10 9l3 7h-7M13 6h3"/>',
   swim: '<circle cx="16" cy="6" r="1.8"/><path d="M3 18c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 4.5 0 3-1 4.5 0M6 14l4-4 3 2 3-3"/>',
   gym: '<path d="M6 8v8M18 8v8M3 10v4M21 10v4M6 12h12"/>',
@@ -299,7 +302,7 @@ async function render() {
     await loadChars();
     if (!S.token) { setNav(null); return viewGate(h === "#/register" ? "register" : "login"); }
     S.me = await api("/api/me");
-    if (S.me.provider === "none" && !h.startsWith("#/me")) { setNav(null); return viewLink(); }
+    if (S.me.provider === "none" && !h.startsWith("#/me") && !h.startsWith("#/learn")) { setNav(null); return viewLink(); }
     for (const r of ROUTES) {
       const m = h.match(r.re);
       if (m) { setNav(r.tab); window.scrollTo(0, 0); return await r.fn(...m.slice(1)); }

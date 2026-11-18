@@ -131,6 +131,7 @@ async function viewAnalysis() {
       <p class="muted" style="margin-top:4px">${p.time ? `${p.time} 開始，` : ""}約 ${p.minutes} 分鐘${p.distance_km ? `、${p.distance_km} 公里` : ""}</p>
       <p style="margin-top:8px">${esc(p.summary || "")}</p>
       <ul class="steps-list">${stepsHtml(p.steps)}</ul>
+      <p style="margin-top:8px">${learnLink(p.kind, `${p.title}是什麼？怎麼跑？`)}</p>
       <p class="muted" style="margin-top:8px">右邊是建議配速（每公里）。開啟「把課表推到 Garmin 手錶」後，手錶會照這些步驟提示。</p>
       <div class="btn-row"><button class="btn tonal" id="d-adj">調整這堂課</button><button class="btn outline" id="d-x">關閉</button></div>`, (box, close) => {
       box.querySelector("#d-x").onclick = close;

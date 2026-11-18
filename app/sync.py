@@ -160,6 +160,12 @@ def sync_user(user_id: int, full: bool = False) -> dict:
                 with db.tx() as c:
                     c.execute("INSERT INTO device(user_id, data) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET data=excluded.data",
                               (user_id, json.dumps(dev, ensure_ascii=False)))
+            if hasattr(prov, "fetch_metrics"):
+                from . import runner
+                try:
+                    runner.save_metrics(user_id, prov.fetch_metrics())
+                except Exception as e:
+                    log.warning("跑者數值抓取失敗: %s", e)
             recs = prov.fetch_records() if hasattr(prov, "fetch_records") else None
             if recs:
                 with db.tx() as c:

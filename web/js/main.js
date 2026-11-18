@@ -17,6 +17,8 @@ route(/^#\/me\/calendar$/, viewCalendar, "me");
 route(/^#\/me\/device$/, viewDevice, "me");
 route(/^#\/me\/briefs$/, viewBriefSettings, "me");
 route(/^#\/me\/apple$/, viewApple, "me");
+route(/^#\/me\/runner$/, viewRunner, "me");
+route(/^#\/learn(?:\/([\w-]+))?$/, viewLearn, "me");
 route(/^#\/brief\/(morning|evening|weekly)$/, viewBrief, "summary");
 route(/^#\/strength\/(\d{4}-\d{2}-\d{2})(?:\/(\w+))?$/, viewStrength, "analysis");
 

@@ -129,7 +129,7 @@ async function viewSummary() {
       <span class="st-ico">${ico(d.strength_today.done ? "check" : "gym")}</span>
       <span><small>休息日任務</small><b>${esc(d.strength_today.title)} · ${d.strength_today.minutes} 分鐘</b>
         <span class="muted">${d.strength_today.done ? "今天做完了，夥伴拿到經驗值" : "不用器材，做完夥伴 +15 經驗值"}</span></span>${ico("chevron")}</button>` : ""}
-    ${d.novice ? `<div class="note-card" style="margin-top:14px">${ico("flag")}<span><b>新手期</b>：紀錄還不多，先排輕鬆跑幫你養成習慣。規律跑滿 3 週、累積 6 次以上，就會開始加入變化。體能趨勢這類數字也要幾週後才會準。</span></div>` : ""}
+    ${d.novice ? `<div class="note-card" style="margin-top:14px">${ico("flag")}<span><b>新手期</b>：紀錄還不多，先排輕鬆跑幫你養成習慣。規律跑滿 3 週、累積 6 次以上，就會開始加入變化。體能趨勢這類數字也要幾週後才會準。${learnLink("start", "新手先看這裡")}</span></div>` : ""}
 
     <section class="card" style="margin-top:18px" aria-label="今天與本週的進度">
       <div class="goals">${d.rings.map((x) => `<div class="goal"><b>${x.label}</b>

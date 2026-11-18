@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import analysis, auth, db, game, season, sync, views
-from . import apple_ingest, briefs, pet_voice, push, strength
+from . import apple_ingest, briefs, pet_voice, push, runner, strength
 from .config import ALLOW_DEMO, INVITE_CODE, PUBLIC_BASE_URL, SYNC_HOURS, TZ, WEB_DIR
 from .garmin_client import MfaRequired, RealGarmin, today_local
 from .ics import build_ics
@@ -665,6 +665,12 @@ def swap_days(body: SwapIn, user=Depends(auth.current_user)):
                       "ON CONFLICT(user_id, date) DO UPDATE SET kind=excluded.kind, minutes=excluded.minutes",
                       (user["id"], d, kind_of(p), p.get("minutes") or None))
     return views.this_week(user["id"])
+
+
+@app.get("/api/runner")
+def runner_profile(user=Depends(auth.current_user)):
+    _need_link(user)
+    return runner.profile(user["id"])
 
 
 @app.get("/api/profile")

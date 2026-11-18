@@ -77,6 +77,11 @@ CREATE TABLE IF NOT EXISTS briefs (
     pushed INTEGER DEFAULT 0,
     PRIMARY KEY (user_id, date, kind)
 );
+CREATE TABLE IF NOT EXISTS runner_metrics (
+    user_id INTEGER PRIMARY KEY,
+    data TEXT NOT NULL,
+    updated_at TEXT
+);
 CREATE TABLE IF NOT EXISTS strength_log (
     user_id INTEGER NOT NULL,
     date TEXT NOT NULL,

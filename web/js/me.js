@@ -54,6 +54,8 @@ async function viewMe() {
     <section class="section"><div class="card" style="padding:4px 12px">
       ${[["#/me/settings", "flag", "目標與課表偏好", "比賽、可跑日、強度、喜歡的課"],
          ["#/me/health", "shield", "健康參考範圍", "心率區間、配速、各項指標參考值"],
+         ["#/me/runner", "heart", "配速與心率上限", "個人最佳、成績預測、最大攝氧量、訓練配速"],
+         ["#/learn", "book", "跑步小教室", "課表怎麼跑、心率怎麼看、名詞說明"],
          ["#/me/briefs", "bell", "晨報、晚報、週報", "報告時間、手機通知、休息日肌力伸展"],
          ["#/me/calendar", "cal", "放進 iPhone 行事曆", "訂閱網址，課表變動自動更新"],
          ["#/me/device", "watch", "手錶與資料來源", S.me.provider === "demo" ? "目前使用範例資料" : S.me.provider === "none" ? "尚未連結，點這裡開始" : `Garmin：${S.me.garmin_email || ""}`]]

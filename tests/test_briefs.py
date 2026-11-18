@@ -200,3 +200,21 @@ def test_weekly_review(ctx):
     sunday = (sunday + timedelta(days=(6 - sunday.weekday()))).replace(hour=21)
     b = briefs.weekly(uid, sunday.date(), sunday)
     assert b["sunday"] and b["week_start"] == (sunday.date() - timedelta(days=6)).isoformat()
+
+
+def test_runner_profile(ctx):
+    from app import runner
+    c, h, uid = ctx
+    assert round(runner.vdot(5000, 1200), 1) == 49.8
+    assert runner.fmt_time(runner.predict(49.8, 21097.5))[:4] == "1:31"
+    r = c.get("/api/runner", headers=h).json()
+    assert [p["key"] for p in r["pbs"]] == ["5k", "10k", "half", "full"]
+    assert r["pbs"][0]["time"] and r["predictions"][3]["time"] and r["prediction_source"] == "vdot"
+    keys = {n["key"]: n for n in r["numbers"]}
+    assert keys["vo2max"]["value"] and keys["max_hr"]["value"] and keys["rhr"]["value"]
+    caps = {p["code"]: p["hr_cap"] for p in r["paces"]}
+    assert caps["E"] < caps["M"] < caps["T"] < caps["I"]
+    runner.save_metrics(uid, {"vo2max": 51.3, "predictions": {"5k": 1180, "10k": 2460, "half": 5450, "full": 11400}, "lt_hr": 168})
+    r = c.get("/api/runner", headers=h).json()
+    assert r["prediction_source"] == "garmin" and r["predictions"][0]["time"] == "19:40"
+    assert {n["key"]: n["value"] for n in r["numbers"]}["vo2max"] == 51

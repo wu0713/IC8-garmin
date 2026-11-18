@@ -373,6 +373,34 @@ class RealGarmin:
     def fetch_series(self, activity_id: str) -> dict:
         return parse_series(self.api.get_activity_details(activity_id, maxchart=1500, maxpoly=0))
 
+    def fetch_metrics(self) -> dict:
+        """成績預測、最大攝氧量、乳酸閾值心率（手錶有算才會有）。"""
+        api, out = self.api, {}
+        rp = self._safe("race_predictions", api.get_race_predictions) if hasattr(api, "get_race_predictions") else None
+        if isinstance(rp, list):
+            rp = rp[-1] if rp else None
+        if isinstance(rp, dict):
+            p = {"5k": rp.get("time5K"), "10k": rp.get("time10K"), "half": rp.get("timeHalfMarathon"), "full": rp.get("timeMarathon")}
+            p = {k: v for k, v in p.items() if v}
+            if p:
+                out["predictions"] = p
+        if hasattr(api, "get_max_metrics"):
+            for back in (0, 3, 10):
+                mm = self._safe("max_metrics", api.get_max_metrics, (today_local() - timedelta(days=back)).isoformat())
+                for e in (mm if isinstance(mm, list) else [mm] if mm else []):
+                    gen = (e or {}).get("generic") or {}
+                    v = gen.get("vo2MaxPreciseValue") or gen.get("vo2MaxValue")
+                    if v:
+                        out["vo2max"] = v
+                if out.get("vo2max"):
+                    break
+        if hasattr(api, "get_lactate_threshold"):
+            lt = self._safe("lactate_threshold", api.get_lactate_threshold)
+            shr = (lt or {}).get("speed_and_heart_rate") if isinstance(lt, dict) else None
+            if isinstance(shr, dict) and shr.get("heartRate"):
+                out["lt_hr"] = shr["heartRate"]
+        return out
+
     def fetch_records(self) -> list[dict] | None:
         raw = self._safe("personal_record", self.api.get_personal_record, True)
         return normalize_records(raw) if raw is not None else None
