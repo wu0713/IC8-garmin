@@ -429,3 +429,30 @@ details.card h3 { font-size: 1rem; }
 .cal-d.ran .ox span, .plan-cal .cal-d.ran .ox span { color: #fff !important; }
 .lg-ox { display: inline-flex; gap: 4px; align-items: center; }
 .lg-ox svg { width: 16px; height: 16px; stroke: #2B8A8F; fill: none; stroke-width: 2; }
+
+/* ── 紀錄月曆：每一趟運動一個小標籤 ── */
+.rcal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-top: 2px solid var(--ink); }
+.rc-wd { text-align: center; font-size: .75rem; font-weight: 700; color: var(--ink-2); padding: 6px 0; border-bottom: 1px solid var(--line); }
+.rc-d { min-height: 64px; padding: 4px 2px 6px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; align-items: stretch; gap: 3px; min-width: 0; }
+.rc-d .n { text-align: center; font-weight: 700; font-size: .9375rem; color: var(--ink); }
+.rc-d.today .n { background: var(--ink); color: #fff; border-radius: 999px; width: 26px; height: 26px; line-height: 26px; align-self: center; }
+.ac { display: flex; align-items: center; justify-content: center; gap: 1px; min-width: 0; min-height: 28px; border: 0; border-radius: 5px; padding: 1px; background: #fff; cursor: pointer; font: inherit; }
+.ac svg { width: 12px; height: 12px; flex: none; stroke: currentColor; fill: none; stroke-width: 2.4; }
+.ac b { font-size: .75rem; font-weight: 700; color: var(--ink); white-space: nowrap; letter-spacing: -.02em; }
+@media (max-width: 359px) {   /* 很窄的螢幕：拿掉圖示，用左邊色條區分運動 */
+  .ac svg { display: none; }
+  .ac { border-left: 3px solid currentColor; border-radius: 3px; }
+}
+.g-run { color: var(--c-run); } .g-bike { color: #2B8A8F; } .g-swim { color: #2F6FD6; } .g-gym { color: #B5502F; }
+.g-calm { color: #7A5BC7; } .g-walk { color: #5C8A33; } .g-ball { color: #C27A12; } .g-other { color: #6B6F8A; }
+.ac.g-run { background: #ECEBFB; } .ac.g-bike { background: #E3F3F3; } .ac.g-swim { background: #E6EEFC; } .ac.g-gym { background: #FAEAE4; }
+.ac.g-calm { background: #EFEAFA; } .ac.g-walk { background: #EAF3E2; } .ac.g-ball { background: #FBF0DD; } .ac.g-other { background: #EEEFF4; }
+.pt { display: inline-block; font-size: .6875rem; font-weight: 700; text-align: center; border-radius: 4px; padding: 1px 2px; border: 1px dashed var(--ink-3); color: var(--ink-2); white-space: nowrap; overflow: hidden; }
+.pt.easy { background: #DCEFD8; } .pt.moderate { background: #FCE9C2; } .pt.hard { background: #FBDAD5; } .pt.race { background: var(--ink); color: #fff; }
+.rc-legend .pt { margin: 0 2px; }
+.rc-legend { margin-top: 10px; font-size: .8125rem; }
+.rc-totals { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 22px; padding: 12px 0 4px; border-bottom: 2px solid var(--ink); }
+.tc { display: flex; gap: 8px; align-items: center; }
+.tc svg { width: 26px; height: 26px; stroke: currentColor; fill: none; stroke-width: 2; }
+.tc b { display: block; font-size: 1.25rem; color: var(--ink); line-height: 1.1; }
+.tc small { display: block; font-size: .75rem; color: var(--ink-2); }

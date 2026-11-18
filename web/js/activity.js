@@ -41,17 +41,13 @@ async function viewActivity() {
         <h2 id="calh">${y} 年 ${mo} 月</h2>
         <button class="icon-btn" id="next" aria-label="下個月" style="transform:scaleX(-1)">${ico("back")}</button>
       </div>
-      <p class="muted" style="text-align:center;margin-bottom:8px">已跑 ${m.runs} 次，共 ${fmt(m.total_km, 1)} 公里${m.others ? `；其他運動 ${m.others} 次、${otherTime(m.other_minutes)}` : ""}</p>
-      <div class="cal" role="grid">
-        ${WD.map((d) => `<div class="cal-wd" role="columnheader">${d}</div>`).join("")}${"<div></div>".repeat(lead)}
-        ${m.days.map((d) => `<div class="cal-d ${d.actual_km ? "ran" : ""} ${d.date === today ? "today" : ""}" role="gridcell"
-            aria-label="${d.date}${d.actual_km ? `，跑了 ${d.actual_km} 公里` : ""}${otherAria(d)}${d.plan ? `，計畫 ${esc(d.plan.title)}` : ""}">
-            <span class="n">${+d.date.slice(8)}${d.event ? " 🏁" : ""}</span>${d.actual_km ? `<b class="num">${d.actual_km}</b>` : ""}${otherIcons(d)}
-            ${d.plan && d.plan.kind !== "rest" ? `<i class="${d.plan.intensity}" title="${esc(d.plan.title)}"></i>` : ""}</div>`).join("")}
+      <div class="rcal" role="grid">
+        ${WD.map((d) => `<div class="rc-wd" role="columnheader">${d}</div>`).join("")}${"<div></div>".repeat(lead)}
+        ${m.days.map((d) => recordCell(d, today)).join("")}
       </div>
-      <div class="legend"><span><i style="background:var(--c-run)"></i>已跑（公里）</span><span><i style="background:var(--ok)"></i>輕鬆課</span>
-        <span><i style="background:#C79100"></i>中強度</span><span><i style="background:var(--bad)"></i>強度課</span>
-        <span class="lg-ox">${sportIco("bike")}其他運動</span></div>
+      ${m.totals?.length ? `<div class="rc-totals">${m.totals.map(totalChip).join("")}</div>`
+        : `<p class="muted" style="text-align:center;margin-top:10px">這個月還沒有運動紀錄</p>`}
+      <p class="muted rc-legend">點運動可以看詳細內容。還沒到的日子，底下的小標籤是排好的課：<span class="pt easy">輕鬆</span><span class="pt moderate">中強度</span><span class="pt hard">強度</span></p>
       <button class="btn tonal block" data-go="#/season">${ico("flag")}查看長期規劃</button>
     </section>
 
@@ -73,6 +69,25 @@ async function viewActivity() {
     ACT_MORE = r.activities.length ? r.activities[r.activities.length - 1].date : null;
     if (r.activities.length < 40) more.remove();
   });
+}
+
+// 紀錄月曆：每一天列出每一趟運動（圖示＋公里；沒有距離的運動顯示分鐘）
+const kmTxt = (km) => (km >= 100 ? Math.round(km) : km.toFixed(1));
+function actChip(id, group, km, minutes, label) {
+  const val = km ? kmTxt(km) : `${minutes}′`;
+  return `<button class="ac g-${group}" data-go="#/workout/${encodeURIComponent(id)}" aria-label="${esc(label)} ${km ? `${km} 公里` : `${minutes} 分鐘`}">${group === "run" ? ico("run") : sportIco(group)}<b class="num">${val}</b></button>`;
+}
+function recordCell(d, today) {
+  const chips = (d.runs || []).map((r) => actChip(r.id, "run", r.km, r.minutes, "跑步"))
+    .concat((d.others || []).map((o) => actChip(o.id, o.group, o.km, o.minutes, o.label)));
+  const p = d.plan, future = d.date >= today && !chips.length && p && !["rest", "done"].includes(p.kind);
+  const tag = future ? `<span class="pt ${d.race ? "race" : p.intensity}">${esc(d.race ? "比賽" : (typeof SHORT !== "undefined" && SHORT[p.kind]) || p.title)}</span>` : "";
+  return `<div class="rc-d ${d.date === today ? "today" : ""}" role="gridcell" aria-label="${d.date}">
+    <span class="n">${+d.date.slice(8)}${d.event ? " 🏁" : ""}</span>${chips.join("")}${tag}</div>`;
+}
+function totalChip(t) {
+  const val = t.km ? `${fmt(t.km, t.km >= 100 ? 0 : 1)} km` : otherTime(t.minutes);
+  return `<span class="tc g-${t.group}">${t.group === "run" ? ico("run") : sportIco(t.group)}<span><b class="num">${val}</b><small>${esc(t.label)} ${t.count} 次</small></span></span>`;
 }
 
 // 月曆上的其他運動：右上角小圖示（最多 2 個）
