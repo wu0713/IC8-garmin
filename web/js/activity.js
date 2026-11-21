@@ -108,7 +108,7 @@ function volumeHtml(a) {
   const hm = (m) => (m >= 60 ? `${Math.floor(m / 60)}<small>h</small>${m % 60}<small>m</small>` : `${m}<small>m</small>`);
   return `<section class="card" style="margin-top:16px" aria-labelledby="vh">
     <div class="section-head" style="margin:0"><h2 id="vh" style="display:flex;gap:6px;align-items:center">${ico("bolt")}總活動量</h2>
-      ${v.verdict ? `<span class="badge ${V[v.verdict.level][0]}">${esc(V[v.verdict.level][1])}</span>` : ""}</div>
+      ${v.verdict ? `<span class="badge ${(V[v.verdict.level] || ["", ""])[0]}">${esc((V[v.verdict.level] || ["", v.verdict.label || ""])[1])}</span>` : ""}</div>
     <p style="margin-top:4px">${v.verdict ? `近 7 天訓練負荷是前 4 週平均的 <b class="num">${Math.round(v.ratio * 100)}%</b>。${esc(v.verdict.text)}`
       : "跑步加上其他運動的總負荷。累積滿 5 週紀錄後，會開始判斷活動量是否過多。"}</p>
     ${barChart(pts, { color: "var(--c-run)", stackColor: SPORT_COLOR.other, avg, h: 160, highlightLast: true })}
@@ -248,7 +248,7 @@ function reportHtml(w) {
       <span class="score ${lv}" aria-label="這堂課 ${r.score} 分">${r.score}</span></div>
     <ul class="list" style="margin-top:10px">${r.items.map((i) => `<li style="padding:10px 0;border-top:1px solid var(--line)">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b style="font-weight:600">${i.label}</b>
-        <span><span class="num" style="margin-right:6px">${esc(i.value)}</span><span class="badge ${V[i.verdict][0]}">${V[i.verdict][1]}</span></span></div>
+        <span><span class="num" style="margin-right:6px">${esc(i.value)}</span><span class="badge ${(V[i.verdict] || V.info)[0]}">${(V[i.verdict] || V.info)[1]}</span></span></div>
       <p style="font-size:.875rem;color:var(--ink-2)">${esc(i.text)}</p></li>`).join("")}</ul>
     ${r.improve.length ? `<h3 style="margin-top:12px">下次可以這樣調整</h3>
       <ul style="margin:6px 0 0;padding-left:1.2em;font-size:.9375rem;line-height:1.6">${r.improve.map((x) => `<li><b>${x.label}：</b>${esc(x.tip)}</li>`).join("")}</ul>`
@@ -324,7 +324,7 @@ async function viewSeason() {
     ${assessHtml(s)}
 
     ${f && f.verdict ? `<section class="card" style="margin-top:14px" aria-labelledby="fh">
-      <div class="section-head" style="margin:0"><h2 id="fh">可行性檢查</h2><span class="verdict ${VERDICT[f.verdict][0]}">${VERDICT[f.verdict][1]}</span></div>
+      <div class="section-head" style="margin:0"><h2 id="fh">可行性檢查</h2><span class="verdict ${(VERDICT[f.verdict] || ["", ""])[0]}">${(VERDICT[f.verdict] || ["", f.verdict])[1]}</span></div>
       <ul class="why">${f.why.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
       ${f.verdict === "infeasible" ? `
         <p style="margin-top:10px">${s.hold ? "在你選擇之前，課表先維持現在的跑量、只排輕鬆跑。這是你的決定，三個選項各有代價：" : "你選了照原目標練，課表會疊到時間允許的最高跑量，受傷風險較高。"}</p>

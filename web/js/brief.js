@@ -55,7 +55,7 @@ function renderBrief(b) {
   } else if (kind === "morning") {
     detail += `<h3>今天早上 vs 昨天 vs 平常</h3>
       <table class="cmp num"><thead><tr><th></th><th>今天</th><th>昨天</th><th>平常</th></tr></thead><tbody>
-      ${b.metrics.map((m) => `<tr><th scope="row">${esc(m.label)}${m.verdict !== "ok" ? ` <span class="badge ${BRIEF_V[m.verdict][0]}">${BRIEF_V[m.verdict][1]}</span>` : ""}</th>
+      ${b.metrics.map((m) => `<tr><th scope="row">${esc(m.label)}${m.verdict !== "ok" ? ` <span class="badge ${(BRIEF_V[m.verdict] || BRIEF_V.ok)[0]}">${(BRIEF_V[m.verdict] || BRIEF_V.ok)[1]}</span>` : ""}</th>
         <td><b>${m.today == null ? "–" : typeof m.today === "number" ? fmt(m.today, m.unit === "小時" ? 1 : 0) : esc(m.today)}</b></td>
         <td>${m.yesterday == null ? "–" : typeof m.yesterday === "number" ? fmt(m.yesterday, m.unit === "小時" ? 1 : 0) : esc(m.yesterday)}</td>
         <td>${m.range ? `${fmt(m.range[0])}–${fmt(m.range[1])}` : m.baseline == null ? "–" : fmt(m.baseline, m.unit === "小時" ? 1 : 0)}</td></tr>
@@ -65,7 +65,7 @@ function renderBrief(b) {
       <h3 style="margin-top:14px">昨天的運動</h3>${b.yesterday_acts.length ? actMini(b.yesterday_acts) : `<p class="muted">昨天沒有運動紀錄。</p>`}`;
   } else {
     detail += `<h3>今天的身體</h3>
-      <div class="tiles two" style="margin-top:8px">${b.items.map((i) => `<div class="tile"><p class="k">${esc(i.label)}${i.verdict && i.verdict !== "ok" ? ` <span class="badge ${BRIEF_V[i.verdict][0]}">${BRIEF_V[i.verdict][1]}</span>` : ""}</p>
+      <div class="tiles two" style="margin-top:8px">${b.items.map((i) => `<div class="tile"><p class="k">${esc(i.label)}${i.verdict && i.verdict !== "ok" ? ` <span class="badge ${(BRIEF_V[i.verdict] || BRIEF_V.ok)[0]}">${(BRIEF_V[i.verdict] || BRIEF_V.ok)[1]}</span>` : ""}</p>
         <p class="v num">${fmt(i.value)}<small>${esc(i.unit)}</small></p>${i.text ? `<p class="muted" style="font-size:.8125rem">${esc(i.text)}</p>` : ""}</div>`).join("")}</div>
       <h3 style="margin-top:14px">今天的運動</h3>${b.acts.length ? actMini(b.acts) : `<p class="muted">今天沒有運動紀錄。</p>`}
       ${b.session ? `<button class="strip" data-go="#/workout/${encodeURIComponent(b.session.activity_id)}" style="margin-top:10px">${ico("flag")}<span><b>${esc(b.session.title)}${b.session.score ? ` · ${b.session.score} 分` : ""}</b><small>${esc(b.session.headline || "")}${b.fatigue ? `；疲勞${{ low: "低", moderate: "中等", high: "偏高" }[b.fatigue.level]}` : ""}</small></span>${ico("chevron")}</button>` : ""}`;
