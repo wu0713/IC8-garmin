@@ -219,7 +219,10 @@ async function viewSettings() {
 
       <section class="card" style="margin-top:12px"><h2>想做的課</h2>
         <p class="muted" style="margin-top:4px">每週幾堂強度課、跑量加多快、什麼時候減量，都由能力診斷和分期決定，不用自己調。這裡只選你喜歡的形式：沒勾的課會換成效果接近、你有勾的課（例如沒勾坡道就換成間歇，沒勾變速就換成節奏跑）；基礎期的坡道、變速沒勾就不排。沒勾快步，輕鬆跑後面就不加快步。</p>
-        <div class="chips" style="margin-top:8px">${Object.entries(m.workouts).map(([k, v]) => chk("workouts", k, p.workouts[k], v)).join("")}</div></section>
+        <div class="chips" style="margin-top:8px">${Object.entries(m.workouts).map(([k, v]) => chk("workouts", k, p.workouts[k], v)).join("")}</div>
+        <h3 style="margin-top:14px">休息日</h3>
+        <div class="chips" style="margin-top:6px">${chk("strength_enabled", "1", p.strength_enabled !== false, "肌力／伸展（10–15 分鐘）")}</div>
+        <p class="muted" style="margin-top:4px">休息日輪流排核心、臀腿肌力和伸展；前一天練得重就排伸展。不用器材，做完夥伴 +15 經驗值。建議保留：臀腿和核心不夠力，是跑者膝蓋、小腿受傷的常見原因。</p></section>
 
       <section class="card" style="margin-top:12px"><h2>每日目標</h2>
         <div class="two"><label><span>步數目標（留空 = 用 Garmin 的）</span><input type="number" min="1000" step="500" name="step_goal" value="${p.step_goal ?? ""}"></label>
@@ -310,7 +313,7 @@ async function viewSettings() {
       max_hr: num(d.get("max_hr")), age: num(d.get("age")), sex: d.get("sex"),
       push_to_garmin: d.get("push_to_garmin") === "on", show_on_board: d.get("show_on_board") === "on",
       calendar_alarm_min: +d.get("calendar_alarm_min"),
-      plan_mode: d.get("plan_mode"), events, level: d.get("level") || "auto",
+      plan_mode: d.get("plan_mode"), events, level: d.get("level") || "auto", strength_enabled: d.get("strength_enabled") === "1",
       template: Object.fromEntries(WD.map((_, i) => [i, { kind: d.get(`tk${i}`), km: num(d.get(`tm${i}`)) }]).filter(([, t]) => t.kind && t.kind !== "rest")),
     };
     const err = q("perr");

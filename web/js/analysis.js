@@ -70,17 +70,18 @@ function monthHtml(m) {
       ${WD.map((d) => `<div class="cal-wd" role="columnheader">${d}</div>`).join("")}${"<div></div>".repeat(lead)}
       ${m.days.map((d) => {
         const p = d.plan, k = d.race ? (d.race.kind === "event" ? "event" : "race") : p?.kind;
-        const label = d.actual_km ? `${d.actual_km}` : k ? SHORT[k] || "" : "";
+        const st = !d.actual_km && (!k || k === "rest" || k === "strength") ? d.strength : null;
+        const label = d.actual_km ? `${d.actual_km}` : st ? (st.kind === "mobility" ? "伸展" : "肌力") : k ? SHORT[k] || "" : "";
         const cls = d.actual_km ? "ran" : k && k !== "rest" ? `k-${d.race ? (k === "event" ? "event" : "race") : p.intensity}` : "";
         return `<button class="cal-d ${cls} ${d.is_today ? "today" : ""} ${p?.projected ? "proj" : ""}" data-day="${d.date}" role="gridcell"
           aria-label="${d.date}${d.actual_km ? `，跑了 ${d.actual_km} 公里` : ""}${otherAria(d)}${p ? `，${esc(p.title)}` : ""}">
           <span class="n">${+d.date.slice(8)}${p?.override ? "·" : ""}</span>${otherIcons(d)}<b>${label}</b>
-          ${!d.actual_km && p?.distance_km && !d.race ? `<small class="num">${fmt(p.distance_km, 0)}k</small>` : d.actual_km ? `<small>km</small>` : ""}</button>`;
+          ${st ? `<small>${st.done ? "✓ " : ""}${st.minutes}′</small>` : !d.actual_km && p?.distance_km && !d.race ? `<small class="num">${fmt(p.distance_km, 0)}k</small>` : d.actual_km ? `<small>km</small>` : ""}</button>`;
       }).join("")}
     </div>
     <div class="legend"><span><i style="background:var(--c-run)"></i>已跑</span><span><i style="background:#DCEFD8"></i>輕鬆</span>
       <span><i style="background:#FCE9C2"></i>中強度</span><span><i style="background:#FBDAD5"></i>強度課</span><span><i style="background:var(--ink)"></i>比賽</span>
-      <span class="lg-ox">${sportIco("bike")}其他運動</span></div>
+      <span class="lg-ox">${sportIco("bike")}其他運動</span><span>肌力／伸展：休息日 10–15 分鐘</span></div>
     <p class="muted" style="margin-top:8px">點任一天可以看內容或自己改課。${anyProj ? "虛線框是預估：真的到那一週，會再依當時的身體狀態微調；你手動改過的會保留。" : ""}</p>
     <div class="btn-row"><button class="btn small tonal" data-go="#/me/settings">${m.mode === "manual" ? "修改我的每週課表" : m.mode === "imported" ? "匯入的課表" : "排課方式與比賽"}</button>
       <button class="btn small outline" data-go="#/season">整季規劃</button></div>`;
