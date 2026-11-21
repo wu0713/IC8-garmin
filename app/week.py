@@ -390,7 +390,7 @@ def _distribute(week, ctx, S, L, long_slot, Q, mode, notes, cons_limit, tail):
                 km = min(km, max(min_e_km, 5.0))
             km = round(km * 2) / 2
             nxt = d + timedelta(days=1)
-            use_strides = (stride_quota > 0 and m is None and nxt != L and km >= 5 and not ctx.get("novice"))
+            use_strides = ("strides" in ctx.get("liked", {"strides"}) and stride_quota > 0 and m is None and nxt != L and km >= 5 and not ctx.get("novice"))
             if use_strides:
                 stride_quota -= 1
             hr = round(ctx["max_hr"] * 0.70) if m == "hrcap" else None

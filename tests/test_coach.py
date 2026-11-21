@@ -171,3 +171,19 @@ def test_unliked_workouts_are_substituted():
     assert _pick_variant("fartlek", liked, 0, "build") == "tempo"
     assert _pick_variant("hills", liked | {"hills"}, 0, "base") == "hills"
     assert _pick_variant("intervals", {"hills", "fartlek"}, 1, "specific") == "fartlek"
+
+
+def test_strides_respect_preference():
+    _, _, with_s = _season(21.0975, 88 * 60, "novice")
+    from app import week
+    se, lv, _ = _season(21.0975, 88 * 60, "novice")
+    # 直接檢查排程：沒勾快步就不會有「輕鬆跑＋快步」
+    w = se["weeks"][1]
+    goal = {"distance_km": 21.0975, "target_s": 88 * 60, "race_date": "2027-03-14"}
+    z = engine.derive_zones(se["diag"], goal, w["phase"], 190, None)["zones"]
+    base_ctx = {"avail": {1, 2, 4, 5, 6}, "long_run_day": 6, "zones": z, "diag": se["diag"], "goal": goal,
+                "event_days": se["event_days"], "prev_tail": {}, "max_minutes_weekday": 70, "max_hr": 190, "level": "novice"}
+    on = week.schedule_week(w, {**base_ctx, "liked": {"tempo", "intervals", "strides"}})
+    off = week.schedule_week(w, {**base_ctx, "liked": {"tempo", "intervals"}})
+    assert any("快步" in d["title"] for d in on["days"].values())
+    assert not any("快步" in d["title"] for d in off["days"].values())
