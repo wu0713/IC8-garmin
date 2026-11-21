@@ -187,3 +187,14 @@ def test_strides_respect_preference():
     off = week.schedule_week(w, {**base_ctx, "liked": {"tempo", "intervals"}})
     assert any("快步" in d["title"] for d in on["days"].values())
     assert not any("快步" in d["title"] for d in off["days"].values())
+
+
+def test_month_shows_strength_on_rest_days(ctx):
+    c, h, uid = ctx
+    ym = (today_local().replace(day=1) + timedelta(days=32)).strftime("%Y-%m")
+    m = c.get(f"/api/month?ym={ym}", headers=h).json()
+    st = [d for d in m["days"] if d.get("strength")]
+    assert st and all(not d["runs"] and (not d["plan"] or d["plan"]["kind"] in ("rest", "strength")) for d in st)
+    c.put("/api/prefs", headers=h, json={"strength_enabled": False})
+    assert not any(d.get("strength") for d in c.get(f"/api/month?ym={ym}", headers=h).json()["days"])
+    c.put("/api/prefs", headers=h, json={"strength_enabled": True})

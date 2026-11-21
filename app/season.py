@@ -489,6 +489,22 @@ def month(user_id: int, ym: str) -> dict:
             "event": bool(ev), "race": ev and {"name": ev["title"], "summary": ev["summary"], "kind": ev["kind"]},
         })
         d += timedelta(days=1)
+    # 休息日的肌力／伸展：月曆上也看得到（跟本週課表同一套輪替）
+    if prefs.get("strength_enabled", True):
+        from . import strength
+        logged = strength.done_dates(user_id, first.isoformat(), last.isoformat())
+        by_week: dict[str, list] = {}
+        for x in days:
+            w0 = engine.monday(date.fromisoformat(x["date"])).isoformat()
+            k = (x["plan"] or {}).get("kind") if x["plan"] else ("done" if x["runs"] else None)
+            by_week.setdefault(w0, []).append({"date": x["date"], "kind": k})
+        rmap = {}
+        for wk in by_week.values():
+            rmap.update(strength.plan_week(wk))
+        for x in days:
+            rid = logged.get(x["date"]) or (rmap.get(x["date"]) if not x["runs"] and not x["past"] else None)
+            if rid and rid in strength.ROUTINES:
+                x["strength"] = {**strength.summary_for(rid), "done": x["date"] in logged}
     total = round(sum((a.get("distance_m") or 0) for a in acts) / 1000, 1)
     fut = [x for x in days if x["plan"] and not x["past"] and x["plan"]["kind"] not in ("rest", "race", "event")]
     return {"month": ym, "days": days, "total_km": total, "runs": len(acts),
