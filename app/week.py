@@ -241,13 +241,26 @@ def _violations(assign: dict[date, str], phase: str, cons_limit: int) -> list[st
     return bad
 
 
-def _pick_variant(kind: str, liked: set[str], week_idx: int) -> str:
-    if kind == "reps" and "reps" not in liked:
-        kind = "intervals" if "intervals" in liked else "hills"
-    if kind == "intervals" and "intervals" not in liked:
-        opts = [k for k in ("hills", "fartlek") if k in liked] or ["intervals"]
-        return opts[week_idx % len(opts)]
-    return kind
+# 使用者在設定裡取消勾選的課，換成功能接近的課；都不喜歡就拿掉（只剩輕鬆跑＋快步也練得到）
+SUBSTITUTE = {
+    "reps": ("intervals", "hills", "fartlek"),
+    "intervals": ("hills", "fartlek", "tempo"),
+    "hills": ("fartlek", "intervals", "tempo"),
+    "fartlek": ("hills", "tempo", "intervals"),
+}
+
+
+def _pick_variant(kind: str, liked: set[str], week_idx: int, phase: str = "") -> str | None:
+    if kind not in SUBSTITUTE or kind in liked:
+        return kind
+    opts = [k for k in SUBSTITUTE[kind] if k in liked or k == "tempo"]
+    if phase == "base":                        # 基礎期的強度課只是點綴：不喜歡就不排，不換成更硬的
+        opts = [k for k in opts if k in ("hills", "fartlek")]
+    if kind == "intervals":                   # 間歇不喜歡時，坡道和變速輪流
+        alt = [k for k in ("hills", "fartlek") if k in liked]
+        if alt:
+            return alt[week_idx % len(alt)]
+    return opts[0] if opts else None
 
 
 # ───────────────────────────── 每週排程 ─────────────────────────────
@@ -269,7 +282,7 @@ def schedule_week(week: dict, ctx: dict) -> dict:
     tail = {date.fromisoformat(k): v for k, v in (ctx.get("prev_tail") or {}).items()}
 
     q_kinds, long_kind = phase_quality(phase, diag, goal, week["week_in_phase"], len(cands), ctx.get("level") or "novice")
-    q_kinds = list(dict.fromkeys(_pick_variant(k, ctx["liked"], week["idx"]) for k in q_kinds))
+    q_kinds = [k for k in dict.fromkeys(_pick_variant(k, ctx["liked"], week["idx"], phase) for k in q_kinds) if k]
     if week.get("no_quality") or ctx.get("novice"):
         q_kinds = []
         long_kind = "long" if long_kind == "long_m" else long_kind
@@ -377,7 +390,7 @@ def _distribute(week, ctx, S, L, long_slot, Q, mode, notes, cons_limit, tail):
                 km = min(km, max(min_e_km, 5.0))
             km = round(km * 2) / 2
             nxt = d + timedelta(days=1)
-            use_strides = (stride_quota > 0 and m is None and nxt != L and km >= 5 and not ctx.get("novice"))
+            use_strides = ("strides" in ctx.get("liked", {"strides"}) and stride_quota > 0 and m is None and nxt != L and km >= 5 and not ctx.get("novice"))
             if use_strides:
                 stride_quota -= 1
             hr = round(ctx["max_hr"] * 0.70) if m == "hrcap" else None

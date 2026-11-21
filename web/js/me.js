@@ -218,7 +218,7 @@ async function viewSettings() {
         <p class="muted" style="margin-top:6px">可跑時間撐不起目標需要的跑量時，可行性檢查會告訴你。</p></section>
 
       <section class="card" style="margin-top:12px"><h2>想做的課</h2>
-        <p class="muted" style="margin-top:4px">每週幾堂強度課、跑量加多快、什麼時候減量，都由能力診斷和分期決定，不用自己調。這裡只選同一種強度裡你喜歡的變化：沒勾間歇跑，間歇課就換成坡道或變速跑。</p>
+        <p class="muted" style="margin-top:4px">每週幾堂強度課、跑量加多快、什麼時候減量，都由能力診斷和分期決定，不用自己調。這裡只選你喜歡的形式：沒勾的課會換成效果接近、你有勾的課（例如沒勾坡道就換成間歇，沒勾變速就換成節奏跑）；基礎期的坡道、變速沒勾就不排。沒勾快步，輕鬆跑後面就不加快步。</p>
         <div class="chips" style="margin-top:8px">${Object.entries(m.workouts).map(([k, v]) => chk("workouts", k, p.workouts[k], v)).join("")}</div></section>
 
       <section class="card" style="margin-top:12px"><h2>每日目標</h2>
