@@ -206,7 +206,7 @@ MIGRATIONS = {
               "bb_now": "REAL", "bb_low": "REAL"},
     "activities": {"calories": "REAL", "elevation_gain": "REAL", "avg_cadence": "REAL",
                    "hr_drift": "REAL", "temp_c": "REAL", "humidity": "REAL", "weather_checked": "INTEGER"},
-    "checkins": {"pain": "TEXT"},
+    "checkins": {"pain": "TEXT", "rpe": "INTEGER"},
     "plan_overrides": {"km": "REAL"},
 }
 

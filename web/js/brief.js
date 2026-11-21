@@ -58,15 +58,17 @@ function renderBrief(b) {
       ${b.metrics.map((m) => `<tr><th scope="row">${esc(m.label)}${m.verdict !== "ok" ? ` <span class="badge ${BRIEF_V[m.verdict][0]}">${BRIEF_V[m.verdict][1]}</span>` : ""}</th>
         <td><b>${m.today == null ? "–" : typeof m.today === "number" ? fmt(m.today, m.unit === "小時" ? 1 : 0) : esc(m.today)}</b></td>
         <td>${m.yesterday == null ? "–" : typeof m.yesterday === "number" ? fmt(m.yesterday, m.unit === "小時" ? 1 : 0) : esc(m.yesterday)}</td>
-        <td>${m.baseline == null ? "–" : fmt(m.baseline, m.unit === "小時" ? 1 : 0)}</td></tr>
+        <td>${m.range ? `${fmt(m.range[0])}–${fmt(m.range[1])}` : m.baseline == null ? "–" : fmt(m.baseline, m.unit === "小時" ? 1 : 0)}</td></tr>
         <tr class="why"><td colspan="4">${esc(m.text)}</td></tr>`).join("")}
-      </tbody></table><p class="muted" style="margin-top:6px">「平常」是前 7 天的平均。</p>
+      </tbody></table><p class="muted" style="margin-top:6px">「平常」是你自己近 4 週的正常範圍（平均 ± 1 個標準差）；HRV 看的是 7 天平均有沒有掉出範圍，比單日可靠。</p>
+      ${b.yesterday_eval ? `<h3 style="margin-top:14px">昨天的課</h3><button class="strip" data-go="#/workout/${encodeURIComponent(b.yesterday_eval.activity_id)}" style="margin-top:6px">${ico("run")}<span><b>${esc(b.yesterday_eval.title)}${b.yesterday_eval.score ? ` · ${b.yesterday_eval.score} 分` : ""}</b><small>疲勞${{ low: "低", moderate: "中等", high: "偏高" }[b.yesterday_eval.fatigue]}${b.yesterday_eval.fatigue_why.length ? `：${esc(b.yesterday_eval.fatigue_why.join("、"))}` : ""}</small></span>${ico("chevron")}</button>` : ""}
       <h3 style="margin-top:14px">昨天的運動</h3>${b.yesterday_acts.length ? actMini(b.yesterday_acts) : `<p class="muted">昨天沒有運動紀錄。</p>`}`;
   } else {
     detail += `<h3>今天的身體</h3>
       <div class="tiles two" style="margin-top:8px">${b.items.map((i) => `<div class="tile"><p class="k">${esc(i.label)}${i.verdict && i.verdict !== "ok" ? ` <span class="badge ${BRIEF_V[i.verdict][0]}">${BRIEF_V[i.verdict][1]}</span>` : ""}</p>
         <p class="v num">${fmt(i.value)}<small>${esc(i.unit)}</small></p>${i.text ? `<p class="muted" style="font-size:.8125rem">${esc(i.text)}</p>` : ""}</div>`).join("")}</div>
-      <h3 style="margin-top:14px">今天的運動</h3>${b.acts.length ? actMini(b.acts) : `<p class="muted">今天沒有運動紀錄。</p>`}`;
+      <h3 style="margin-top:14px">今天的運動</h3>${b.acts.length ? actMini(b.acts) : `<p class="muted">今天沒有運動紀錄。</p>`}
+      ${b.session ? `<button class="strip" data-go="#/workout/${encodeURIComponent(b.session.activity_id)}" style="margin-top:10px">${ico("flag")}<span><b>${esc(b.session.title)}${b.session.score ? ` · ${b.session.score} 分` : ""}</b><small>${esc(b.session.headline || "")}${b.fatigue ? `；疲勞${{ low: "低", moderate: "中等", high: "偏高" }[b.fatigue.level]}` : ""}</small></span>${ico("chevron")}</button>` : ""}`;
   }
 
   const sch = b.schedule || {};
@@ -85,29 +87,37 @@ function renderBrief(b) {
 
   const box = document.getElementById("chat"), acts = document.getElementById("acts");
   const say = (text, me = false) => box.insertAdjacentHTML("beforeend", `<p class="bubble ${me ? "me" : ""}">${esc(text)}</p>`);
-  const showActions = () => {
-    acts.innerHTML = c.actions.map((a) => `<button class="btn ${a.id === "apply" ? "" : "outline"}" data-a="${a.id}">${esc(a.label)}</button>`).join("");
-    acts.querySelectorAll("[data-a]").forEach((btn) => (btn.onclick = () => busy(btn, async () => {
-      const a = c.actions.find((x) => x.id === btn.dataset.a);
+  // 按鈕：回答感覺、跑後感受、套用改課。伺服器回傳夥伴接下來的話，可以一直接下去
+  const showActions = (list = c.actions) => {
+    if (!list || !list.length) { acts.innerHTML = ""; return; }
+    const chips = list.every((a) => a.type === "feel" || a.type === "rpe");
+    acts.className = `chat-actions${chips ? " chips-row" : ""}`;
+    acts.innerHTML = list.map((a, i) => `<button class="btn ${chips ? "small outline" : i === 0 && a.type === "option" ? "" : "outline"}" data-i="${i}">
+      ${esc(a.label)}${a.detail && !chips ? `<small style="display:block;font-weight:400;opacity:.8">${esc(a.detail)}</small>` : ""}</button>`).join("");
+    acts.querySelectorAll("[data-i]").forEach((btn) => (btn.onclick = () => busy(btn, async () => {
+      const a = list[+btn.dataset.i];
       acts.innerHTML = ""; say(a.label, true);
-      if (a.id === "apply") {
+      if (a.type === "legacy") {
         await api("/api/brief/morning/apply", { method: "POST" });
-        say(`改好了！今天的課已經換成${b.suggestion.title}${b.suggestion.minutes ? ` ${b.suggestion.minutes} 分鐘` : ""}，行事曆和手錶下次同步也會跟著更新。`);
-      } else {
-        say("好，那就照原本的課。跑的途中覺得心率降不下來、腿很沉，就直接改成輕鬆跑喔。");
+        say(`改好了！今天的課已經換成${b.suggestion.title}，行事曆和手錶下次同步也會跟著更新。`);
+        return;
       }
+      const r = await api(`/api/brief/${kind}/reply`, { method: "POST", body: { type: a.type, value: a.value ?? null, label: a.label, apply: a.apply || null } });
+      await sayAll(r.lines);
+      showActions(r.actions);
     })));
   };
-  if (!animate) { c.lines.forEach((l) => say(l)); showActions(); }
-  else {
+  const sayAll = (lines) => new Promise((res) => {
+    if (!animate) { lines.forEach((l) => say(l)); return res(); }
     let i = 0;
     const next = () => {
-      if (i >= c.lines.length) return showActions();
+      if (i >= lines.length) return res();
       box.insertAdjacentHTML("beforeend", `<p class="bubble typing" aria-hidden="true"><i></i><i></i><i></i></p>`);
-      setTimeout(() => { box.lastElementChild.remove(); say(c.lines[i++]); next(); }, Math.min(1100, 350 + c.lines[i].length * 12));
+      setTimeout(() => { box.lastElementChild.remove(); say(lines[i++]); next(); }, Math.min(1100, 350 + lines[i].length * 12));
     };
     next();
-  }
+  });
+  sayAll(c.lines).then(() => showActions());
 
   document.getElementById("rf").onclick = (e) => busy(e.currentTarget, async () => {
     sessionStorage.removeItem(seenKey);

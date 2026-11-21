@@ -10,7 +10,7 @@ import logging
 from datetime import date, datetime, timedelta
 from statistics import mean
 
-from . import db, metrics, views
+from . import coach, db, metrics, views
 from .config import TZ
 from .garmin_client import today_local
 from .planner import WORKOUT_LABELS
@@ -75,6 +75,70 @@ def _clean(acts):
     return [{k: v for k, v in x.items() if not k.startswith("_")} for x in acts]
 
 
+def _series(user_id: int, a: dict) -> list:
+    r = db.q1("SELECT data FROM activity_series WHERE user_id=? AND activity_id=?", (user_id, a["activity_id"]))
+    return (json.loads(r["data"]).get("points") or []) if r else []
+
+
+def run_eval(user_id: int, a: dict) -> tuple[dict, dict]:
+    """一趟跑步的課型評分＋疲勞（晚報、晨報用；有快取的心率曲線才評得細）。"""
+    from . import analysis
+    plan = _plan(user_id, a["date"])
+    prefs = db.get_prefs(user_id)
+    mx = metrics.estimate_max_hr(db.q("SELECT max_hr FROM activities WHERE user_id=? AND max_hr IS NOT NULL", (user_id,)), prefs)
+    mx = float(prefs.get("max_hr") or mx)
+    rev = coach.review(user_id, a, _series(user_id, a), plan, mx, analysis.classify(a.get("avg_hr"), mx))
+    return rev, coach.fatigue(user_id, a, rev, plan)
+
+
+def _main_run(user_id: int, ds: str) -> dict | None:
+    runs = db.q("SELECT * FROM activities WHERE user_id=? AND date=? ORDER BY distance_m DESC", (user_id, ds))
+    return runs[0] if runs else None
+
+
+def _yesterday_eval(user_id: int, yd: str) -> dict | None:
+    a = _main_run(user_id, yd)
+    if not a:
+        return None
+    try:
+        rev, fat = run_eval(user_id, a)
+    except Exception as e:
+        log.warning("yesterday eval: %s", e)
+        return None
+    return {"title": (_plan(user_id, yd) or {}).get("title") or a.get("name") or "跑步", "score": rev.get("score"),
+            "headline": rev.get("headline"), "fatigue": fat["level"], "fatigue_why": fat["why"][:2], "activity_id": a["activity_id"]}
+
+
+def session_advice(user_id: int, plan: dict, ds: str) -> str:
+    """狀態好的時候：針對今天這堂課給具體的提醒（配速、心率、該注意什麼）。"""
+    k, title = plan["kind"], plan.get("title") or "跑步"
+    km = plan.get("distance_km")
+    main = coach._main_step(plan) or {}
+    cap = plan.get("hr_cap") or main.get("hr_cap")
+    pace = (f"{coach.fmt_pace(main['pace_hi'])}–{coach.fmt_pace(main['pace_lo'])}/km" if main.get("pace_hi") else None)
+    nxt = None
+    for i in range(1, 4):
+        d2 = (date.fromisoformat(ds) + timedelta(days=i)).isoformat()
+        p2 = _plan(user_id, d2)
+        if p2 and p2.get("kind") in coach.QUALITY | {"long"}:
+            nxt = (i, p2.get("title"))
+            break
+    g = coach.KIND_GROUP.get(k, "easy")
+    if g == "easy":
+        s = f"今天是 {km:g} 公里{title}，心率守在 {cap} 以下。" if km and cap else f"今天是{title}，放輕鬆跑。"
+        if nxt:
+            s += f"狀態好也別跑快，力氣留給{'明天' if nxt[0] == 1 else f'{nxt[0]} 天後'}的「{nxt[1]}」。"
+        return s
+    if g == "long":
+        return f"今天長跑 {km:g} 公里：前半段刻意慢，心率守在 {cap} 以下，超過 75 分鐘記得帶水和補給。" if km and cap else f"今天長跑，前半段刻意慢。"
+    if g == "tempo":
+        return f"今天是「{title}」：主課配速 {pace}，心率上限 {cap}。狀態不錯照表練，感覺特別好也別超過配速上限，留到比賽。" if pace else f"今天是「{title}」，照表練。"
+    if g == "intervals":
+        return (f"今天是「{title}」：每趟 {pace}，重點是每一趟都一樣快，最後一趟還能維持就是剛好。熱身要做足 15 分鐘。" if pace
+                else f"今天是「{title}」，熱身做足。")
+    return f"今天是「{title}」：比賽配速 {pace}，練習記住這個速度的感覺和心率。" if pace else f"今天是「{title}」。"
+
+
 # ───────────────────────────── 晨報 ─────────────────────────────
 
 def morning(user_id: int, today: date | None = None) -> dict:
@@ -93,47 +157,66 @@ def morning(user_id: int, today: date | None = None) -> dict:
         metrics_rows.append({"key": key, "label": label, "unit": unit, "today": today_v, "yesterday": yest_v,
                              "baseline": None if base_v is None else round(base_v, 1), "verdict": verdict, "text": text})
 
-    # 安靜心率：今天 vs 昨天 vs 前 7 天平均
-    rhr_base = _avg([r.get("rhr") for r in h7])
+    # 安靜心率：跟「你自己近 4 週的正常範圍」比（平均 ± 1 個標準差），不是只跟昨天比
+    h28 = hist[-28:]
+    rb = coach.band([r.get("rhr") for r in h28])
+    rhr_base = rb["mean"] if rb else _avg([r.get("rhr") for r in h7])
     rhr = t.get("rhr")
+    rng = f"平常 {round(rb['lo'])}–{round(rb['hi'])}" if rb else None
     if rhr:
         dv = rhr - rhr_base if rhr_base else 0
         dy = rhr - y["rhr"] if y.get("rhr") else 0
+        recent = [r.get("rhr") for r in hist[-2:]] + [rhr]
+        warn_at = rb and rb["mean"] + max(1.5 * rb["sd"], 3)     # 單日小幅波動不算，至少高 3 下
+        rising = bool(rb) and all(v and v > rb["mean"] + max(rb["sd"], 2) for v in recent)
         if rhr_base and dv >= T.RHR_DELTA:      # 和排課引擎的停損規則用同一個門檻
             points += 2
-            v, txt = "bad", f"比平常高 {round(dv)} 下。常見原因是還沒從訓練恢復、睡不好、喝酒或快感冒。"
-        elif rhr_base and dv >= 4:
+            v, txt = "bad", f"比平常高 {round(dv)} 下（{rng or '近期平均 ' + str(round(rhr_base))}）。常見原因是還沒從訓練恢復、睡不好、喝酒或快感冒。"
+        elif rb and (rhr >= warn_at or rising):
+            points += 2 if rising else 1
+            v = "bad" if rising else "warn"
+            txt = (f"連續 3 天高於你的正常範圍（{rng}），疲勞在累積。" if rising
+                   else f"高於你的正常範圍（{rng}），身體有點疲勞。")
+        elif not rb and rhr_base and dv >= 4:
             points += 1
             v, txt = "warn", f"比平常高 {round(dv)} 下，身體有點疲勞。"
-        elif rhr_base and dv <= -3:
-            v, txt = "good", f"比平常低 {round(-dv)} 下，恢復得不錯。"
+        elif rb and rhr < rb["lo"]:
+            v, txt = "good", f"低於你的正常範圍（{rng}），恢復得不錯。"
         else:
-            v, txt = "ok", "在平常的範圍內。"
-        if dy >= 5 and not (rhr_base and dv >= T.RHR_DELTA):
+            v, txt = "ok", f"在你的正常範圍內（{rng}）。" if rng else "在平常的範圍內。"
+        if dy >= 5 and v in ("ok", "good"):
             points += 1
-            txt += f" 而且比昨天一下子高了 {round(dy)} 下。"
-            v = "warn" if v in ("ok", "good") else v
+            txt += f" 不過比昨天一下子高了 {round(dy)} 下。"
+            v = "warn"
         row("rhr", "安靜心率", "bpm", rhr, y.get("rhr"), rhr_base, v, txt)
-        reasons.append(f"安靜心率 {round(rhr)}（平常 {round(rhr_base)}）" if rhr_base else f"安靜心率 {round(rhr)}")
+        metrics_rows[-1]["range"] = [rb["lo"], rb["hi"]] if rb else None
+        reasons.append(f"安靜心率 {round(rhr)}（{rng}）" if rng else f"安靜心率 {round(rhr)}")
     else:
         row("rhr", "安靜心率", "bpm", None, y.get("rhr"), rhr_base, "none",
             "今天的安靜心率還沒同步。手錶要先同步到手機的 Garmin Connect，這裡才抓得到。")
 
-    # HRV
-    hrv_base = _avg([r.get("hrv_avg") for r in h7])
+    # HRV：看「7 天平均」有沒有掉出正常範圍（單日 HRV 起伏很大，趨勢比單日可靠）
+    hb = coach.band([r.get("hrv_avg") for r in h28], k=0.5)
+    hrv_base = hb["mean"] if hb else _avg([r.get("hrv_avg") for r in h7])
     if t.get("hrv_avg") and hrv_base:
-        drop = (hrv_base - t["hrv_avg"]) / hrv_base
-        if drop > 0.25:
+        last7 = [r.get("hrv_avg") for r in hist[-6:]] + [t["hrv_avg"]]
+        roll = _avg(last7, need=4)
+        sd = hb["sd"] if hb else hrv_base * 0.1
+        z = (t["hrv_avg"] - hrv_base) / sd
+        low_trend = bool(hb and roll and roll < hb["lo"])
+        if z <= -1.5 and low_trend:
             points += 2
-            v, txt = "bad", f"比平常低 {round(drop * 100)}%，自律神經還在疲勞狀態。"
-        elif drop > 0.12:
+            v, txt = "bad", f"昨晚 {round(t['hrv_avg'])}，7 天平均 {round(roll)} 也低於你的正常範圍（{round(hb['lo'])}–{round(hb['hi'])}），自律神經還在疲勞狀態。"
+        elif z <= -1.5 or low_trend:
             points += 1
-            v, txt = "warn", f"比平常低 {round(drop * 100)}%。"
-        elif drop < -0.08:
+            v, txt = "warn", (f"7 天平均 {round(roll)} 低於你的正常範圍（{round(hb['lo'])}–{round(hb['hi'])}），恢復變慢了。" if low_trend
+                              else "昨晚比平常低不少；單一天的 HRV 起伏大，明天再看一次。")
+        elif z >= 1:
             v, txt = "good", "比平常高，恢復得不錯。"
         else:
-            v, txt = "ok", "在平常的範圍內。"
+            v, txt = "ok", (f"7 天平均在你的正常範圍內（{round(hb['lo'])}–{round(hb['hi'])}）。" if hb else "在平常的範圍內。")
         row("hrv", "昨晚 HRV", "ms", t["hrv_avg"], y.get("hrv_avg"), hrv_base, v, txt)
+        metrics_rows[-1]["range"] = [hb["lo"], hb["hi"]] if hb else None
     elif t.get("hrv_status") in ("LOW", "POOR"):
         points += 1
         row("hrv", "HRV 狀態", "", t["hrv_status"], y.get("hrv_status"), None, "warn", "Garmin 判定 HRV 偏低。")
@@ -179,6 +262,12 @@ def morning(user_id: int, today: date | None = None) -> dict:
     big_day = bool(nonzero) and y_load > 1.8 * mean(nonzero) and y_load > 80
 
     have = sum(1 for r in metrics_rows if r["verdict"] != "none")
+    y_eval = _yesterday_eval(user_id, yd)
+    if y_eval and y_eval["fatigue"] == "high":
+        points += 1
+    ck = db.q1("SELECT feeling, pain FROM checkins WHERE user_id=? AND date=?", (user_id, ds)) or {}
+    if ck.get("feeling") and ck["feeling"] <= 2:      # 自己填的感覺也算進來
+        points += 2 if ck["feeling"] == 1 else 1
     level = "go" if points <= 1 else "reduce" if points <= 4 else "rest"
     # 排課引擎的停損（晨間心率連續 3 天偏高、疼痛、心率漂移）優先：已經觸發就至少減量
     meta = db.q1("SELECT data FROM plan_meta WHERE user_id=?", (user_id,))
@@ -187,38 +276,31 @@ def morning(user_id: int, today: date | None = None) -> dict:
     if engine_rule and level == "go":
         level = "reduce"
 
+    if ck.get("pain") and level == "go":
+        level = "reduce"
+
     plan = _plan(user_id, ds)
-    run_today = plan and plan.get("kind") not in (None, "rest", "done")
-    suggestion = None
+    run_today = plan and plan.get("kind") not in (None, "rest", "done", "strength", "event", "race")
+    suggestion, options = None, []
     if plan and plan.get("kind") == "done":
         advice = "今天已經跑過了，好好恢復。"
     elif not run_today:
-        advice = "今天本來就是休息日。" + ("身體有點累，連散步都放輕鬆就好。" if level != "go" else "想動的話散步或伸展就好。")
+        advice = "今天本來就是休息日。" + ("身體有點累，連散步都放輕鬆就好。" if level != "go" else "想動的話散步或做 10 分鐘伸展就好。")
     else:
-        k, m, title = plan["kind"], plan.get("minutes") or 40, plan.get("title") or "跑步"
-        km = plan.get("distance_km")
-        amount = lambda f, lo_min: ({"minutes": max(lo_min, round(m * f)), "km": max(1.0, round(km * f, 1))} if km  # noqa: E731
-                                    else {"minutes": max(lo_min, round(m * f)), "km": None})
-        txt = lambda s: f"{s['km']} 公里" if s.get("km") else f"{s['minutes']} 分鐘"  # noqa: E731
+        title = plan.get("title") or "跑步"
         if level == "go":
-            advice = f"照課表：{title}（{f'{km} 公里' if km else f'{m} 分'}）。"
-        elif level == "reduce":
-            if k in HARD or k in ("race_pace", "long_m", "test"):
-                suggestion = {"kind": "easy", **amount(0.8, 20), "title": "輕鬆跑"}
-                advice = f"把「{title}」改成 {txt(suggestion)}輕鬆跑，強度課等身體回來再補。"
-            elif k == "long":
-                suggestion = {"kind": "long", **amount(0.7, 30), "title": "縮短的長跑"}
-                advice = f"長跑縮短到 {txt(suggestion)}，配速放慢。"
-            else:
-                suggestion = {"kind": "easy" if k != "recovery" else "recovery", **amount(0.8, 20), "title": "縮短的輕鬆跑"}
-                advice = f"輕鬆跑縮短到 {txt(suggestion)}。"
+            advice = session_advice(user_id, plan, ds)
+            if points == 1 and plan["kind"] in coach.QUALITY:
+                advice += " 有一項指標偏低，熱身時腿還是很沉的話，主課就少跑一兩趟。"
+                options = coach.day_options(user_id, ds, "trim", plan)
         else:
-            if points >= 7:
-                suggestion = {"kind": "rest", "minutes": None, "km": None, "title": "休息"}
-                advice = f"今天休息，「{title}」先不跑。"
-            else:
-                suggestion = {"kind": "recovery", "minutes": 20, "km": None, "title": "恢復跑"}
-                advice = f"「{title}」改成 20 分鐘超輕鬆恢復跑，或直接休息。"
+            options = coach.day_options(user_id, ds, "rest" if level == "rest" else "reduce", plan)
+            first = options[0] if options else None
+            advice = (f"今天建議{first['label']}：{first['detail']}" if first else f"「{title}」今天放輕鬆。")
+            if first and first["apply"]["type"] == "override":
+                ap = first["apply"]
+                suggestion = {"kind": ap["kind"], "km": ap.get("km"), "minutes": None,
+                              "title": {"rest": "休息", "recovery": "恢復跑", "easy": "輕鬆跑", "long": "縮短的長跑"}.get(ap["kind"], first["label"])}
         if engine_rule and level != "go":
             advice += f"（排課引擎也偵測到：{engine_rule.get('title')}）"
 
@@ -234,8 +316,9 @@ def morning(user_id: int, today: date | None = None) -> dict:
         notes.append("同步到安靜心率後，晨報會自動更新。")
 
     return {"kind": "morning", "date": ds, "level": level, "headline": headline, "advice": advice, "suggestion": suggestion,
+            "options": options, "checked_in": bool(ck.get("feeling")), "yesterday_eval": y_eval,
             "points": points, "metrics": metrics_rows, "yesterday_acts": _clean(yacts), "volume": vol, "ratio": ratio,
-            "notes": notes, "plan": plan and {k: plan.get(k) for k in ("kind", "title", "minutes", "intensity")},
+            "notes": notes, "plan": plan and {k: plan.get(k) for k in ("kind", "title", "minutes", "intensity", "distance_km")},
             "has_rhr": bool(rhr), "engine_rule": engine_rule and {"rule": engine_rule.get("rule"), "title": engine_rule.get("title"),
                                                                    "action": engine_rule.get("action")}, "generated_at": datetime.now(TZ).isoformat(timespec="minutes")}
 
@@ -307,6 +390,18 @@ def evening(user_id: int, today: date | None = None, now: datetime | None = None
         else:
             plan_txt = f"今天的課「{plan.get('title')}」沒跑到，課表會自動重排，不用硬補。"
     tomorrow = _plan(user_id, (today + timedelta(days=1)).isoformat())
+    # 今天有跑：用跑後報告同一套規則評這堂課、估疲勞，必要時建議明天怎麼改
+    session, fat = None, None
+    main_run = _main_run(user_id, ds)
+    if main_run:
+        try:
+            rev, fat = run_eval(user_id, main_run)
+            session = {"activity_id": main_run["activity_id"], "title": (plan or {}).get("title") or main_run.get("name") or "跑步",
+                       "score": rev.get("score"), "headline": rev.get("headline"), "group": rev.get("group"),
+                       "improve": rev.get("improve", [])[:2]}
+        except Exception as e:
+            log.warning("evening run eval: %s", e)
+    rpe = (db.q1("SELECT rpe FROM checkins WHERE user_id=? AND date=?", (user_id, ds)) or {}).get("rpe")
 
 
     tips = []
@@ -316,7 +411,9 @@ def evening(user_id: int, today: date | None = None, now: datetime | None = None
     tired = tired_today or week_heavy
     sleep_goal = prefs.get("sleep_goal") or 8
     tips.append(f"今晚目標睡滿 {sleep_goal} 小時" + ("，比平常早 30 分鐘上床。" if tired else "。"))
-    if tomorrow and tomorrow.get("kind") in HARD | {"long", "race_pace"}:
+    if fat and fat.get("advice"):
+        tips.append(fat["advice"])
+    elif tomorrow and tomorrow.get("kind") in HARD | {"long", "race_pace"}:
         if tired:
             tips.append(f"明天是「{tomorrow.get('title')}」。今天比較累，明早晨報會看安靜心率決定要不要減量。")
         else:
@@ -341,6 +438,8 @@ def evening(user_id: int, today: date | None = None, now: datetime | None = None
             "day_load": day_load, "volume": vol, "ratio": ratio, "plan_text": plan_txt,
             "tomorrow": tomorrow and {k: tomorrow.get(k) for k in ("kind", "title", "minutes", "intensity")},
             "tips": tips, "preliminary": preliminary, "evening_time": f"{h:02d}:{mi:02d}",
+            "session": session, "fatigue": fat and {k: fat[k] for k in ("level", "label", "why", "advice", "options", "tomorrow_date")},
+            "rpe": rpe,
             "generated_at": datetime.now(TZ).isoformat(timespec="minutes")}
 
 
@@ -519,8 +618,23 @@ def weekly(user_id: int, today: date | None = None, now: datetime | None = None)
     else:
         level, headline = "good", "這週穩穩前進"
 
+    key_sessions = []
+    for r in runs:
+        pk = (_plan(user_id, r["date"]) or {})
+        if pk.get("kind") in coach.QUALITY | {"long"}:
+            try:
+                rev, _ = run_eval(user_id, r)
+                key_sessions.append({"date": r["date"], "title": pk.get("title"), "score": rev.get("score"), "id": r["activity_id"]})
+            except Exception as e:
+                log.warning("weekly session eval: %s", e)
+    try:
+        progress = coach.goal_progress(user_id)
+    except Exception:
+        progress = None
+
     return {
         "kind": "weekly", "date": b, "week_start": a, "level": level, "headline": headline,
+        "sessions": key_sessions, "progress": progress,
         "run": {"count": len(runs), "km": this_km, "minutes": mins(runs), "prev_km": prev_km, "avg4_km": avg4,
                 "change": round((this_km - prev_km) / prev_km * 100) if prev_km else None},
         "plan": {"planned": len(planned), "done": len(done), "rate": rate},

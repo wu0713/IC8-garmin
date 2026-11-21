@@ -555,3 +555,15 @@ details.card h3 { font-size: 1rem; }
 .rn-sub { font-size: .8125rem; color: var(--ink-2); margin-top: 2px; }
 .rn-code { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; background: var(--ink); color: #fff; font-size: .75rem; font-weight: 700; margin-right: 6px; }
 label.tile { min-width: 0; } label.tile input[type=time] { max-width: 100%; box-sizing: border-box; }
+.choice button.keep { box-shadow: none; background: transparent; }
+.choice button:first-child:not(.keep) { background: var(--surface-hi, #fff7d6); }
+.fat { display: flex; gap: 10px; align-items: baseline; margin-top: 4px; }
+.fat .lvl { font-weight: 700; padding: 2px 8px; border-radius: 4px; border: var(--edge); }
+.fat .lvl.low { background: #d9f2e3; } .fat .lvl.moderate { background: #fff1c2; } .fat .lvl.high { background: #ffd9d2; }
+.badge.info { background: var(--page); }
+.care h3 { margin-top: 10px; font-size: .9375rem; }
+.care ul { margin: 4px 0 0; padding-left: 1.2em; font-size: .9375rem; line-height: 1.6; }
+.chat-actions.chips-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.chat-actions .btn { text-align: left; }
+.chat-actions.chips-row .btn { text-align: center; }
+.chat-actions:not(.chips-row) .btn { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }

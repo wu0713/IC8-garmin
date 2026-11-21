@@ -26,7 +26,7 @@ PHASE_COLORS = {"base": "base", "build": "build", "specific": "specific", "taper
 
 def _keys(prefs: dict, goal: dict) -> tuple[str, str]:
     hard = json.dumps([goal["type"], goal["distance_km"], bool(goal.get("race_date")), sorted(prefs["days"]),
-                       prefs["long_run_day"]])
+                       prefs["long_run_day"], prefs.get("level") or "auto"])
     soft = json.dumps([goal.get("race_date"), goal.get("target_s"), prefs.get("max_minutes_weekday"),
                        prefs.get("max_long_minutes")])
     return hard, soft
@@ -73,9 +73,15 @@ def ensure_snap(uid: int, today: date, prefs: dict, goal: dict, ath: dict) -> di
                 "v_base": max(diag["baseline_km"], 8.0), "start_long_km": max(ath["recent_longest_km"], 3.0),
                 "decision": None, "insertions": {}, "freeze_from": None, "triggers": {}, "results": {},
                 "resume_after": None, "created": today.isoformat()}
+        lv = engine.athlete_level(ath, diag, prefs.get("level"))
+        snap["level"], snap["level_info"] = lv["level"], lv
         refresh_feasibility(snap, prefs, goal)
         save_snap(uid, snap)
-    elif snap.get("key_soft") != soft:
+    elif not snap.get("level"):          # 舊版快照：補上程度（不重排整季）
+        lv = engine.athlete_level(ath, snap["diag"], prefs.get("level"))
+        snap["level"], snap["level_info"] = lv["level"], lv
+        save_snap(uid, snap)
+    if snap.get("key_soft") != soft:
         snap["key_soft"] = soft
         snap["decision"] = None
         refresh_feasibility(snap, prefs, goal)
@@ -95,8 +101,17 @@ class Ctx:
         self.goal = planner.goal_from_prefs(self.prefs, self.today)
         self.ath = athlete_mod.build(uid, self.today, self.prefs)
         self.snap = ensure_snap(uid, self.today, self.prefs, self.goal, self.ath)
+        self.level = self.snap.get("level") or "novice"
+        self.plan_goal = dict(self.goal)
         self._runtime()
         self.season = engine.build_season(ath=self.ath, goal=self.goal, prefs=self.prefs, snap=self.snap, today=self.today)
+        self.level = self.snap.get("level") or "novice"
+        self.assess = engine.assess(diag=self.live_diag(), goal=self.goal, level=self.level, weeks=self.season["n_weeks"],
+                                    feas=self.season["feasibility"], ath=self.ath, decision=self.snap.get("decision"))
+        # 目標不切實際：配速照「做得到的成績」排，不照目標硬推
+        self.plan_goal = dict(self.goal)
+        if self.assess.get("verdict") == "unrealistic" and self.assess.get("realistic_s"):
+            self.plan_goal["target_s"] = self.assess["realistic_s"]
         self.model = engine.fit_hr_pace(self.ath["easy_samples"])
         self._zones: dict[str, dict] = {}
         self._sched: dict[int, dict] = {}
@@ -116,7 +131,7 @@ class Ctx:
     def zones(self, phase: str) -> dict:
         if phase not in self._zones:
             ph = "taper" if phase == "race" else phase
-            self._zones[phase] = engine.derive_zones(self.live_diag(), self.goal, ph, self.ath["max_hr"], self.model)
+            self._zones[phase] = engine.derive_zones(self.live_diag(), self.plan_goal, ph, self.ath["max_hr"], self.model)
         return self._zones[phase]
 
     def week_idx(self, d: date) -> int:
@@ -138,7 +153,7 @@ class Ctx:
         tail = {k: v["kind"] for k, v in prev["days"].items() if k >= (ws - timedelta(days=3)).isoformat()}
         res = schedule_week(w, {
             "avail": set(int(x) for x in self.prefs["days"]), "long_run_day": self.prefs["long_run_day"],
-            "zones": self.zones(w["phase"])["zones"], "diag": self.snap["diag"], "goal": self.goal,
+            "zones": self.zones(w["phase"])["zones"], "diag": self.snap["diag"], "goal": self.plan_goal, "level": self.level,
             "event_days": self.season["event_days"], "prev_tail": tail,
             "max_minutes_weekday": self.prefs["max_minutes_weekday"],
             "liked": {k for k, v in self.prefs["workouts"].items() if v}, "max_hr": self.ath["max_hr"],
@@ -369,6 +384,10 @@ def season_plan(uid: int, today: date | None = None) -> dict:
         "goal": {"name": g.get("name"), "distance_km": g["distance_km"], "race_date": g.get("race_date"),
                  "target_s": g.get("target_s"), "target": engine.fmt_time(g.get("target_s")) if g.get("target_s") else None,
                  "type": g["type"], "race_passed": g.get("race_passed")},
+        "level": cx.snap.get("level_info") or {"level": cx.level, "label": T.LEVEL_ZH[cx.level]}, "assess": {
+            **cx.assess, "realistic": cx.assess.get("realistic_s") and engine.fmt_time(cx.assess["realistic_s"]),
+            "pred_goal": cx.assess.get("pred_goal_s") and engine.fmt_time(cx.assess["pred_goal_s"])},
+        "distance_label": T.DIST_PROFILE[T.dist_key(g["distance_km"])]["label"],
         "diag": cx.snap["diag"], "feasibility": feas and {**feas, "achievable": feas.get("achievable_s") and engine.fmt_time(feas["achievable_s"]),
                                                           "target": engine.fmt_time(feas["target_s"])},
         "decision": cx.snap.get("decision"), "warnings": cx.season["warnings"], "phases": phases, "weeks": weeks,

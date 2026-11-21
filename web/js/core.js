@@ -315,3 +315,33 @@ async function render() {
   }
 }
 window.addEventListener("hashchange", render);
+
+// ───────────────────── 改課選項（跑後報告、晨報、身體狀況共用） ─────────────────────
+function optionsHtml(opts, tag) {
+  if (!opts || !opts.length) return "";
+  return `<div class="choice" data-opts="${tag}">${opts.map((o, i) => `<button type="button" data-opt="${i}"${o.id === "keep" ? ' class="keep"' : ""}>
+    <b>${i === 0 && o.id !== "keep" ? "建議：" : ""}${esc(o.label)}</b><small>${esc(o.detail)}</small></button>`).join("")}</div>`;
+}
+
+async function applyOption(o) {
+  const a = o.apply || {};
+  if (a.type === "override") {
+    const body = { date: a.date, kind: a.kind };
+    if (a.km) body.km = Math.max(1, a.km);
+    await api("/api/override", { method: "PUT", body });
+  } else if (a.type === "swap") {
+    await api("/api/swap", { method: "POST", body: { a: a.a, b: a.b } });
+  }
+  return a.type !== "keep";
+}
+
+function bindOptions(tag, opts, after) {
+  const box = document.querySelector(`[data-opts="${tag}"]`);
+  if (!box) return;
+  box.querySelectorAll("[data-opt]").forEach((b) => (b.onclick = () => busy(b, async () => {
+    const o = opts[+b.dataset.opt];
+    const changed = await applyOption(o);
+    box.innerHTML = `<p class="note-card" style="margin:0">${ico("check")}<span>${changed ? `已改成「${esc(o.label)}」，課表和手錶會跟著更新。` : "好，照原本的課。"}</span></p>`;
+    if (after) after(o, changed);
+  })));
+}

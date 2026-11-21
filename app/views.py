@@ -5,7 +5,7 @@ import json
 from datetime import date, datetime, timedelta
 from statistics import mean
 
-from . import analysis, auth, db, game, metrics, strength, sync
+from . import analysis, auth, coach, db, game, metrics, strength, sync
 from .config import TZ
 from .garmin_client import DemoGarmin, RealGarmin, today_local
 from .metrics import fmt_pace
@@ -404,11 +404,23 @@ def activity_detail(user_id: int, activity_id: str) -> dict:
     hrs_all = [p["hr"] for p in pts if p.get("hr")]
     zones_out = [{"zone": f"Z{i + 1}", "label": lbl, "minutes": round(s / 60, 1)}
                  for i, (lbl, s) in enumerate(zip(["暖身", "燃脂", "有氧", "乳酸閾值", "最大"], zone_s))]
-    report = run_report(a, pts, splits, zones_out, plan_d, analysis.classify(a.get("avg_hr"), max_hr), max_hr)
+    zone_cls = analysis.classify(a.get("avg_hr"), max_hr)
+    try:
+        report = coach.review(user_id, a, pts, plan_d, max_hr, zone_cls)
+    except Exception as e:      # 新評分出錯時退回舊版，報告不能整頁壞掉
+        import logging
+        logging.getLogger("ic8").warning("coach.review %s: %s", activity_id, e)
+        report = run_report(a, pts, splits, zones_out, plan_d, zone_cls, max_hr)
+    try:
+        tired = coach.fatigue(user_id, a, report, plan_d)
+    except Exception as e:
+        import logging
+        logging.getLogger("ic8").warning("coach.fatigue %s: %s", activity_id, e)
+        tired = None
     xp = round((a.get("distance_m") or 0) / 1000 * game.XP_PER_KM) + (
         game.XP_PLANNED if plan_d and plan_d["kind"] not in ("rest", "done", "strength") else 0)
     return {
-        "report": report, "xp": xp, "focus": ability_profile(user_id)["focus"],
+        "report": report, "xp": xp, "focus": [], "fatigue": tired, "progress": coach.goal_progress(user_id),
         **_act_row(a, max_hr), "max_hr": a.get("max_hr") and round(a["max_hr"]),
         "elevation_gain": a.get("elevation_gain"), "cadence": a.get("avg_cadence") and round(a["avg_cadence"]),
         "points": pts, "series_error": series_error,

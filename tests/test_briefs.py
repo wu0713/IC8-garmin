@@ -65,7 +65,8 @@ def test_morning_normal_follows_plan(ctx):
                  (uid, today_local().isoformat()))["r"]
     _set_today(uid, rhr=round(base), hrv_avg=60, sleep_score=82, sleep_hours=7.5, bb_now=80)
     b = briefs.build_and_save(uid, "morning")
-    assert b["level"] == "go" and b["suggestion"] is None and "照課表" in b["advice"]
+    assert b["level"] == "go" and b["suggestion"] is None and "今天" in b["advice"], [(m["key"], m["verdict"], m["today"], m["baseline"], m.get("range")) for m in b["metrics"]]
+    assert not b["options"] or b["options"][0]["id"] == "trim"     # 只有一項偏低時給「縮短」選項
 
 
 def test_morning_high_rhr_suggests_reduce_and_apply(ctx):
@@ -77,7 +78,8 @@ def test_morning_high_rhr_suggests_reduce_and_apply(ctx):
     b = briefs.build_and_save(uid, "morning")
     rhr = next(m for m in b["metrics"] if m["key"] == "rhr")
     assert rhr["verdict"] == "bad" and b["level"] == "reduce"
-    assert b["suggestion"]["kind"] == "easy" and b["suggestion"]["minutes"] == max(20, round(b["plan"]["minutes"] * 0.8))
+    assert b["suggestion"]["kind"] == "easy" and b["suggestion"]["km"]
+    assert b["options"][0]["id"] == "easy" and b["options"][-1]["id"] == "keep"
     r = c.post("/api/brief/morning/apply", headers=h)
     assert r.status_code == 200
     today = next(d for d in c.get("/api/week", headers=h).json()["days"] if d["date"] == today_local().isoformat())
