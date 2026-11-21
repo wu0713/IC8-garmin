@@ -125,6 +125,8 @@ async function viewSummary() {
         <span style="color:var(--primary);font-weight:700">${d.today_activity ? "看今天的訓練報告" : t.steps?.length ? "看課表內容與調整" : "看本週課表"}</span>
       </span>
     </button>
+    ${d.plan_hold ? `<button class="decide-nudge" data-go="#/season" style="margin-bottom:12px"><span class="dot" aria-hidden="true"></span>
+      <span><b>課表暫停中：請選擇怎麼調整目標</b><small>目標賽前的時間不夠，選好之前只排輕鬆跑。點這裡三選一。</small></span>${ico("chevron")}</button>` : ""}
     ${d.strength_today ? `<button class="card st-today" data-go="#/strength/${d.strength_today.date}">
       <span class="st-ico">${ico(d.strength_today.done ? "check" : "gym")}</span>
       <span><small>休息日任務</small><b>${esc(d.strength_today.title)} · ${d.strength_today.minutes} 分鐘</b>
