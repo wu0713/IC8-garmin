@@ -15,7 +15,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import analysis, apple_ingest, auth, briefs, db, game, pet_voice, plan_import, planner, push, runner, season, strength, sync, views
+from . import analysis, apple_ingest, auth, coach, briefs, db, game, pet_voice, plan_import, planner, push, runner, season, strength, sync, views
 from .config import ALLOW_DEMO, INVITE_CODE, PUBLIC_BASE_URL, SYNC_HOURS, TZ, WEB_DIR
 from .garmin_client import MfaRequired, RealGarmin, today_local
 from .ics import build_ics
@@ -331,7 +331,7 @@ def dashboard(user=Depends(auth.current_user)):
 
 @app.get("/api/meta")
 def meta():
-    return {"goal_types": GOAL_TYPES, "workouts": WORKOUT_LABELS, "defaults": default_prefs(),
+    return {"goal_types": GOAL_TYPES, "workouts": WORKOUT_LABELS, "levels": planner.LEVELS, "defaults": default_prefs(),
             "event_types": {k: {"label": v["label"], "damage": v["damage"]} for k, v in plan_tables.EVENT_TYPES.items() if k != "race_a"},
             "pain_sites": plan_tables.PAIN_SITES,
             "cards": views.CARD_LABELS, "default_cards": views.DEFAULT_CARDS,
@@ -360,6 +360,8 @@ def put_prefs(body: dict, user=Depends(auth.current_user)):
     prefs["long_run_day"] = int(prefs.get("long_run_day", 6)) % 7
     prefs["max_minutes_weekday"] = max(20, min(240, int(prefs.get("max_minutes_weekday") or 70)))
     prefs["max_long_minutes"] = max(30, min(400, int(prefs.get("max_long_minutes") or 150)))
+    if prefs.get("level") not in planner.LEVELS:
+        prefs["level"] = "auto"
     mode = prefs.get("plan_mode")
     prefs["plan_mode"] = mode if mode == "manual" or (mode == "imported" and prefs.get("imported")) else "auto"
     tpl = {}
@@ -436,7 +438,11 @@ def checkin(body: CheckinIn, user=Depends(auth.current_user)):
                   "pain=CASE WHEN ? THEN excluded.pain ELSE pain END",
                   (user["id"], d, body.feeling, int(body.skip), body.note, pain, body.skip or body.feeling is None and body.pain is None,
                    body.pain is not None))
-    return sync.replan(user["id"])
+    out = sync.replan(user["id"])
+    if d == today_local().isoformat() and (body.feeling is not None or body.pain is not None):
+        ck = db.q1("SELECT feeling, pain FROM checkins WHERE user_id=? AND date=?", (user["id"], d)) or {}
+        out["advice"] = coach.checkin_advice(user["id"], d, ck.get("feeling"), ck.get("pain"))
+    return out
 
 
 class DecisionIn(BaseModel):
@@ -583,6 +589,55 @@ def get_brief(kind: str, refresh: bool = False, user=Depends(auth.current_user))
     b["schedule"] = {"enabled": prefs.get("brief_enabled", True), "morning": prefs.get("brief_morning"), "evening": prefs.get("brief_evening"),
                      "weekly": prefs.get("brief_weekly") if prefs.get("weekly_review", True) else None}
     return b
+
+
+class BriefReplyIn(BaseModel):
+    type: str                    # feel | rpe | option | keep
+    value: int | None = None
+    label: str | None = None
+    apply: dict | None = None
+
+
+@app.post("/api/brief/{kind}/reply")
+def brief_reply(kind: str, body: BriefReplyIn, user=Depends(auth.current_user)):
+    """夥伴對話裡的按鈕：回答感覺、跑後感受，或套用改課選項。回傳夥伴接下來說的話。"""
+    _need_link(user)
+    if kind not in ("morning", "evening"):
+        raise HTTPException(404, "沒有這種報告")
+    uid, today = user["id"], today_local().isoformat()
+    result: dict = {}
+    if body.type == "feel":
+        if body.value not in (1, 2, 3, 4, 5):
+            raise HTTPException(400, "感覺要是 1–5")
+        with db.tx() as c:
+            c.execute("INSERT INTO checkins(user_id, date, feeling) VALUES(?,?,?) "
+                      "ON CONFLICT(user_id, date) DO UPDATE SET feeling=excluded.feeling", (uid, today, body.value))
+        sync.replan(uid)
+        ck = db.q1("SELECT feeling, pain FROM checkins WHERE user_id=? AND date=?", (uid, today)) or {}
+        result["advice"] = coach.checkin_advice(uid, today, ck.get("feeling"), ck.get("pain"))
+    elif body.type == "rpe":
+        if body.value not in (1, 2, 3, 4, 5):
+            raise HTTPException(400, "感受要是 1–5")
+        with db.tx() as c:
+            c.execute("INSERT INTO checkins(user_id, date, rpe) VALUES(?,?,?) "
+                      "ON CONFLICT(user_id, date) DO UPDATE SET rpe=excluded.rpe", (uid, today, body.value))
+        b = briefs.build_and_save(uid, "evening")
+        result["fatigue"] = b.get("fatigue")
+    elif body.type == "option":
+        ap = body.apply or {}
+        if ap.get("type") == "override":
+            put_override(OverrideIn(date=ap.get("date") or "", kind=ap.get("kind") or "",
+                                    km=max(1.0, float(ap["km"])) if ap.get("km") else None), user)
+        elif ap.get("type") == "swap":
+            swap_days(SwapIn(a=ap.get("a") or "", b=ap.get("b") or ""), user)
+        else:
+            raise HTTPException(400, "看不懂這個選項")
+        sync.replan(uid)
+        briefs.build_and_save(uid, kind)
+    elif body.type != "keep":
+        raise HTTPException(400, "看不懂這個回答")
+    g = game.compute(uid)
+    return pet_voice.reply(kind, body.model_dump(), result, g["character"])
 
 
 @app.post("/api/brief/morning/apply")

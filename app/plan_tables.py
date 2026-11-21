@@ -73,13 +73,39 @@ LONG_RATIO = {"base": 0.30, "build": 0.32, "specific": 0.35, "taper": 0.35, "rac
 
 def long_race_cap(race_km: float) -> float:
     """κ：長跑對比賽距離的上限倍數。半馬 1.4、全馬 0.75；5K/10K 為補值。"""
-    if race_km >= 30:
-        return 0.75
-    if race_km >= 15:
-        return 1.4
-    if race_km >= 8:
-        return 1.6
-    return 2.6
+    return DIST_PROFILE[dist_key(race_km)]["kappa"]
+
+
+# ───────────── 依目標距離的課表輪廓 ─────────────
+# 5K/10K：長跑到某個長度就夠（12/16 km），專項期不再加長；重心放在間歇、快跑（R）。
+# 半馬：節奏跑 + 長跑後段比賽配速。全馬：基礎期最長、長跑逐步加到 30 km 附近。
+DIST_PROFILE = {
+    "5k": {"label": "5K", "split": (30, 30, 30), "kappa": 2.4, "long_hold_specific": True},
+    "10k": {"label": "10K", "split": (32, 28, 30), "kappa": 1.6, "long_hold_specific": True},
+    "half": {"label": "半馬", "split": (35, 25, 30), "kappa": 1.4, "long_hold_specific": False},
+    "full": {"label": "全馬", "split": (40, 25, 25), "kappa": 0.75, "long_hold_specific": False},
+}
+
+
+def dist_key(km: float) -> str:
+    return "5k" if km < 8 else "10k" if km < 15 else "half" if km < 30 else "full"
+
+
+# ───────────── 跑者程度 ─────────────
+LEVEL_ZH = {"novice": "新手", "intermediate": "有基礎", "experienced": "有經驗"}
+LEVEL_SHAPE = {
+    "novice": "先把頻率和有氧底子練起來：基礎期只有輕鬆跑和快步，進展期才加節奏跑，最後才是間歇。",
+    "intermediate": "基礎期隔週一堂坡道衝刺，進展期起節奏跑和間歇輪替。",
+    "experienced": "從第一週就混合練：基礎期每週一堂強度（節奏或坡道），進展期兩堂，專項期以比賽需要的強度為主。",
+}
+# 判斷門檻（補值）
+LEVEL_NOVICE_KM = 15               # 近 8 週週跑量中位數 < 15 km → 新手
+LEVEL_EXP_KM = 35                  # ≥ 35 km 且 VDOT ≥ 45、規律、有練過強度 → 有經驗
+LEVEL_EXP_VDOT = 45
+LEVEL_EXP_HARD_RUNS = 3            # 近 8 週至少 3 次強度課（平均心率 ≥ 84% max）
+# 每週可期待的 VDOT 進步（比例）與整季上限（補值，取保守值）
+VDOT_GAIN_PER_WEEK = {"novice": 0.008, "intermediate": 0.005, "experienced": 0.003}
+VDOT_GAIN_CAP = {"novice": 0.20, "intermediate": 0.12, "experienced": 0.06}
 
 
 LONG_STEP_KM = 2.0                 # 單次長跑每週最多 +2 km

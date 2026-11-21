@@ -58,17 +58,19 @@ def chat(brief: dict, pet: dict | None, seed: str = "") -> dict:
         r = m.get("rhr")
         if r and r.get("today") is not None:
             t, base, y = _n(r["today"]), r.get("baseline"), r.get("yesterday")
-            vs_y = f"，昨天是 {_n(y)}" if y else ""
+            rg = r.get("range")
+            normal = f"你平常的範圍是 {_n(rg[0])}–{_n(rg[1])}" if rg else f"平常大約 {_n(base)}" if base else ""
             if r["verdict"] == "bad":
-                lines.append(f"{v['wow']}，{U}今天早上的安靜心率是 {t}{vs_y}，比平常（{_n(base)}）高了 {_n(t - base)} 下。身體還在忙著恢復，可能是累積的疲勞、沒睡好，或是快感冒了。")
+                lines.append(f"{v['wow']}，{U}今天早上的安靜心率是 {t}，{normal}，比平常高了 {_n(t - base) if base else '不少'} 下。身體還在忙著恢復，可能是累積的疲勞、沒睡好，或是快感冒了。")
             elif r["verdict"] == "warn":
-                lines.append(f"{U}今天的安靜心率 {t}{vs_y}，比平常（{_n(base)}）高一點點。有些疲勞還沒散。")
+                lines.append(f"{U}今天的安靜心率 {t}，比{normal.replace('你平常的範圍是', '你平常的範圍')}高一點。有些疲勞還沒散。")
             elif r["verdict"] == "good":
-                lines.append(f"{U}今天的安靜心率 {t}，比平常（{_n(base)}）還低，恢復得很好！")
+                lines.append(f"{U}今天的安靜心率 {t}，{normal}，比平常還低，恢復得很好！")
             else:
-                lines.append(f"{U}今天的安靜心率 {t}{vs_y}，跟平常差不多，很穩定。")
+                lines.append(f"{U}今天的安靜心率 {t}，在你平常的範圍裡（{_n(rg[0])}–{_n(rg[1])}），很穩定。" if rg
+                             else f"{U}今天的安靜心率 {t}，跟平常差不多，很穩定。")
         else:
-            lines.append(f"{I}還沒拿到{U}今天的安靜心率。手錶先同步到手機的 Garmin Connect，{I}再幫{U}看一次。")
+            lines.append(f"{I}還沒拿到{U}今天的安靜心率。手錶先同步到手機，{I}再幫{U}看一次。")
 
         others = [x for k, x in m.items() if k != "rhr" and x["verdict"] in ("warn", "bad")]
         goods = [x for k, x in m.items() if k != "rhr" and x["verdict"] == "good"]
@@ -76,7 +78,7 @@ def chat(brief: dict, pet: dict | None, seed: str = "") -> dict:
             parts = []
             for x in others[:2]:
                 if x["key"] == "hrv":
-                    parts.append(f"昨晚 HRV {_n(x['today'])}（平常 {_n(x['baseline'])}）")
+                    parts.append(f"HRV 的 7 天平均掉出你的正常範圍" if "7 天平均" in x.get("text", "") else f"昨晚 HRV {_n(x['today'])}（平常 {_n(x['baseline'])}）")
                 elif x["key"] == "sleep":
                     parts.append(f"睡眠{'分數 ' + str(_n(x['today'])) if x['unit'] == '分' else ' ' + str(x['today']) + ' 小時'}")
                 elif x["key"] == "bb":
@@ -85,8 +87,13 @@ def chat(brief: dict, pet: dict | None, seed: str = "") -> dict:
         elif goods:
             lines.append(f"{'、'.join(x['label'] for x in goods[:2])}都不錯。")
 
+        ye = brief.get("yesterday_eval")
         ya = [a for a in brief.get("yesterday_acts", [])]
-        if ya:
+        if ye:
+            FZ = {"low": "疲勞不高", "moderate": "疲勞中等", "high": "疲勞偏高"}
+            lines.append(f"昨天的「{ye['title']}」" + (f"{ye['score']} 分，" if ye.get("score") else "") + f"{FZ[ye['fatigue']]}"
+                         + (f"（{'、'.join(ye['fatigue_why'])}）" if ye.get("fatigue_why") and ye["fatigue"] != "low" else "") + "。")
+        elif ya:
             desc = "、".join(f"{a['label'] if a['group'] != 'run' else a['name']} {a['minutes']} 分" for a in ya[:3])
             extra = next((n for n in brief.get("notes", []) if "倍" in n), None)
             lines.append(f"昨天{U}做了{desc}。" + (extra or ""))
@@ -94,13 +101,19 @@ def chat(brief: dict, pet: dict | None, seed: str = "") -> dict:
             lines.append(f"這 7 天的活動量是平常的 {_n(brief['ratio'] * 100)}%，{brief['volume']['label']}了。")
 
         lines.append(brief["advice"])
-        if brief.get("suggestion"):
-            s = brief["suggestion"]
-            actions = [{"id": "apply", "label": f"好，改成{s['title']}" + (f" {s['minutes']} 分" if s.get("minutes") else "")},
-                       {"id": "keep", "label": "我還是照原本的跑"}]
+        runs_today = (brief.get("plan") or {}).get("kind") not in (None, "rest", "done", "strength", "event")
+        if brief.get("options"):
+            actions = option_actions(brief["options"])
+            lines.append(f"要不要{I}幫{U}把今天的課改一下？" if brief["level"] != "go" else f"如果熱身完腿還是很沉，可以讓{I}幫{U}縮短：")
+        elif brief.get("suggestion"):        # 舊版晨報（沒有 options）
+            s_ = brief["suggestion"]
+            actions = [{"id": "apply", "type": "legacy", "label": f"好，改成{s_['title']}" + (f" {s_['minutes']} 分" if s_.get("minutes") else "")},
+                       {"id": "keep", "type": "keep", "label": "我還是照原本的跑"}]
             lines.append(f"要不要{I}幫{U}把今天的課改掉？")
+        elif runs_today and not brief.get("checked_in"):
+            lines.append(f"出門前跟{I}說一下，{U}今天身體感覺怎樣？")
+            actions = FEEL_ACTIONS
         else:
-            runs_today = (brief.get("plan") or {}).get("kind") not in (None, "rest", "done")
             lines.append(v["go"] if brief["level"] == "go" and runs_today else v["rest"])
     else:
         early = brief.get("preliminary")
@@ -116,6 +129,17 @@ def chat(brief: dict, pet: dict | None, seed: str = "") -> dict:
             lines.append(f"今天到現在{U}還沒有運動紀錄。" if early else f"今天{U}沒有運動紀錄，讓身體休息也很好。")
         if brief.get("plan_text"):
             lines.append(brief["plan_text"])
+        ss = brief.get("session")
+        if ss and ss.get("score"):
+            lines.append(f"{I}看了今天的「{ss['title']}」：{ss['score']} 分，{ss['headline']}。"
+                         + (f"下次可以注意{ss['improve'][0]['label']}。" if ss.get("improve") else ""))
+        fat = brief.get("fatigue")
+        ask = None
+        if ss and not brief.get("rpe") and not early:
+            ask = f"最後，今天跑起來的感覺跟{I}說一下？這會影響{I}對明天的建議。"
+            actions = RPE_ACTIONS
+        elif fat and fat.get("options"):
+            actions = option_actions(fat["options"])
         it = {x["key"]: x for x in brief.get("items", [])}
         body = []
         if "steps" in it:
@@ -134,9 +158,62 @@ def chat(brief: dict, pet: dict | None, seed: str = "") -> dict:
             lines.append(f"晚上 {brief.get('evening_time')} {I}再跟你說完整的晚報。")
         else:
             lines.extend(brief.get("tips", []))
-            lines.append(v["night"])
+            if ask:
+                lines.append(ask)
+            elif actions and actions[0]["type"] == "option":
+                lines.append(f"要不要{I}先幫{U}把明天的課改一下？")
+            else:
+                lines.append(v["night"])
 
     return {"name": _name(pet), "species": sp, "lines": lines, "actions": actions}
+
+
+FEEL_ACTIONS = [{"id": f"feel{n}", "type": "feel", "value": n, "label": t}
+                for n, t in ((1, "很糟"), (2, "很累"), (3, "普通"), (4, "不錯"), (5, "超好"))]
+RPE_ACTIONS = [{"id": f"rpe{n}", "type": "rpe", "value": n, "label": t}
+               for n, t in ((2, "很輕鬆"), (3, "剛剛好"), (4, "很硬"), (5, "快撐不住"))]
+
+
+def option_actions(opts: list[dict]) -> list[dict]:
+    return [{"id": o["id"], "type": "option" if o["apply"]["type"] != "keep" else "keep", "label": o["label"],
+             "detail": o.get("detail"), "apply": o["apply"]} for o in opts]
+
+
+def reply(kind: str, action: dict, result: dict, pet: dict | None) -> dict:
+    """使用者在對話裡按了按鈕之後，夥伴的回應。result 由 main.py 處理完動作後帶進來。"""
+    v = VOICES.get((pet or {}).get("species"), DEFAULT)
+    I = v["I"]
+    t = action.get("type")
+    lines, actions = [], []
+    if t == "feel":
+        a = result.get("advice") or {}
+        n = action.get("value")
+        if a.get("options"):
+            lines.append(f"{v['wow']}，{'、'.join(a.get('why') or ['身體不太舒服'])}。{a.get('headline') or ''}。")
+            lines.append(f"{I}建議：{a['options'][0]['label']}。{a['options'][0]['detail']}")
+            actions = option_actions(a["options"])
+        elif n and n >= 4:
+            lines.append(f"太好了！那今天就照課表，{v['go']}")
+        else:
+            lines.append(f"普通也很正常。熱身 10 分鐘後還是很沉的話，主課少跑一兩趟就好。{v['go']}")
+    elif t == "rpe":
+        f = result.get("fatigue") or {}
+        FZ = {"low": "疲勞不高，明天照課表就好", "moderate": "疲勞中等", "high": "疲勞偏高"}
+        lines.append(f"收到！綜合起來，今天這堂{FZ.get(f.get('level'), '')}" + (f"（{'、'.join(f['why'][:2])}）" if f.get("why") and f.get("level") != "low" else "") + "。")
+        if f.get("advice"):
+            lines.append(f["advice"])
+        if f.get("options"):
+            lines.append(f"要不要{I}先幫你把明天的課改一下？")
+            actions = option_actions(f["options"])
+        else:
+            lines.append(v["night"] if kind == "evening" else v["go"])
+    elif t == "option":
+        lines.append(f"改好了！已經換成「{action.get('label')}」，行事曆和手錶下次同步會跟著更新。")
+        lines.append(v["rest"] if (action.get("apply") or {}).get("kind") == "rest" else ("好好休息，" + v["night"] if kind == "evening" else v["go"]))
+    else:
+        lines.append("好，那就照原本的課。跑的途中心率降不下來、腿很沉，就直接改成輕鬆跑喔。" if kind == "morning"
+                     else f"好，照原本的課。明天早上{I}再看一次你的恢復狀況。{v['night']}")
+    return {"lines": lines, "actions": actions}
 
 
 def _name(pet):
@@ -170,6 +247,15 @@ def _weekly_lines(b: dict, v: dict, I: str) -> list[str]:
         hi.append(f"{wd(b['fastest']['date'])}的 {b['fastest']['km']} 公里配速最快（{b['fastest']['pace']}）")
     if hi:
         lines.append(f"{period}亮點：" + "；".join(hi) + "。")
+    ks = [x for x in b.get("sessions") or [] if x.get("score")]
+    if ks:
+        lines.append("重點課：" + "、".join(f"{wd(x['date'])}「{x['title']}」{x['score']} 分" for x in ks[:3]) + "。")
+    pg = b.get("progress")
+    if pg and pg.get("pred"):
+        tail = ""
+        if pg.get("gap_pct") is not None:
+            tail = "，已經達到目標的能力了！" if pg["gap_pct"] <= 0 else f"，離目標 {pg['target']} 還差 {pg['gap_pct']}% 的能力。"
+        lines.append(f"照目前的能力，{pg['distance_label']}大約能跑 {pg['pred']}{tail or '。'}")
     if b.get("others"):
         lines.append("其他運動：" + "、".join(f"{o['label']} {o['minutes']} 分" for o in b["others"][:3]) + "。")
     s = b["strength"]

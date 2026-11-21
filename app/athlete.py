@@ -108,6 +108,8 @@ def build(user_id: int, today: date, prefs: dict | None = None) -> dict:
         if a.get("hr_drift") is not None and a["date"] >= (today - timedelta(days=21)).isoformat():
             drifts.append(a["hr_drift"])
 
+    hard8 = sum(1 for a in acts if a["date"] >= eight and a.get("avg_hr") and (a.get("duration_s") or 0) >= 15 * 60
+                and a["avg_hr"] >= 0.84 * max_hr)
     runs28 = sum(1 for a in acts if a["date"] >= (today - timedelta(days=28)).isoformat())
     novice = (not acts) or (today - first).days < 21 or runs28 < 6
     rhr = {d["date"]: d["rhr"] for d in daily if d.get("rhr")}
@@ -117,6 +119,7 @@ def build(user_id: int, today: date, prefs: dict | None = None) -> dict:
         "best_effort": best[1] if best else None, "fallback_vdot": fallback,
         "long_runs": long_runs, "recent_longest_km": round(longest4, 1), "easy_hr_share": easy_share and round(easy_share, 3),
         "easy_samples": samples, "drifts_recent": drifts, "age": prefs.get("age"), "novice": novice,
+        "hard_runs_8w": hard8, "history_weeks": len(weekly),
         "rhr": rhr, "rest_hr_base": round(median(hist)) if len(hist) >= 5 else None,
         "easy_pace": paces[int(len(paces) * 0.6)] if paces else None,
         "fallback_pace": metrics.estimate_paces(acts[-60:], prefs)["easy"],

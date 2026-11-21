@@ -166,6 +166,89 @@ def diagnose(ath: dict, goal: dict) -> dict:
     }
 
 
+# ═════════════════════════════ L1b 跑者程度與目標合理性 ═════════════════════════════
+
+def athlete_level(ath: dict, diag: dict, override: str | None = None) -> dict:
+    """新手／有基礎／有經驗。決定基礎期要不要就有強度課，以及能期待多快的進步。"""
+    base = diag.get("baseline_km") or 0
+    v = diag.get("cur_vdot") or 0
+    hard = ath.get("hard_runs_8w") or 0
+    weeks = ath.get("history_weeks") or len(ath.get("weekly_km") or [])
+    why = [f"近 8 週週跑量中位數 {base:g} km、VDOT {v or '—'}、近 8 週強度課 {hard} 次、有紀錄的週數 {weeks}"]
+    if override in T.LEVEL_ZH:
+        return {"level": override, "label": T.LEVEL_ZH[override], "source": "manual",
+                "why": why + ["你在設定裡指定了程度"], "shape": T.LEVEL_SHAPE[override]}
+    if ath.get("novice") or base < T.LEVEL_NOVICE_KM or weeks < 4:
+        lv = "novice"
+        why.append(f"跑量 < {T.LEVEL_NOVICE_KM} km 或紀錄不到 4 週 → 先當新手，安全第一")
+    elif (base >= T.LEVEL_EXP_KM and v >= T.LEVEL_EXP_VDOT and diag.get("low_weeks", 9) <= 1
+          and hard >= T.LEVEL_EXP_HARD_RUNS):
+        lv = "experienced"
+        why.append(f"跑量 ≥ {T.LEVEL_EXP_KM} km、VDOT ≥ {T.LEVEL_EXP_VDOT}、規律而且有在練強度 → 可以從一開始就混合練")
+    else:
+        lv = "intermediate"
+        miss = []
+        if base < T.LEVEL_EXP_KM:
+            miss.append(f"週跑量到 {T.LEVEL_EXP_KM} km")
+        if v < T.LEVEL_EXP_VDOT:
+            miss.append(f"VDOT 到 {T.LEVEL_EXP_VDOT}")
+        if hard < T.LEVEL_EXP_HARD_RUNS:
+            miss.append(f"近 8 週練過 {T.LEVEL_EXP_HARD_RUNS} 次以上強度課")
+        if diag.get("low_weeks", 0) > 1:
+            miss.append("每週跑量更穩定")
+        why.append("有基礎；要被判為「有經驗」還差：" + "、".join(miss) if miss else "有基礎")
+    return {"level": lv, "label": T.LEVEL_ZH[lv], "source": "auto", "why": why, "shape": T.LEVEL_SHAPE[lv]}
+
+
+def assess(*, diag: dict, goal: dict, level: str, weeks: int, feas: dict | None, ath: dict,
+           decision: str | None = None) -> dict:
+    """目標合不合理、課表會不會讓人受傷。不合理時課表照「做得到的」排，並明白說出來。"""
+    cur = diag.get("cur_vdot")
+    out = {"level": level, "cur_vdot": cur, "pred_goal_s": diag.get("pred_goal_s"), "verdict": "none", "risks": []}
+    risks = out["risks"]
+
+    def risk(sev, title, text):
+        risks.append({"severity": sev, "title": title, "text": text})
+
+    gmax = min(T.VDOT_GAIN_CAP[level], T.VDOT_GAIN_PER_WEEK[level] * max(1, weeks))
+    out["gain_max"] = round(gmax, 3)
+    if cur and goal.get("target_s"):
+        tv = vdot(goal["distance_km"], goal["target_s"])
+        gain = tv / cur - 1
+        out.update({"target_vdot": round(tv, 1), "gain": round(gain, 3)})
+        real = equivalent_time(cur * (1 + gmax), goal["distance_km"])
+        out["realistic_s"] = round(real)
+        if gain <= gmax * 0.6:
+            out["verdict"], out["text"] = "realistic", "目標在你目前能力的合理進步範圍內。"
+        elif gain <= gmax:
+            out["verdict"], out["text"] = "ambitious", "目標偏積極，但照表練、沒有中斷的話有機會。"
+        else:
+            out["verdict"] = "unrealistic"
+            out["text"] = (f"以目前能力（約 {fmt_time(diag.get('pred_goal_s'))}）和 {weeks} 週的時間，比較實際的成績是 "
+                           f"{fmt_time(real)} 左右。課表會先照這個成績排配速，等檢核點跑出進步再往目標推。")
+            risk("danger", f"目標配速比目前能力快 {round(gain * 100)}%",
+                 "直接用目標配速練強度課，配速會超出身體能負荷的範圍，是最常見的受傷原因（脛前疼痛、跟腱、足底）。"
+                 "課表已改用做得到的配速；如果你自己加速去追目標，請特別注意疼痛訊號。")
+    if level == "novice" and goal["distance_km"] >= 15 and goal.get("race_date") and weeks < 16:
+        risk("warn", f"新手準備{'全馬' if goal['distance_km'] >= 30 else '半馬'}只有 {weeks} 週",
+             "一般建議新手至少 16 週（全馬 20 週以上）。可以完賽，但請以完賽為目標，不要追時間。")
+    if feas and feas.get("verdict") == "infeasible" and decision == "accept_risk":
+        risk("danger", "你選了在時間不夠的情況下照原目標練",
+             f"跑量只會疊到每週 {feas.get('v_reachable')} km；若再自行加量，週增幅超過 10% 時受傷機率明顯上升。")
+    elif feas and feas.get("verdict") == "tight":
+        risk("warn", "時間沒有緩衝", "生病或受傷一週就會影響進度。寧可少練一堂，也不要硬補。")
+    vb, vt = (feas or {}).get("v_base"), (feas or {}).get("v_target")
+    if vb and vt and vt > vb * 1.8:
+        risk("warn", f"週跑量要從 {vb:g} km 疊到 {vt:g} km",
+             "跑量會增加超過八成。疊量期間如果小腿、足底、膝蓋開始痛，先停一兩天，不要撐。")
+    if diag.get("easy_too_fast"):
+        risk("warn", "你的輕鬆跑常常跑太快",
+             "加了強度課之後，輕鬆跑再跑快就等於天天都在練強度，容易累積成傷。輕鬆跑請守住心率上限。")
+    if (ath.get("age") or 0) >= 50:
+        risk("info", "50 歲以上", "恢復需要比較久：每 3 週會排一次減量週，強度課之間至少隔 2 天。")
+    return out
+
+
 # ═════════════════════════════ L2 可行性檢查 ═════════════════════════════
 
 def _rows_for(km: float):
@@ -269,10 +352,15 @@ def feasibility(diag: dict, goal: dict, weeks_available: int, cap_km: float | No
 
 # ═════════════════════════════ L3 分期 ═════════════════════════════
 
-def split_phases(n_weeks: int, diag: dict, open_mode: bool = False) -> list[str]:
+def split_phases(n_weeks: int, diag: dict, open_mode: bool = False, race_km: float | None = None,
+                 level: str | None = None) -> list[str]:
     flags = diag["flags"]
     key = "endurance" if "endurance" in flags else "speed" if "speed" in flags else "default"
     sb, sbu, ss = T.PHASE_SPLIT[key]
+    if key == "default" and race_km:
+        sb, sbu, ss = T.DIST_PROFILE[T.dist_key(race_km)]["split"]
+    if level == "experienced" and key != "endurance":
+        sb = max(20, sb - 8)          # 有經驗的人基礎期本來就有強度課，不需要那麼長
     if open_mode:
         taper = 1
     else:
@@ -355,9 +443,15 @@ def long_run_series(vols: list[float], phases: list[str], race_km: float, start_
                     max_long_km: float | None) -> list[float]:
     out, prev = [], [start_long, start_long]
     kappa = T.long_race_cap(race_km)
+    hold = T.DIST_PROFILE[T.dist_key(race_km)]["long_hold_specific"]
+    build_max = 0.0
     for v, ph in zip(vols, phases):
         cap_prev = max(prev[-1], prev[-2]) + T.LONG_STEP_KM
         d = min(v * T.LONG_RATIO.get(ph, 0.3), race_km * kappa, cap_prev)
+        if hold and ph in ("specific", "taper", "race") and build_max:
+            d = min(d, build_max)          # 5K/10K：專項期長跑不再加長，力氣留給間歇
+        elif ph in ("base", "build"):
+            build_max = max(build_max, d)
         if max_long_km:
             d = min(d, max_long_km)
         d = round(max(d, 0), 1)
@@ -642,29 +736,82 @@ def evaluate_stoploss(*, today: date, checkins: dict[str, dict], rhr: dict[str, 
 
 # ═════════════════════════════ 串起來：整季週表 ═════════════════════════════
 
-QUALITY_KINDS = {"tempo", "intervals", "hills", "fartlek", "race_pace", "long_m", "test"}
+QUALITY_KINDS = {"tempo", "intervals", "hills", "fartlek", "race_pace", "long_m", "test", "reps"}
 
 
-def phase_quality(phase: str, diag: dict, goal: dict, week_in_phase: int, run_days: int) -> tuple[list[str], str]:
-    """L5 課表組成：這週有哪些質量課、長跑要不要加比賽配速。回傳 (質量課種類, 長跑種類)。"""
+def phase_quality(phase: str, diag: dict, goal: dict, week_in_phase: int, run_days: int,
+                  level: str = "novice") -> tuple[list[str], str]:
+    """L5 課表組成：這週有哪些質量課、長跑要不要加比賽配速。回傳 (質量課種類, 長跑種類)。
+
+    依「目標距離」和「跑者程度」決定：
+      新手：基礎期沒有強度課，進展期節奏跑，專項期才加間歇（線性週期）。
+      有基礎：基礎期隔週一堂坡道衝刺；進展期節奏和間歇輪替。
+      有經驗：從基礎期就每週一堂強度（混合週期），進展期兩堂，專項期最多三堂。
+    """
     speed = "speed" in diag["flags"]
+    dk = T.dist_key(goal["distance_km"])
+    odd = week_in_phase % 2 == 1
+    exp = level == "experienced"
+    mid = level == "intermediate"
     long_kind = "long"
-    if phase in ("base", "hold", "recover"):
+    if phase in ("hold", "recover"):
+        return [], long_kind
+    if phase == "race":
+        return ["race_pace"], long_kind
+    if phase == "base":
+        if exp:
+            return ([("hills" if dk in ("5k", "10k") else "tempo")] if not odd
+                    else [("tempo" if dk in ("5k", "10k") else "hills")]), long_kind
+        if mid:
+            return (["hills"] if odd else []), long_kind
         return [], long_kind
     if phase == "build":
-        q = ["tempo", "tempo"] if speed and run_days >= 5 else ["tempo"]
+        if dk == "5k":
+            q = ["intervals", "tempo"] if exp else (["tempo"] if odd else ["intervals"]) if mid else ["tempo"]
+        elif dk == "10k":
+            q = ["tempo", "intervals"] if exp else (["intervals"] if odd else ["tempo"]) if mid else ["tempo"]
+        elif dk == "half":
+            q = ["tempo", "fartlek" if odd else "hills"] if exp else (["fartlek"] if odd else ["tempo"]) if mid else ["tempo"]
+        else:
+            q = ["tempo"]
+            if exp and odd:
+                long_kind = "long_m"
+        if speed and run_days >= 5 and len(q) < 2:
+            q = q + ["tempo" if q[0] != "tempo" else "intervals"]
         return q, long_kind
+    # specific / taper
     alt = "intervals" if week_in_phase % 2 == 0 else "tempo"
-    half_or_full = goal["distance_km"] >= 15
-    if phase in ("specific", "taper"):
-        if half_or_full and week_in_phase % 2 == 1:
+    if dk == "5k":
+        q = ["intervals", "tempo"] if not odd else ["race_pace", "reps"]
+        if exp:
+            q = q + (["reps"] if not odd else ["tempo"])
+    elif dk == "10k":
+        q = ["intervals", "tempo"] if not odd else ["race_pace", "tempo"]
+        if exp:
+            q = q + ["reps"]
+    elif dk == "half":
+        if odd:
             q, long_kind = [alt], "long_m"           # 長跑末段比賽配速 → 算一堂質量課
         else:
             q = [alt, "race_pace"]
-        if speed and run_days >= 5:
-            q = ["intervals", "tempo", "race_pace"] if long_kind == "long" else ["intervals", "tempo"]
-        return q, long_kind
-    return ["race_pace"], long_kind               # 比賽週
+        if exp:
+            q = q + (["intervals"] if "intervals" not in q else ["tempo"])
+    else:
+        if odd:
+            q, long_kind = ["tempo"], "long_m"
+        else:
+            q = ["race_pace", "tempo"]
+        if exp:
+            q = q + ["intervals"]
+    if speed and run_days >= 5 and len(q) < 3:
+        q = q + [k for k in ("intervals", "tempo", "race_pace") if k not in q][:1]
+    if level == "novice":
+        q = q[:1] if long_kind == "long_m" else q[:2]
+    if run_days <= 3:
+        q = q[:1]
+    elif run_days == 4:
+        q = q[:2]
+    return q, long_kind
 
 
 def build_season(*, ath: dict, goal: dict, prefs: dict, snap: dict, today: date) -> dict:
@@ -676,7 +823,8 @@ def build_season(*, ath: dict, goal: dict, prefs: dict, snap: dict, today: date)
         n = 12
     else:
         n = max(1, (monday(date.fromisoformat(goal["race_date"])) - plan_start).days // 7 + 1)
-    phases = split_phases(n, diag, open_mode)
+    level = snap.get("level") or "novice"
+    phases = split_phases(n, diag, open_mode, goal["distance_km"], level)
     feas = snap.get("feasibility") or {}
     v_base = snap["v_base"]
     v_target = feas.get("v_target") or v_base * 1.15
@@ -765,4 +913,4 @@ def build_season(*, ath: dict, goal: dict, prefs: dict, snap: dict, today: date)
             eff_warn = f"行程讓 {lost} 週的訓練量大減，時間變得沒有緩衝"
     return {"mode": "open" if open_mode else "race", "hold": hold, "plan_start": plan_start.isoformat(), "n_weeks": n,
             "weeks": weeks, "checkpoints": cps, "event_days": ev["days"], "warnings": ev["warnings"] + ([eff_warn] if eff_warn else []),
-            "diag": diag, "feasibility": feas, "v_base": v_base, "v_target": v_target}
+            "diag": diag, "feasibility": feas, "v_base": v_base, "v_target": v_target, "level": level}

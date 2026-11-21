@@ -174,6 +174,10 @@ async function viewSettings() {
           <p class="muted" style="margin-top:6px">儲存後會先做可行性檢查：時間不夠時不會硬排課，會請你選擇改目標、延後賽期，或接受較高風險。</p>
         </div></section>
 
+      <section class="card" style="margin-top:12px"><h2>我的程度</h2>
+        <div class="chips" style="margin-top:8px">${Object.entries(m.levels || {}).map(([k, v]) => rad("level", k, (p.level || "auto") === k, v)).join("")}</div>
+        <p class="muted" style="margin-top:6px">決定課表一開始要不要就有強度課。「自動判斷」看你近 8 週的跑量、成績和有沒有練過強度；新手會先打有氧底子，有經驗的人從第一週就節奏、坡道、間歇混合練。</p></section>
+
       <section class="card" style="margin-top:12px"><h2>排課方式</h2>
         <div class="chips" style="margin-top:8px">${rad("plan_mode", "auto", !["manual", "imported"].includes(p.plan_mode), "自動排課")}${rad("plan_mode", "manual", p.plan_mode === "manual", "每週固定課表")}${p.imported ? rad("plan_mode", "imported", p.plan_mode === "imported", "照匯入的課表") : ""}</div>
         <p class="muted" id="mode-hint" style="margin-top:8px"></p>
@@ -306,7 +310,7 @@ async function viewSettings() {
       max_hr: num(d.get("max_hr")), age: num(d.get("age")), sex: d.get("sex"),
       push_to_garmin: d.get("push_to_garmin") === "on", show_on_board: d.get("show_on_board") === "on",
       calendar_alarm_min: +d.get("calendar_alarm_min"),
-      plan_mode: d.get("plan_mode"), events,
+      plan_mode: d.get("plan_mode"), events, level: d.get("level") || "auto",
       template: Object.fromEntries(WD.map((_, i) => [i, { kind: d.get(`tk${i}`), km: num(d.get(`tm${i}`)) }]).filter(([, t]) => t.kind && t.kind !== "rest")),
     };
     const err = q("perr");

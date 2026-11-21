@@ -205,6 +205,7 @@ async function viewWorkout(id) {
     <div class="card warm" style="margin-top:12px;display:flex;gap:12px;align-items:center">${ico("watch")}
       <span><small class="muted" style="display:block">資料來源</small>${esc(w.device || "Garmin")}</span></div>`;
   bindCommon();
+  if (w.fatigue) bindOptions("fat", w.fatigue.options);
 }
 
 function viewCross(w) {
@@ -239,7 +240,7 @@ function reportHtml(w) {
   if (r.score == null) return `<section class="card" style="margin-top:16px"><span class="muted">訓練報告</span><h2 style="font-size:1.0625rem">${esc(r.headline)}</h2>
     ${r.items.map((i) => `<p style="margin-top:6px;font-size:.9375rem"><b>${i.label} ${esc(i.value)}</b>：${esc(i.text)}</p>`).join("")}
     <p class="muted" style="margin-top:6px">戶外跑 3 公里以上、有心率資料，就會有完整的評分。</p></section>`;
-  const V = { good: ["done", "好"], ok: ["today", "普通"], bad: ["missed", "要加強"] };
+  const V = { good: ["done", "好"], ok: ["today", "普通"], bad: ["missed", "要加強"], info: ["info", "參考"] };
   const lv = r.score >= 85 ? "green" : r.score >= 65 ? "yellow" : "red";
   return `<section class="card warm" style="margin-top:16px" aria-labelledby="rph">
     <div class="today-head"><span><span class="muted">訓練報告</span><h2 id="rph" style="font-size:1.25rem">${esc(r.headline)}</h2>
@@ -253,9 +254,48 @@ function reportHtml(w) {
       <ul style="margin:6px 0 0;padding-left:1.2em;font-size:.9375rem;line-height:1.6">${r.improve.map((x) => `<li><b>${x.label}：</b>${esc(x.tip)}</li>`).join("")}</ul>`
       : `<p style="margin-top:10px">這堂沒有需要調整的地方，維持這個感覺。</p>`}
     ${w.notes.map((n) => `<p style="margin-top:8px;font-size:.9375rem;color:var(--ink-2)">${esc(n)}</p>`).join("")}
-    ${w.focus.length ? `<div class="tile" style="margin-top:12px;background:var(--page)"><p class="k">近 4 週最需要補足</p>
-      ${w.focus.map((f) => `<p style="margin-top:4px;font-size:.9375rem"><b>${f.label}</b>（${esc(f.value)}）：${esc(f.tip)}</p>`).join("")}</div>` : ""}
     <p class="muted" style="margin-top:10px">這趟讓夥伴獲得約 +${w.xp} XP。</p>
+  </section>
+  ${fatigueHtml(w.fatigue)}
+  ${progressHtml(w.progress)}`;
+}
+
+function fatigueHtml(f) {
+  if (!f) return "";
+  const L = { low: "低", moderate: "中等", high: "高" };
+  return `<section class="card" style="margin-top:14px" aria-labelledby="fth">
+    <h2 id="fth" style="font-size:1.0625rem">這堂課的疲勞程度</h2>
+    <div class="fat"><span class="lvl ${f.level}">${L[f.level]}</span><span>${esc(f.label.split("：")[1] || "")}</span></div>
+    ${f.why.length ? `<ul class="why">${f.why.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : `<p class="muted" style="margin-top:6px">負荷在你平常的範圍內，恢復得了。</p>`}
+    ${f.advice ? `<p style="margin-top:8px">${esc(f.advice)}</p>` : ""}
+    ${optionsHtml(f.options, "fat")}
+  </section>`;
+}
+
+function progressHtml(p) {
+  if (!p) return "";
+  return `<section class="card" style="margin-top:14px" aria-labelledby="pgh">
+    <h2 id="pgh" style="font-size:1.0625rem">離目標還有多遠</h2>
+    <p style="margin-top:6px">目前 VDOT <b>${p.cur_vdot}</b>，${esc(p.distance_label)}大約能跑 <b>${esc(p.pred || "—")}</b>${p.target ? `；目標 <b>${esc(p.target)}</b>（VDOT ${p.target_vdot}）` : ""}。</p>
+    ${p.gap_pct != null ? `<p style="margin-top:4px">${p.gap_pct <= 0 ? "目前能力已經達標，接下來是把它穩定在比賽當天發揮出來。" : `還差 ${p.gap_pct}% 的能力。${p.verdict === "unrealistic" && p.realistic ? `以剩下的時間，比較實際的成績是 ${esc(p.realistic)}，課表先照這個排。` : ""}`}</p>` : ""}
+    <p class="muted" style="margin-top:6px">VDOT 由近期最好的 3–10 km 成績推算，跑出新成績或檢核點測驗後會更新。</p>
+    <button class="btn tonal block" style="margin-top:8px" data-go="#/season">看整季規劃</button>
+  </section>`;
+}
+
+function assessHtml(s) {
+  const a = s.assess || {}, lv = s.level || {};
+  const V = { realistic: ["ok", "目標合理"], ambitious: ["tight", "目標偏積極"], unrealistic: ["infeasible", "目標太遠"] };
+  const SEV = { danger: "alert", warn: "warn", info: "" };
+  const g = s.goal;
+  return `<section class="card" style="margin-top:14px" aria-labelledby="ah">
+    <div class="section-head" style="margin:0"><h2 id="ah">實力評估</h2><span class="badge">${esc(lv.label || "")}${lv.source === "manual" ? "（自己指定）" : ""}</span></div>
+    <p style="margin-top:6px">${a.cur_vdot ? `目前 VDOT 約 <b>${a.cur_vdot}</b>，${esc(s.distance_label)}現在大約能跑 <b>${esc(a.pred_goal || "—")}</b>` : "還沒有夠快的紀錄可以推估能力，先用平常配速估計"}${g.target ? `；目標 ${esc(g.target)}` : ""}。</p>
+    ${a.verdict && V[a.verdict] ? `<p style="margin-top:6px"><span class="verdict ${V[a.verdict][0]}">${V[a.verdict][1]}</span> ${esc(a.text || "")}</p>` : ""}
+    ${lv.shape ? `<p style="margin-top:8px"><b>課表形狀：</b>${esc(lv.shape)}</p>` : ""}
+    ${(lv.why || []).length ? `<ul class="why">${lv.why.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+    ${(a.risks || []).map((r) => `<div class="tip ${SEV[r.severity] || ""}" style="margin-top:10px"><h3>${r.severity === "danger" ? "⚠️ " : ""}${esc(r.title)}</h3><p>${esc(r.text)}</p></div>`).join("")}
+    <p class="muted" style="margin-top:8px">程度判斷不準的話，可以到「我的 → 目標與課表 → 我的程度」自己指定。</p>
   </section>`;
 }
 
@@ -280,6 +320,8 @@ async function viewSeason() {
       <div class="phasebar" aria-label="分期">${s.phases.map((p) => `<span class="${PHASE_CLS[p.phase]}" style="flex:${p.weeks}" title="${esc(p.label)} ${p.weeks} 週">${p.weeks >= 2 ? `${esc(p.label)} ${p.weeks}` : ""}</span>`).join("")}</div>
       <ul class="why">${s.phases.map((p) => `<li><b>${esc(p.label)}</b> ${p.weeks} 週：${esc(p.purpose)}</li>`).join("")}</ul>
     </section>
+
+    ${assessHtml(s)}
 
     ${f && f.verdict ? `<section class="card" style="margin-top:14px" aria-labelledby="fh">
       <div class="section-head" style="margin:0"><h2 id="fh">可行性檢查</h2><span class="verdict ${VERDICT[f.verdict][0]}">${VERDICT[f.verdict][1]}</span></div>

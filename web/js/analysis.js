@@ -4,10 +4,10 @@
 const KINDS = [
   ["easy", "輕鬆跑", "E，心率上限內"], ["recovery", "恢復跑", "更輕鬆"], ["long", "長跑", "耐力"],
   ["tempo", "節奏跑", "T，舒服的辛苦"], ["intervals", "間歇跑", "I，高強度"], ["hills", "坡道間歇", "I 的變化"],
-  ["fartlek", "變速跑", "快慢交替"], ["race_pace", "比賽配速", "練節奏感"], ["progression", "漸進跑", "由慢到快"],
+  ["fartlek", "變速跑", "快慢交替"], ["reps", "快跑", "R，200/400 m"], ["race_pace", "比賽配速", "練節奏感"], ["progression", "漸進跑", "由慢到快"],
   ["rest", "休息", "這天不跑"],
 ];
-const SHORT = { easy: "輕鬆", recovery: "恢復", long: "長跑", long_m: "長跑M", fartlek: "變速", tempo: "節奏", intervals: "間歇", hills: "坡道",
+const SHORT = { easy: "輕鬆", recovery: "恢復", long: "長跑", long_m: "長跑M", fartlek: "變速", tempo: "節奏", intervals: "間歇", hills: "坡道", reps: "快跑",
   progression: "漸進", race_pace: "配速", test: "測驗", rest: "休", race: "比賽", event: "行程", done: "完成",
   strength: "肌力", custom: "課" };
 const STATUS = { done: ["done", "已完成"], missed: ["missed", "沒跑到"], today: ["today", "今天"], upcoming: ["", "待跑"],
@@ -110,7 +110,7 @@ async function viewAnalysis() {
 
     <section class="card" style="margin-top:16px" aria-labelledby="fh">
       <h2 id="fh">今天身體感覺如何？</h2>
-      <p class="muted">恢復分數 ${r.score}。感覺只用來提醒你，不會自動改課；要改請在上面的課表按「調整」。</p>
+      <p class="muted">恢復分數 ${r.score}。填了之後會告訴你今天的課要不要調整、痛的地方怎麼處理；要不要改由你決定。</p>
       <div class="feel">${[["1", "很糟"], ["2", "累"], ["3", "普通"], ["4", "不錯"], ["5", "超好"]].map(([v, t]) =>
         `<button data-feel="${v}" aria-pressed="${ck?.feeling == v}"><b>${v}</b>${t}</button>`).join("")}</div>
       <h3 style="margin-top:14px">有沒有哪裡痛？</h3>
@@ -184,11 +184,12 @@ async function viewAnalysis() {
   })));
   document.querySelectorAll("[data-feel]").forEach((b) => (b.onclick = async () => {
     const res = await api("/api/checkin", { method: "POST", body: { feeling: +b.dataset.feel } });
-    toast(res.plan.notes.find((n) => n.includes("恢復分數")) || "收到"); refresh();
+    if (!checkinSheet(res.advice, refresh)) { toast(res.plan.notes.find((n) => n.includes("恢復分數")) || "收到"); refresh(); }
   }));
   document.querySelectorAll("[data-pain]").forEach((b) => (b.onclick = async () => {
     const res = await api("/api/checkin", { method: "POST", body: { pain: b.dataset.pain } });
-    toast(res.plan.stoploss?.some((x) => x.rule === "pain") ? "已暫停課表，先休息、建議就醫" : b.dataset.pain === "none" ? "收到" : "記下了，連續 3 天會暫停課表"); refresh();
+    if (res.plan.stoploss?.some((x) => x.rule === "pain")) toast("已暫停課表，先休息、建議就醫");
+    if (!checkinSheet(res.advice, refresh)) { toast(b.dataset.pain === "none" ? "收到" : "記下了"); refresh(); }
   }));
   document.querySelectorAll("[data-resume]").forEach((b) => (b.onclick = () => busy(b, async () => {
     await api("/api/plan/resume", { method: "POST" }); toast("已恢復課表"); refresh();
@@ -197,6 +198,31 @@ async function viewAnalysis() {
     await api("/api/checkin", { method: "POST", body: { skip: true } });
     toast("今天改成休息；這堂不會補回來"); refresh();
   };
+}
+
+// 填完身體狀況：今天要不要改課、痛的地方怎麼處理
+function checkinSheet(a, refresh) {
+  if (!a || (!a.severity && !a.care)) return false;
+  const c = a.care, today = localISO();
+  const list = (t, xs) => (xs && xs.length ? `<h3>${t}</h3><ul>${xs.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : "");
+  sheet(`
+    <h2>${esc(a.headline || "記下了")}</h2>
+    ${a.why.length ? `<p class="muted" style="margin-top:4px">因為：${esc(a.why.join("、"))}</p>` : ""}
+    ${a.plan && a.options.length ? `<p style="margin-top:8px">${a.target_label || "今天"}排的是「${esc(a.plan.title)}」。要怎麼調整？</p>${optionsHtml(a.options, "ck")}` : ""}
+    ${c ? `<div class="care" style="margin-top:12px">
+      <h2 style="font-size:1.0625rem">${esc(c.label)}痛：可以先這樣處理</h2>
+      ${c.likely ? `<p style="margin-top:4px">${esc(c.likely)}</p>` : ""}
+      ${list("這幾天", c.do)}${list("復健肌力（不痛或微痛的範圍內做）", c.rehab)}${list("伸展放鬆", c.stretch)}
+      <div class="tip alert" style="margin-top:12px"><h3>有以下情況請先給醫師或物理治療師看</h3><p>${esc(c.red_flags.join("、"))}。</p></div>
+      <p class="muted" style="margin-top:8px">${c.stop_in > 0 ? `同一個地方再痛 ${c.stop_in} 天，課表會自動暫停。` : "已經連續痛 3 天，課表暫停中。"}這些是一般性的建議，不能取代診斷。</p>
+    </div>` : ""}
+    <div class="btn-row" style="margin-top:12px"><button class="btn tonal" data-go="#/strength/${today}/mobility">做 10 分鐘伸展</button><button class="btn outline" id="ckclose">關閉</button></div>`,
+  (box, close) => {
+    bindCommon(box); box.querySelectorAll("[data-go]").forEach((x) => x.addEventListener("click", close));
+    bindOptions("ck", a.options, () => refresh());
+    box.querySelector("#ckclose").onclick = () => { close(); refresh(); };
+  });
+  return true;
 }
 
 function adjustSheet(day, others, done) {

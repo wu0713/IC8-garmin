@@ -16,12 +16,12 @@ from . import plan_tables as T
 from .engine import QUALITY_KINDS, fmt_pace, phase_quality
 
 LONGISH = {"long", "long_m", "test"}
-I_KINDS = {"intervals", "hills", "fartlek"}
+I_KINDS = {"intervals", "hills", "fartlek", "reps"}
 KIND_ZH = {"easy": "輕鬆跑", "recovery": "恢復跑", "long": "長跑", "long_m": "長跑（末段比賽配速）",
-           "tempo": "節奏跑", "intervals": "間歇跑", "hills": "坡道間歇", "fartlek": "變速跑",
+           "tempo": "節奏跑", "intervals": "間歇跑", "hills": "坡道間歇", "fartlek": "變速跑", "reps": "快跑",
            "race_pace": "比賽配速跑", "test": "測驗", "progression": "漸進跑", "rest": "休息", "race": "比賽"}
 INTRO = {"tempo": "進展期", "intervals": "專項期", "hills": "專項期", "fartlek": "專項期", "race_pace": "專項期",
-         "long_m": "專項期"}
+         "long_m": "專項期", "reps": "專項期"}
 
 
 # ───────────────────────────── 課表產生器 ─────────────────────────────
@@ -133,6 +133,16 @@ def build_workout(kind: str, *, km: float = 0, zones: dict, week_km: float = 30,
                                                    _step("recovery", z, "E", minutes=2, note="慢跑")),
               _step("cooldown", z, "E", km=cd)]
         return _wrap(kind, title, "hard", st, f"{n} × (2 分快 / 2 分慢)。", why)
+    if kind == "reps":
+        tot = max(2.0, min(4.0, week_km * 0.05)) * scale
+        rep = 0.4 if tot >= 3 else 0.2
+        n = max(4, min(12, round(tot / rep)))
+        st = [_step("warmup", z, "E", km=wu, note="熱身，最後加 2–3 次快步"),
+              _rep(n, _step("interval", z, "R", km=rep, note="快、放鬆、跑姿不走樣"),
+                   _step("recovery", z, None, minutes=2 if rep >= 0.4 else 1, note="慢跑或走路，完全恢復")),
+              _step("cooldown", z, "E", km=cd)]
+        return _wrap(kind, "快跑（R）", "hard", st, f"{n} × {int(rep * 1000)} m @ {fmt_pace(z['R']['min'])}–{fmt_pace(z['R']['max'])}/km，"
+                     "每趟之間完全恢復；練速度和跑步經濟性，不看心率。", why)
     if kind == "race_pace":
         if goal["distance_km"] >= 15:
             block = max(4.0, min(16.0, week_km * 0.15)) * scale
@@ -232,6 +242,8 @@ def _violations(assign: dict[date, str], phase: str, cons_limit: int) -> list[st
 
 
 def _pick_variant(kind: str, liked: set[str], week_idx: int) -> str:
+    if kind == "reps" and "reps" not in liked:
+        kind = "intervals" if "intervals" in liked else "hills"
     if kind == "intervals" and "intervals" not in liked:
         opts = [k for k in ("hills", "fartlek") if k in liked] or ["intervals"]
         return opts[week_idx % len(opts)]
@@ -256,8 +268,8 @@ def schedule_week(week: dict, ctx: dict) -> dict:
     normal = {d for d in cands if mode[d] is None}
     tail = {date.fromisoformat(k): v for k, v in (ctx.get("prev_tail") or {}).items()}
 
-    q_kinds, long_kind = phase_quality(phase, diag, goal, week["week_in_phase"], len(cands))
-    q_kinds = [_pick_variant(k, ctx["liked"], week["idx"]) for k in q_kinds]
+    q_kinds, long_kind = phase_quality(phase, diag, goal, week["week_in_phase"], len(cands), ctx.get("level") or "novice")
+    q_kinds = list(dict.fromkeys(_pick_variant(k, ctx["liked"], week["idx"]) for k in q_kinds))
     if week.get("no_quality") or ctx.get("novice"):
         q_kinds = []
         long_kind = "long" if long_kind == "long_m" else long_kind
@@ -357,7 +369,7 @@ def _distribute(week, ctx, S, L, long_slot, Q, mode, notes, cons_limit, tail):
             easy.pop(len(easy) // 2)
         per = max(min_e_km if easy else 0, rest_km / len(easy)) if easy else 0
         out = dict(fixed)
-        stride_quota = 2 if phase == "base" else 0 if phase in ("taper", "race", "hold", "recover") else 1
+        stride_quota = (1 if Q else 2) if phase == "base" else 0 if phase in ("taper", "race", "hold", "recover") else 1
         for d in sorted(easy):
             m = mode[d]
             km = min(per, max_wd_km)

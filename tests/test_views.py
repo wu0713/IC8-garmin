@@ -203,8 +203,9 @@ def test_run_report_flags_problems():
 
 def test_activity_detail_has_report_and_original_plan_kept(ctx):
     c, h = ctx
-    a = c.get("/api/activities", headers=h).json()["activities"][3]
+    a = [x for x in c.get("/api/activities", headers=h).json()["activities"] if not x.get("cross")][3]
     d = c.get(f"/api/activities/{a['id']}", headers=h).json()
+    assert "fatigue" in d and "progress" in d
     assert d["report"]["items"] and d["plan"] and d["plan"]["kind"] != "done" and d["xp"] > 0
     assert len(c.get("/api/profile", headers=h).json()["dims"]) == 5
 

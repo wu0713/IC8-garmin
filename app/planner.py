@@ -15,9 +15,10 @@ WEEKDAY_ZH = ["一", "二", "三", "四", "五", "六", "日"]
 
 # 「想做的課」：同一個強度裡選哪一種變化（間歇類可以換成坡道或變速跑）
 WORKOUT_LABELS = {
-    "tempo": "節奏跑", "intervals": "間歇跑", "hills": "坡道間歇", "fartlek": "變速跑", "strides": "快步（20 秒）",
+    "tempo": "節奏跑", "intervals": "間歇跑", "hills": "坡道間歇", "fartlek": "變速跑", "reps": "快跑（200/400 m）", "strides": "快步（20 秒）",
 }
-MANUAL_KINDS = {"easy", "recovery", "long", "tempo", "intervals", "hills", "fartlek", "race_pace", "progression"}
+MANUAL_KINDS = {"easy", "recovery", "long", "tempo", "intervals", "hills", "fartlek", "reps", "race_pace", "progression"}
+LEVELS = {"auto": "自動判斷", "novice": "新手", "intermediate": "有基礎", "experienced": "有經驗"}
 
 GOAL_TYPES = {
     "race": "準備一場比賽",
@@ -45,6 +46,7 @@ def default_prefs() -> dict:
         "template": {},
         "events": [],                   # 固定事件 [{type, name, date, end_date?, distance_km?, target_time?}]
         "dashboard": None,
+        "level": "auto",
         "brief_enabled": True,          # 每日晨報、晚報
         "brief_morning": "07:30",
         "brief_evening": "21:30",
