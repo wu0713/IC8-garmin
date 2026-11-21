@@ -187,3 +187,36 @@ def test_strides_respect_preference():
     off = week.schedule_week(w, {**base_ctx, "liked": {"tempo", "intervals"}})
     assert any("快步" in d["title"] for d in on["days"].values())
     assert not any("快步" in d["title"] for d in off["days"].values())
+
+
+def test_half_only_as_event_warns_and_unplanned_days_blank(ctx):
+    c, h, uid = ctx
+    c.put("/api/prefs", headers=h, json={"goal": {"type": "speed", "name": "變快"},
+                                         "events": [{"type": "race_b", "name": "半馬", "date": (today_local() + timedelta(days=140)).isoformat(),
+                                                     "distance_km": 21.0975}]})
+    ym = (today_local() + timedelta(days=120)).strftime("%Y-%m")
+    m = c.get(f"/api/month?ym={ym}", headers=h).json()
+    assert any("只登記在固定行程" in n for n in m["notices"])
+    assert not any(d["plan"] and d["plan"]["kind"] == "rest" and not d["past"] for d in m["days"])   # 週期外不顯示「休」
+    assert any("只登記在固定行程" in w for w in c.get("/api/season", headers=h).json()["warnings"])
+    c.put("/api/prefs", headers=h, json={"events": []})
+
+
+def test_no_back_to_back_long_runs_across_weeks():
+    from app.week import _violations
+    d = date(2027, 1, 3)
+    assert "兩次長跑間隔不到 72 小時" in _violations({d: "long", d + timedelta(days=1): "long"}, "base", 3)
+
+
+def test_past_race_date_rejected_and_warned(ctx):
+    c, h, uid = ctx
+    past = (today_local() - timedelta(days=60)).isoformat()
+    r = c.put("/api/prefs", headers=h, json={"goal": {"type": "race", "event_date": past, "event_distance_km": 21.0975}})
+    assert r.status_code == 400 and "已經過了" in r.json()["detail"]
+    # 舊資料裡本來就是過去的日期：照樣能存其他設定，並提醒
+    p = db.get_prefs(uid)
+    p["goal"] = {**p["goal"], "type": "race", "event_date": past, "event_distance_km": 21.0975, "target_time": "1:35:00"}
+    db.save_prefs(uid, p)
+    assert c.put("/api/prefs", headers=h, json={"sleep_goal": 8}).status_code == 200
+    assert any("已經過了" in w for w in c.get("/api/season", headers=h).json()["warnings"])
+    c.put("/api/prefs", headers=h, json={"goal": {"type": "fun", "event_date": None}})

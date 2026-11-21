@@ -346,6 +346,7 @@ def get_prefs(user=Depends(auth.current_user)):
 @app.put("/api/prefs")
 def put_prefs(body: dict, user=Depends(auth.current_user)):
     prefs = db.get_prefs(user["id"])
+    old_race = (prefs.get("goal") or {}).get("event_date")
     allowed = set(default_prefs())
     for k, v in body.items():
         if k in allowed:
@@ -376,9 +377,11 @@ def put_prefs(body: dict, user=Depends(auth.current_user)):
         if not g.get("event_date") or not g.get("event_distance_km"):
             raise HTTPException(400, "準備比賽要填比賽日期和距離")
         try:
-            date.fromisoformat(g["event_date"])
+            rd = date.fromisoformat(g["event_date"])
         except ValueError:
             raise HTTPException(400, "比賽日期格式錯誤")
+        if rd < today_local() and g["event_date"] != old_race:     # 新填的日期已經過了，多半是年份打錯
+            raise HTTPException(400, f"比賽日期 {g['event_date'].replace('-', '/')} 已經過了，請確認年份")
     if g.get("target_time") and planner.parse_hms(g["target_time"]) is None:
         raise HTTPException(400, "目標時間請寫成 1:45:00 或 50:00")
     events = []

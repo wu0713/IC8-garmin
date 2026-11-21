@@ -228,7 +228,10 @@ def _violations(assign: dict[date, str], phase: str, cons_limit: int) -> list[st
     for a, b in zip(q, q[1:]):
         if (b - a).days < 2:
             bad.append("兩堂質量課間隔不到 48 小時")
-    longs = [d for d, k in assign.items() if k in LONGISH]
+    longs = sorted(d for d, k in assign.items() if k in LONGISH)
+    for a, b in zip(longs, longs[1:]):
+        if (b - a).days < 3:
+            bad.append("兩次長跑間隔不到 72 小時")
     for L in longs:
         for off in (-1, 1):
             k = assign.get(L + timedelta(days=off))
