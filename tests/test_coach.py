@@ -123,7 +123,8 @@ def ctx():
 def test_checkin_pain_gives_options_and_care(ctx):
     c, h, uid = ctx
     ds = today_local().isoformat()
-    c.put("/api/override", headers=h, json={"date": ds, "kind": "tempo", "km": 8})
+    for d in (ds, (today_local() + timedelta(days=1)).isoformat()):     # 今天跑過的話，建議改的是明天
+        c.put("/api/override", headers=h, json={"date": d, "kind": "tempo", "km": 8})
     r = c.post("/api/checkin", headers=h, json={"pain": "shin"}).json()
     a = r["advice"]
     assert a["severity"] in ("reduce", "rest") and a["care"]["label"] == "小腿脛骨" and a["care"]["rehab"]
@@ -134,14 +135,16 @@ def test_checkin_pain_gives_options_and_care(ctx):
 def test_brief_reply_feel_and_option(ctx):
     c, h, uid = ctx
     ds = today_local().isoformat()
-    c.put("/api/override", headers=h, json={"date": ds, "kind": "tempo", "km": 8})
+    for d in (ds, (today_local() + timedelta(days=1)).isoformat()):
+        c.put("/api/override", headers=h, json={"date": d, "kind": "tempo", "km": 8})
     r = c.post("/api/brief/morning/reply", headers=h, json={"type": "feel", "value": 1}).json()
     assert r["lines"] and r["actions"] and r["actions"][0]["type"] == "option"
     opt = r["actions"][0]
     r2 = c.post("/api/brief/morning/reply", headers=h, json={"type": "option", "label": opt["label"], "apply": opt["apply"]})
     assert r2.status_code == 200 and "改好了" in r2.json()["lines"][0]
-    day = next(d for d in c.get("/api/week", headers=h).json()["days"] if d["date"] == opt["apply"]["date"])
-    assert day["plan"]["kind"] == opt["apply"]["kind"]
+    week = c.get("/api/week", headers=h).json()["days"]
+    day = next((d for d in week if d["date"] == opt["apply"]["date"]), None)
+    assert day is None or day["plan"]["kind"] == opt["apply"]["kind"]      # 明天可能已經是下一週
     assert c.post("/api/brief/morning/reply", headers=h, json={"type": "feel", "value": 9}).status_code == 400
 
 

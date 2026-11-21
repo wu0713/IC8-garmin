@@ -300,7 +300,7 @@ def daily_plan(uid: int, today: date, *, checkins: dict, done_dates: set[str], r
         "week_idx": w["idx"] if w else None, "n_weeks": cx.season["n_weeks"],
         "target_km": w["target_km"] if w else None, "planned_km": round(planned, 1),
         "check": s.get("check"), "limiter": diag["limiter"], "limiter_label": diag["limiter_label"],
-        "verdict": feas.get("verdict"), "hold": cx.season["hold"],
+        "verdict": feas.get("verdict"), "hold": cx.season["hold"], "decision": cx.snap.get("decision"),
         "stoploss": stop, "next_checkpoint": nxt,
         "notes": list(dict.fromkeys(n for n in notes if n)), "days": days,
     }
