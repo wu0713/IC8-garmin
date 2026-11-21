@@ -145,7 +145,7 @@ def _sched(phase, days=(1, 3, 5, 6), V=40, flags=(), idx=0, long_km=14, event_da
          "checkpoint": cp}
     return schedule_week(w, {"avail": set(days), "long_run_day": 6, "zones": _zones(phase), "diag": {"flags": list(flags)},
                              "goal": goal(), "event_days": event_days or {}, "prev_tail": tail or {},
-                             "max_minutes_weekday": 90, "liked": {"tempo", "intervals"}, "max_hr": 190})
+                             "max_minutes_weekday": 90, "liked": {"tempo", "intervals", "strides"}, "max_hr": 190})
 
 
 @pytest.mark.parametrize("phase,n", [("base", 0), ("build", 1), ("specific", 2)])
