@@ -885,4 +885,16 @@ def index():
     return FileResponse(WEB_DIR / "index.html", headers={"Cache-Control": "no-cache"})
 
 
+@app.middleware("http")
+async def no_stale_shell(request, call_next):
+    """程式檔（js／css／html／json）每次都向伺服器確認有沒有新版，避免更新後手機還在用舊程式。
+    沒變的話伺服器回 304，不會多花流量。圖片照常快取。"""
+    resp = await call_next(request)
+    path = request.url.path
+    if request.method == "GET" and not path.startswith("/api/") and (
+            path == "/" or path.endswith((".js", ".css", ".html", ".json", ".webmanifest"))):
+        resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
 app.mount("/", StaticFiles(directory=WEB_DIR), name="web")
