@@ -81,6 +81,7 @@ function monthHtml(m) {
     <div class="legend"><span><i style="background:var(--c-run)"></i>已跑</span><span><i style="background:#DCEFD8"></i>輕鬆</span>
       <span><i style="background:#FCE9C2"></i>中強度</span><span><i style="background:#FBDAD5"></i>強度課</span><span><i style="background:var(--ink)"></i>比賽</span>
       <span class="lg-ox">${sportIco("bike")}其他運動</span></div>
+    ${(m.notices || []).map((n) => `<div class="tip warn" style="margin-top:10px"><p>${esc(n)}</p></div>`).join("")}
     <p class="muted" style="margin-top:8px">點任一天可以看內容或自己改課。${anyProj ? "虛線框是預估：真的到那一週，會再依當時的身體狀態微調；你手動改過的會保留。" : ""}</p>
     <div class="btn-row"><button class="btn small tonal" data-go="#/me/settings">${m.mode === "manual" ? "修改我的每週課表" : m.mode === "imported" ? "匯入的課表" : "排課方式與比賽"}</button>
       <button class="btn small outline" data-go="#/season">整季規劃</button></div>`;

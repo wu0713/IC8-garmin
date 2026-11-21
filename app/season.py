@@ -390,11 +390,24 @@ def season_plan(uid: int, today: date | None = None) -> dict:
         "distance_label": T.DIST_PROFILE[T.dist_key(g["distance_km"])]["label"],
         "diag": cx.snap["diag"], "feasibility": feas and {**feas, "achievable": feas.get("achievable_s") and engine.fmt_time(feas["achievable_s"]),
                                                           "target": engine.fmt_time(feas["target_s"])},
-        "decision": cx.snap.get("decision"), "warnings": cx.season["warnings"], "phases": phases, "weeks": weeks,
+        "decision": cx.snap.get("decision"), "warnings": goal_event_warnings(cx.prefs, cx.goal) + cx.season["warnings"], "phases": phases, "weeks": weeks,
         "checkpoints": cps, "zones": zinfo, "max_hr": round(cx.ath["max_hr"]), "max_hr_source": cx.ath["max_hr_source"],
         "model": cx.model, "triggers": list(cx.snap["triggers"].values())[-5:],
         "completion": getattr(cx, "week_completion", []),
     }
+
+
+def goal_event_warnings(prefs: dict, goal: dict) -> list[str]:
+    """行程裡有一場比目標長很多的比賽，但它不是「我的目標」：課表不會為它備賽，要提醒。"""
+    out = []
+    today = today_local().isoformat()
+    for e in prefs.get("events") or []:
+        km = float(e.get("distance_km") or 0)
+        if e.get("type") in ("race_b", "race_c") and (e.get("date") or "") >= today and km >= 15 and km > goal["distance_km"] * 1.5:
+            out.append(f"「{e.get('name') or '比賽'}」（{km:g} km，{e['date'][5:].replace('-', '/')}）只登記在固定行程，"
+                       f"課表是照「{goal.get('name') or '目前的目標'}」（{goal['distance_km']:g} km）排的，不會為它拉長長跑或倒數減量。"
+                       "要為它備賽，請到「目標與課表」把目標改成「準備一場比賽」並填這場的日期、距離。")
+    return out
 
 
 def projected_days(uid: int, upto: date) -> dict[str, dict]:
@@ -410,6 +423,9 @@ def projected_days(uid: int, upto: date) -> dict[str, dict]:
         w = cx.week(cx.week_idx(d))
         z = cx.zones(w["phase"] if w else "base")["zones"]
         ev = planner.event_day(d.isoformat(), cx.prefs, cx.goal)
+        if not w and not ev and d.isoformat() not in imported and d.isoformat() not in ov:
+            d += timedelta(days=1)          # 超過這個週期：還沒排，不要顯示成「休」
+            continue
         x = imported.get(d.isoformat()) or ev or cx.day(d) or build_workout("rest", zones=z)
         if d.isoformat() in ov:
             o = ov[d.isoformat()]
@@ -491,7 +507,12 @@ def month(user_id: int, ym: str) -> dict:
         d += timedelta(days=1)
     total = round(sum((a.get("distance_m") or 0) for a in acts) / 1000, 1)
     fut = [x for x in days if x["plan"] and not x["past"] and x["plan"]["kind"] not in ("rest", "race", "event")]
-    return {"month": ym, "days": days, "total_km": total, "runs": len(acts),
+    unplanned = any(not x["past"] and not x["plan"] and not x["event"] and x["date"] > (td + timedelta(days=7)).isoformat() for x in days)
+    notices = goal_event_warnings(prefs, goal)
+    if unplanned:
+        notices.append("空白的日子還沒排：沒有設定目標賽時，課表以 12 週為一個週期，下個週期開始時會依新資料重新排。"
+                       if not goal.get("race_date") else "空白的日子在目標賽之後，比賽結束再重新設定目標。")
+    return {"month": ym, "days": days, "total_km": total, "runs": len(acts), "notices": notices,
             "others": len(cross), "other_minutes": round(sum((c.get("duration_s") or 0) for c in cross) / 60),
             "totals": _month_totals(acts, cross),
             "planned_runs": len(fut), "planned_km": round(sum(x["plan"]["distance_km"] or 0 for x in fut), 1),

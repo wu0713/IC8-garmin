@@ -187,3 +187,22 @@ def test_strides_respect_preference():
     off = week.schedule_week(w, {**base_ctx, "liked": {"tempo", "intervals"}})
     assert any("快步" in d["title"] for d in on["days"].values())
     assert not any("快步" in d["title"] for d in off["days"].values())
+
+
+def test_half_only_as_event_warns_and_unplanned_days_blank(ctx):
+    c, h, uid = ctx
+    c.put("/api/prefs", headers=h, json={"goal": {"type": "speed", "name": "變快"},
+                                         "events": [{"type": "race_b", "name": "半馬", "date": (today_local() + timedelta(days=140)).isoformat(),
+                                                     "distance_km": 21.0975}]})
+    ym = (today_local() + timedelta(days=120)).strftime("%Y-%m")
+    m = c.get(f"/api/month?ym={ym}", headers=h).json()
+    assert any("只登記在固定行程" in n for n in m["notices"])
+    assert not any(d["plan"] and d["plan"]["kind"] == "rest" and not d["past"] for d in m["days"])   # 週期外不顯示「休」
+    assert any("只登記在固定行程" in w for w in c.get("/api/season", headers=h).json()["warnings"])
+    c.put("/api/prefs", headers=h, json={"events": []})
+
+
+def test_no_back_to_back_long_runs_across_weeks():
+    from app.week import _violations
+    d = date(2027, 1, 3)
+    assert "兩次長跑間隔不到 72 小時" in _violations({d: "long", d + timedelta(days=1): "long"}, "base", 3)
