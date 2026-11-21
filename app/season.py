@@ -513,6 +513,12 @@ def month(user_id: int, ym: str) -> dict:
     fut = [x for x in days if x["plan"] and not x["past"] and x["plan"]["kind"] not in ("rest", "race", "event")]
     unplanned = any(not x["past"] and not x["plan"] and not x["event"] and x["date"] > (td + timedelta(days=7)).isoformat() for x in days)
     notices = goal_event_warnings(prefs, goal)
+    snap = load_snap(user_id) or {}
+    feas = snap.get("feasibility") or {}
+    if goal.get("race_date") and feas.get("verdict") == "infeasible" and not snap.get("decision"):
+        notices.insert(0, f"時間不夠：照目前的跑量，目標 {prefs['goal'].get('target_time') or ''} 需要大約 {feas.get('w_need')} 週，"
+                          f"離比賽只有 {feas.get('weeks_available')} 週。你做決定之前，課表先維持現在的跑量、只排輕鬆跑。"
+                          "請到「整季規劃」選：改目標、延後賽期，或照原目標接受較高風險。")
     if unplanned:
         notices.append("空白的日子還沒排：沒有設定目標賽時，課表以 12 週為一個週期，下個週期開始時會依新資料重新排。"
                        if not goal.get("race_date") else "空白的日子在目標賽之後，比賽結束再重新設定目標。")
