@@ -311,7 +311,10 @@ async function render() {
     }
     go("#/summary");
   } catch (x) {
-    if (S.token) $app.innerHTML = `<p class="boot">${esc(x.message)}<br><br><button class="btn" onclick="location.reload()">重新整理</button></p>`;
+    // 附上出錯的檔案和行號，截圖回報時才查得到是哪裡壞
+    const where = ((x.stack || "").split("\n").find((l) => /\/js\/\w+\.js:\d+/.test(l)) || "").replace(/^.*\/js\//, "").replace(/\)$/, "");
+    if (S.token) $app.innerHTML = `<p class="boot">${esc(x.message)}${where ? `<br><small class="muted">${esc(where)}</small>` : ""}<br><br>
+      <button class="btn" onclick="location.reload(true)">重新整理</button></p>`;
   }
 }
 window.addEventListener("hashchange", render);
