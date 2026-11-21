@@ -161,3 +161,13 @@ def test_level_pref_saved(ctx):
     assert s["level"]["level"] == "experienced" and s["level"]["source"] == "manual"
     c.put("/api/prefs", headers=h, json={"level": "bogus"})
     assert c.get("/api/season", headers=h).json()["level"]["source"] == "auto"
+
+
+def test_unliked_workouts_are_substituted():
+    from app.week import _pick_variant
+    liked = {"tempo", "intervals", "reps", "strides"}          # 不喜歡坡道和變速
+    assert _pick_variant("hills", liked, 0, "base") is None   # 基礎期直接拿掉
+    assert _pick_variant("hills", liked, 0, "build") == "intervals"
+    assert _pick_variant("fartlek", liked, 0, "build") == "tempo"
+    assert _pick_variant("hills", liked | {"hills"}, 0, "base") == "hills"
+    assert _pick_variant("intervals", {"hills", "fartlek"}, 1, "specific") == "fartlek"
