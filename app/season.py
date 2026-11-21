@@ -400,6 +400,10 @@ def season_plan(uid: int, today: date | None = None) -> dict:
 def goal_event_warnings(prefs: dict, goal: dict) -> list[str]:
     """行程裡有一場比目標長很多的比賽，但它不是「我的目標」：課表不會為它備賽，要提醒。"""
     out = []
+    g = prefs.get("goal") or {}
+    if goal.get("race_passed"):
+        out.append(f"目標賽日期 {g.get('event_date', '').replace('-', '/')} 已經過了，現在是照「沒有比賽」排：以 12 週為一個週期、"
+                   "跑量只小幅增加，長跑也不會往比賽距離拉長。要備下一場比賽，請到「目標與課表」更新比賽日期（注意年份）。")
     today = today_local().isoformat()
     for e in prefs.get("events") or []:
         km = float(e.get("distance_km") or 0)

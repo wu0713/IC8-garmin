@@ -206,3 +206,17 @@ def test_no_back_to_back_long_runs_across_weeks():
     from app.week import _violations
     d = date(2027, 1, 3)
     assert "兩次長跑間隔不到 72 小時" in _violations({d: "long", d + timedelta(days=1): "long"}, "base", 3)
+
+
+def test_past_race_date_rejected_and_warned(ctx):
+    c, h, uid = ctx
+    past = (today_local() - timedelta(days=60)).isoformat()
+    r = c.put("/api/prefs", headers=h, json={"goal": {"type": "race", "event_date": past, "event_distance_km": 21.0975}})
+    assert r.status_code == 400 and "已經過了" in r.json()["detail"]
+    # 舊資料裡本來就是過去的日期：照樣能存其他設定，並提醒
+    p = db.get_prefs(uid)
+    p["goal"] = {**p["goal"], "type": "race", "event_date": past, "event_distance_km": 21.0975, "target_time": "1:35:00"}
+    db.save_prefs(uid, p)
+    assert c.put("/api/prefs", headers=h, json={"sleep_goal": 8}).status_code == 200
+    assert any("已經過了" in w for w in c.get("/api/season", headers=h).json()["warnings"])
+    c.put("/api/prefs", headers=h, json={"goal": {"type": "fun", "event_date": None}})
