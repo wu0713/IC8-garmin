@@ -223,3 +223,11 @@ def test_past_race_date_rejected_and_warned(ctx):
     assert c.put("/api/prefs", headers=h, json={"sleep_goal": 8}).status_code == 200
     assert any("已經過了" in w for w in c.get("/api/season", headers=h).json()["warnings"])
     c.put("/api/prefs", headers=h, json={"goal": {"type": "fun", "event_date": None}})
+
+
+def test_experienced_base_keeps_weekly_quality_when_hills_unchecked():
+    from app.week import _pick_variant
+    liked = {"tempo", "intervals", "reps", "strides"}
+    assert _pick_variant("hills", liked, 1, "base", "experienced") == "intervals"
+    assert _pick_variant("hills", liked, 1, "base", "intermediate") is None
+    assert _pick_variant("intervals", liked, 0, "build", "experienced", ("intervals",)) == "tempo"

@@ -253,14 +253,16 @@ SUBSTITUTE = {
 }
 
 
-def _pick_variant(kind: str, liked: set[str], week_idx: int, phase: str = "") -> str | None:
-    if kind not in SUBSTITUTE or kind in liked:
+def _pick_variant(kind: str, liked: set[str], week_idx: int, phase: str = "", level: str = "", taken: tuple = ()) -> str | None:
+    """沒勾的課換成效果接近、有勾的課；同一週已經有的就再換下一個。"""
+    if kind not in SUBSTITUTE or (kind in liked and kind not in taken):
         return kind
-    opts = [k for k in SUBSTITUTE[kind] if k in liked or k == "tempo"]
-    if phase == "base":                        # 基礎期的強度課只是點綴：不喜歡就不排，不換成更硬的
+    opts = [k for k in SUBSTITUTE[kind] if (k in liked or k == "tempo") and k not in taken]
+    if phase == "base" and level != "experienced":
+        # 新手、有基礎：基礎期的強度課只是點綴，不喜歡就不排，不換成更硬的
         opts = [k for k in opts if k in ("hills", "fartlek")]
     if kind == "intervals":                   # 間歇不喜歡時，坡道和變速輪流
-        alt = [k for k in ("hills", "fartlek") if k in liked]
+        alt = [k for k in ("hills", "fartlek") if k in liked and k not in taken]
         if alt:
             return alt[week_idx % len(alt)]
     return opts[0] if opts else None
@@ -285,7 +287,12 @@ def schedule_week(week: dict, ctx: dict) -> dict:
     tail = {date.fromisoformat(k): v for k, v in (ctx.get("prev_tail") or {}).items()}
 
     q_kinds, long_kind = phase_quality(phase, diag, goal, week["week_in_phase"], len(cands), ctx.get("level") or "novice")
-    q_kinds = [k for k in dict.fromkeys(_pick_variant(k, ctx["liked"], week["idx"], phase) for k in q_kinds) if k]
+    picked: list[str] = []
+    for k in q_kinds:
+        v = _pick_variant(k, ctx["liked"], week["idx"], phase, ctx.get("level") or "", tuple(picked))
+        if v:
+            picked.append(v)
+    q_kinds = picked
     if week.get("no_quality") or ctx.get("novice"):
         q_kinds = []
         long_kind = "long" if long_kind == "long_m" else long_kind
