@@ -47,6 +47,7 @@ def default_prefs() -> dict:
         "events": [],                   # 固定事件 [{type, name, date, end_date?, distance_km?, target_time?}]
         "dashboard": None,
         "level": "auto",
+        "self_report": {},
         "brief_enabled": True,          # 每日晨報、晚報
         "brief_morning": "07:30",
         "brief_evening": "21:30",

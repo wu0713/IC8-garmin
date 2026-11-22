@@ -114,12 +114,30 @@ def build(user_id: int, today: date, prefs: dict | None = None) -> dict:
     novice = (not acts) or (today - first).days < 21 or runs28 < 6
     rhr = {d["date"]: d["rhr"] for d in daily if d.get("rhr")}
     hist = [v for k, v in rhr.items() if k < (today - timedelta(days=2)).isoformat()]
+
+    # 新手問卷：剛換手錶、紀錄不到 4 週的人，用自己填的跑量和成績當起點（紀錄夠了就改用實際資料）
+    sr = prefs.get("self_report") or {}
+    used_self_report = False
+    if sr.get("weekly_km") is not None and len(weekly) < 4:
+        used_self_report = True
+        wk = float(sr["weekly_km"])
+        weekly = (weekly + [wk] * 8)[:8]
+        if sr.get("longest_km"):
+            longest4 = max(longest4, float(sr["longest_km"]))
+        if sr.get("race_km") and sr.get("race_s"):
+            v = engine.vdot(float(sr["race_km"]), float(sr["race_s"]))
+            if not best or v > best[0]:
+                best = (v, {"km": float(sr["race_km"]), "seconds": float(sr["race_s"]), "date": sr.get("updated") or today.isoformat(),
+                            "source": "self_report"})
+        if sr.get("hard_per_week"):
+            hard8 = max(hard8, int(sr["hard_per_week"]) * 8)
+        novice = wk < 10 or (sr.get("years") == "new")
     return {
         "weekly_km": weekly, "max_hr": max_hr, "max_hr_source": src,
         "best_effort": best[1] if best else None, "fallback_vdot": fallback,
         "long_runs": long_runs, "recent_longest_km": round(longest4, 1), "easy_hr_share": easy_share and round(easy_share, 3),
         "easy_samples": samples, "drifts_recent": drifts, "age": prefs.get("age"), "novice": novice,
-        "hard_runs_8w": hard8, "history_weeks": len(weekly),
+        "hard_runs_8w": hard8, "history_weeks": len(weekly), "self_report": used_self_report,
         "rhr": rhr, "rest_hr_base": round(median(hist)) if len(hist) >= 5 else None,
         "easy_pace": paces[int(len(paces) * 0.6)] if paces else None,
         "fallback_pace": metrics.estimate_paces(acts[-60:], prefs)["easy"],

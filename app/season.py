@@ -26,7 +26,8 @@ PHASE_COLORS = {"base": "base", "build": "build", "specific": "specific", "taper
 
 def _keys(prefs: dict, goal: dict) -> tuple[str, str]:
     hard = json.dumps([goal["type"], goal["distance_km"], bool(goal.get("race_date")), sorted(prefs["days"]),
-                       prefs["long_run_day"], prefs.get("level") or "auto"])
+                       prefs["long_run_day"], prefs.get("level") or "auto",
+                       {k: v for k, v in (prefs.get("self_report") or {}).items() if k != "updated"}])
     soft = json.dumps([goal.get("race_date"), goal.get("target_s"), prefs.get("max_minutes_weekday"),
                        prefs.get("max_long_minutes")])
     return hard, soft
@@ -35,6 +36,12 @@ def _keys(prefs: dict, goal: dict) -> tuple[str, str]:
 def load_snap(uid: int) -> dict | None:
     r = db.q1("SELECT data FROM season_state WHERE user_id=?", (uid,))
     return json.loads(r["data"]) if r else None
+
+
+def reset(uid: int):
+    """重新開季（例如匯入了舊紀錄）：下次排課時重新診斷能力、起始跑量和可行性。"""
+    with db.tx() as c:
+        c.execute("DELETE FROM season_state WHERE user_id=?", (uid,))
 
 
 def save_snap(uid: int, snap: dict):
@@ -112,6 +119,15 @@ class Ctx:
         self.plan_goal = dict(self.goal)
         if self.assess.get("verdict") == "unrealistic" and self.assess.get("realistic_s"):
             self.plan_goal["target_s"] = self.assess["realistic_s"]
+        self.provisional_s = None
+        feas = self.season.get("feasibility") or {}
+        if self.season.get("provisional") and feas.get("achievable_s"):
+            # 暫定成績：時間允許的跑量做得到的成績，但不比你現在的能力慢、也不比原目標快
+            pv = feas["achievable_s"]
+            if self.assess.get("pred_goal_s"):
+                pv = min(pv, self.assess["pred_goal_s"])
+            pv = max(pv, self.goal.get("target_s") or 0, self.plan_goal.get("target_s") or 0)
+            self.plan_goal["target_s"] = self.provisional_s = round(pv)
         self.model = engine.fit_hr_pace(self.ath["easy_samples"])
         self._zones: dict[str, dict] = {}
         self._sched: dict[int, dict] = {}
@@ -277,8 +293,9 @@ def daily_plan(uid: int, today: date, *, checkins: dict, done_dates: set[str], r
         n_phase = sum(1 for x in cx.season["weeks"] if x["phase"] == w["phase"])
         notes.insert(0, f"{w['phase_label']}第 {w['week_in_phase'] + 1} 週（共 {n_phase} 週）：{T.PHASE_PURPOSE.get(w['phase'], '')}")
     notes.append(f"診斷：{diag['limiter_label']} → {diag['shape']}")
-    if cx.season["hold"]:
-        notes.append("目標在剩下的時間內做不到：先維持現在的跑量、只排輕鬆跑，到「課表 → 整季規劃」選擇怎麼調整")
+    if cx.season.get("provisional"):
+        notes.append(f"原目標在剩下的時間內做不到：先照 {engine.fmt_time(cx.provisional_s) if cx.provisional_s else '做得到的成績'} 排，"
+                     "要改成延後賽期或照原目標練，到「課表 → 整季規劃」選")
     elif feas.get("verdict") == "tight":
         notes.append("可行但沒有緩衝：照表走，錯過的課不要補")
     if w:
@@ -301,6 +318,7 @@ def daily_plan(uid: int, today: date, *, checkins: dict, done_dates: set[str], r
         "target_km": w["target_km"] if w else None, "planned_km": round(planned, 1),
         "check": s.get("check"), "limiter": diag["limiter"], "limiter_label": diag["limiter_label"],
         "verdict": feas.get("verdict"), "hold": cx.season["hold"], "decision": cx.snap.get("decision"),
+        "provisional": cx.season.get("provisional"), "provisional_time": cx.provisional_s and engine.fmt_time(cx.provisional_s),
         "stoploss": stop, "next_checkpoint": nxt,
         "notes": list(dict.fromkeys(n for n in notes if n)), "days": days,
     }
@@ -380,7 +398,8 @@ def season_plan(uid: int, today: date | None = None) -> dict:
     feas = cx.season["feasibility"]
     g = cx.goal
     return {
-        "mode": cx.season["mode"], "hold": cx.season["hold"], "plan_start": cx.season["plan_start"], "n_weeks": cx.season["n_weeks"],
+        "mode": cx.season["mode"], "hold": cx.season["hold"], "provisional": cx.season.get("provisional"),
+        "provisional_time": cx.provisional_s and engine.fmt_time(cx.provisional_s), "plan_start": cx.season["plan_start"], "n_weeks": cx.season["n_weeks"],
         "goal": {"name": g.get("name"), "distance_km": g["distance_km"], "race_date": g.get("race_date"),
                  "target_s": g.get("target_s"), "target": engine.fmt_time(g.get("target_s")) if g.get("target_s") else None,
                  "type": g["type"], "race_passed": g.get("race_passed")},
@@ -516,9 +535,11 @@ def month(user_id: int, ym: str) -> dict:
     snap = load_snap(user_id) or {}
     feas = snap.get("feasibility") or {}
     if goal.get("race_date") and feas.get("verdict") == "infeasible" and not snap.get("decision"):
+        cx = Ctx(user_id)
+        pv = cx.provisional_s and engine.fmt_time(cx.provisional_s)
         notices.insert(0, f"時間不夠：照目前的跑量，目標 {prefs['goal'].get('target_time') or ''} 需要大約 {feas.get('w_need')} 週，"
-                          f"離比賽只有 {feas.get('weeks_available')} 週。你做決定之前，課表先維持現在的跑量、只排輕鬆跑。"
-                          "請到「整季規劃」選：改目標、延後賽期，或照原目標接受較高風險。")
+                          f"離比賽只有 {feas.get('weeks_available')} 週。課表先照做得到的成績{f'（{pv}）' if pv else ''}排。"
+                          "要延後賽期或照原目標練，到「整季規劃」選。")
     if unplanned:
         notices.append("空白的日子還沒排：沒有設定目標賽時，課表以 12 週為一個週期，下個週期開始時會依新資料重新排。"
                        if not goal.get("race_date") else "空白的日子在目標賽之後，比賽結束再重新設定目標。")

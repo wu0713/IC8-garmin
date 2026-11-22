@@ -125,8 +125,9 @@ async function viewSummary() {
         <span style="color:var(--primary);font-weight:700">${d.today_activity ? "看今天的訓練報告" : t.steps?.length ? "看課表內容與調整" : "看本週課表"}</span>
       </span>
     </button>
-    ${d.plan_hold ? `<button class="decide-nudge" data-go="#/season" style="margin-bottom:12px"><span class="dot" aria-hidden="true"></span>
-      <span><b>課表暫停中：請選擇怎麼調整目標</b><small>目標賽前的時間不夠，選好之前只排輕鬆跑。點這裡三選一。</small></span>${ico("chevron")}</button>` : ""}
+    ${d.ask_intro ? `<button class="card intro-ask" data-go="#/me/settings" style="display:flex;gap:10px;align-items:center;width:100%;text-align:left;font:inherit;margin-bottom:12px">
+      ${ico("flag")}<span><b>剛開始用？告訴我你最近的跑步狀況</b><small class="muted" style="display:block">紀錄還不到 4 週，課表只能保守地排。填 1 分鐘的問卷，或上傳 Strava 等 App 的舊紀錄，課表會更貼近你的程度。</small></span>${ico("chevron")}</button>` : ""}
+    ${d.plan_provisional ? `<div style="margin-bottom:12px">${decideNudge(d.plan_provisional.time)}</div>` : ""}
     ${d.strength_today ? `<button class="card st-today" data-go="#/strength/${d.strength_today.date}">
       <span class="st-ico">${ico(d.strength_today.done ? "check" : "gym")}</span>
       <span><small>休息日任務</small><b>${esc(d.strength_today.title)} · ${d.strength_today.minutes} 分鐘</b>

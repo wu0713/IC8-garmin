@@ -327,7 +327,7 @@ async function viewSeason() {
       <div class="section-head" style="margin:0"><h2 id="fh">可行性檢查</h2><span class="verdict ${(VERDICT[f.verdict] || ["", ""])[0]}">${(VERDICT[f.verdict] || ["", f.verdict])[1]}</span></div>
       <ul class="why">${f.why.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
       ${f.verdict === "infeasible" ? `
-        <p style="margin-top:10px">${s.hold ? "在你選擇之前，課表先維持現在的跑量、只排輕鬆跑。這是你的決定，三個選項各有代價：" : "你選了照原目標練，課表會疊到時間允許的最高跑量，受傷風險較高。"}</p>
+        <p style="margin-top:10px">${s.provisional ? `還沒選之前，課表先照「做得到的成績」${s.provisional_time ? `（${esc(s.provisional_time)}）` : ""}排：強度課和長跑照常，跑量只疊到時間允許的範圍。三個選項各有代價：` : "你選了照原目標練，課表會疊到時間允許的最高跑量，受傷風險較高。"}</p>
         <div class="choice">
           ${f.achievable ? `<button data-choice="achievable"><b>把目標改成 ${f.achievable}</b><small>賽期不變，用剩下的時間做得到的成績。</small></button>` : ""}
           ${f.suggested_date ? `<button data-choice="postpone"><b>改報 ${f.suggested_date.replaceAll("-", "/")} 之後的比賽</b><small>目標不變，給身體足夠的疊量時間（需要 ${f.required_weeks} 週）。</small></button>` : ""}
