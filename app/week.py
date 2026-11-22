@@ -419,6 +419,16 @@ def _distribute(week, ctx, S, L, long_slot, Q, mode, notes, cons_limit, tail):
         while easy and rest_km / len(easy) < min_e_km and len(easy) > 1:
             easy.remove(_least_needed(easy, hard_days, week["week_start"]))
         per = max(min_e_km if easy else 0, rest_km / len(easy)) if easy else 0
+        # 長跑一定要是這週最長的一次：跑量很少時（例如每週 8 km、只跑兩次），把量往長跑挪
+        if L and long_slot in ("long", "long_m") and easy and fixed[L]["distance_km"] < per + 1:
+            lk = fixed[L]["distance_km"]
+            pool = rest_km + lk
+            want = round(min(pool - len(easy) * min_e_km, max(lk, pool / (len(easy) + 1) * 1.3), lk + T.LONG_STEP_KM) * 2) / 2
+            if want > lk:
+                fixed[L] = build_workout(long_slot, km=want, zones=zones, goal=goal,
+                                         why=f"這週跑量少，長跑至少要比輕鬆跑長：{want:g} km")
+                rest_km = V - sum(w["distance_km"] for w in fixed.values())
+                per = max(min_e_km, rest_km / len(easy))
         out = dict(fixed)
         stride_quota = (1 if Q else 2) if phase == "base" else 0 if phase in ("taper", "race", "hold", "recover") else 1
         for d in sorted(easy):

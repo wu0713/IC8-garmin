@@ -345,3 +345,11 @@ def test_goal_parsing():
     g = planner.goal_from_prefs(p, MON)
     assert g["target_s"] == 6300 and g["race_date"] == "2027-03-14"
     assert planner.goal_from_prefs(p, date(2027, 4, 1))["race_date"] is None
+
+
+def test_long_run_never_shorter_than_easy_run_at_low_volume():
+    r = _sched("base", days=(2, 5), V=8, long_km=3.6)
+    days = r["days"].values()
+    long_km = next(d["distance_km"] for d in days if d["kind"] == "long")
+    easy_km = max(d["distance_km"] for d in days if d["kind"] in ("easy", "recovery"))
+    assert long_km > easy_km
