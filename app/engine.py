@@ -999,6 +999,7 @@ def build_season(*, ath: dict, goal: dict, prefs: dict, snap: dict, today: date)
             eff_warn = f"行程讓 {lost} 週的訓練量大減，有效訓練週數 {n_eff} 少於需要的 {feas['w_need']} 週：可行性變更"
         elif feas["w_need"] > n_eff * T.FEASIBLE_BUFFER and feas["verdict"] == "ok":
             eff_warn = f"行程讓 {lost} 週的訓練量大減，時間變得沒有緩衝"
-    return {"mode": "open" if open_mode else "race", "hold": hold, "provisional": provisional, "plan_start": plan_start.isoformat(), "n_weeks": n,
+    deload_every = 3 if diag.get("needs_frequent_deload") and (level != "experienced" or diag.get("older")) else 4
+    return {"mode": "open" if open_mode else "race", "hold": hold, "provisional": provisional, "deload_every": deload_every, "plan_start": plan_start.isoformat(), "n_weeks": n,
             "weeks": weeks, "checkpoints": cps, "event_days": ev["days"], "warnings": ev["warnings"] + ([eff_warn] if eff_warn else []),
             "diag": diag, "feasibility": feas, "v_base": v_base, "v_target": v_target, "level": level}

@@ -267,3 +267,20 @@ def test_frequency_target_for_experienced_low_volume():
     se, lv, weeks = _season(21.0975, 95 * 60, "experienced", ath=_ath(base=20))
     runs = [sum(1 for k in ks) for w, ks in weeks if w["phase"] == "base"]
     assert min(runs) >= 4
+
+
+def test_easy_days_spread_not_next_to_quality():
+    from app import week as wk
+    ws = date(2027, 1, 4)
+    pick = wk._least_needed([ws + timedelta(days=2), ws + timedelta(days=4)], {ws + timedelta(days=1), ws + timedelta(days=6)}, ws.isoformat())
+    assert pick == ws + timedelta(days=2)            # 拿掉緊貼強度課的週三，留週五
+
+
+def test_month_explains_deload_week(ctx):
+    c, h, uid = ctx
+    found = False
+    for k in range(0, 4):
+        ym = (today_local().replace(day=1) + timedelta(days=32 * k)).strftime("%Y-%m")
+        m = c.get(f"/api/month?ym={ym}", headers=h).json()
+        found = found or any("減量週" in n for n in m["notices"])
+    assert found
