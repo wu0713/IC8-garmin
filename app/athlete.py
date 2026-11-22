@@ -46,13 +46,24 @@ def build(user_id: int, today: date, prefs: dict | None = None) -> dict:
     # 跑量：當週以前、完整的週，最近一週在前；只算第一筆紀錄之後的週
     first = date.fromisoformat(acts[0]["date"]) if acts else today
     mon = engine.monday(today)
-    weekly = []
+    weekly, week_starts = [], []
     for i in range(1, 13):
         ws = mon - timedelta(weeks=i)
         if ws + timedelta(days=6) < first:
             break
         we = ws + timedelta(days=6)
         weekly.append(round(sum(km(a) for a in acts if ws.isoformat() <= a["date"] <= we.isoformat()), 1))
+        week_starts.append(ws.isoformat())
+    # 使用者標記「生病／出差／沒戴錶」的週，以及行程裡的生病、出差：不算進跑量基線和一致性
+    excused = set(prefs.get("excused_weeks") or [])
+    for e in prefs.get("events") or []:
+        if e.get("type") in ("illness", "travel") and e.get("date"):
+            d0 = date.fromisoformat(e["date"])
+            d1 = date.fromisoformat(e.get("end_date") or e["date"])
+            w = engine.monday(d0)
+            while w <= d1:
+                excused.add(w.isoformat())
+                w += timedelta(weeks=1)
 
     # 最大心率：設定 > 實測峰值 > 公式
     seen = [a["max_hr"] for a in acts if a.get("max_hr")]
@@ -122,6 +133,7 @@ def build(user_id: int, today: date, prefs: dict | None = None) -> dict:
         used_self_report = True
         wk = float(sr["weekly_km"])
         weekly = (weekly + [wk] * 8)[:8]
+        week_starts = [(mon - timedelta(weeks=i)).isoformat() for i in range(1, len(weekly) + 1)]
         if sr.get("longest_km"):
             longest4 = max(longest4, float(sr["longest_km"]))
         if sr.get("race_km") and sr.get("race_s"):
@@ -133,7 +145,8 @@ def build(user_id: int, today: date, prefs: dict | None = None) -> dict:
             hard8 = max(hard8, int(sr["hard_per_week"]) * 8)
         novice = wk < 10 or (sr.get("years") == "new")
     return {
-        "weekly_km": weekly, "max_hr": max_hr, "max_hr_source": src,
+        "weekly_km": weekly, "week_starts": week_starts, "excused_weeks": sorted(excused & set(week_starts)),
+        "max_hr": max_hr, "max_hr_source": src,
         "best_effort": best[1] if best else None, "fallback_vdot": fallback,
         "long_runs": long_runs, "recent_longest_km": round(longest4, 1), "easy_hr_share": easy_share and round(easy_share, 3),
         "easy_samples": samples, "drifts_recent": drifts, "age": prefs.get("age"), "novice": novice,

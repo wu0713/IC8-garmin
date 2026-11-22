@@ -9,6 +9,8 @@
 """
 from __future__ import annotations
 
+import math
+
 from datetime import date, timedelta
 from itertools import combinations, permutations
 
@@ -279,7 +281,9 @@ def schedule_week(week: dict, ctx: dict) -> dict:
     diag = ctx["diag"]
     goal = ctx["goal"]
     phase = week["phase"]
-    cons_limit = T.MAX_CONSECUTIVE_RUN_DAYS_CONSISTENCY if "consistency" in diag["flags"] else T.MAX_CONSECUTIVE_RUN_DAYS
+    # 一致性受限時連跑最多 2 天；自己選「有經驗」的人不鎖（只影響加量速度）
+    cons_limit = (T.MAX_CONSECUTIVE_RUN_DAYS_CONSISTENCY if "consistency" in diag["flags"] and ctx.get("level") != "experienced"
+                  else T.MAX_CONSECUTIVE_RUN_DAYS)
     notes: list[str] = []
     mode = {d: (ev.get(d.isoformat()) or (None, ""))[0] for d in dates}
     cands = [d for d in dates if d.weekday() in ctx["avail"] and mode[d] not in ("rest", "event")]
@@ -367,7 +371,10 @@ def _distribute(week, ctx, S, L, long_slot, Q, mode, notes, cons_limit, tail):
     phase = week["phase"]
     e_pace = (zones["E"]["min"] + zones["E"]["max"]) / 2
     max_wd_km = float(ctx.get("max_minutes_weekday") or 60) * 60 / e_pace
-    min_e_km = max(3.0, T.MIN_EASY_MINUTES * 60 / e_pace)
+    min_e_km = max(T.MIN_EASY_KM, T.MIN_EASY_MINUTES * 60 / e_pace)
+    # 先定頻率：依程度和目標距離決定每週跑幾次，跑量少就每次跑短一點
+    lv = ctx.get("level") or "novice"
+    freq = T.FREQ_TARGET.get(lv, 4) + T.FREQ_BY_DIST[T.dist_key(goal["distance_km"])] + (1 if V >= 60 else 0)
     scale = 0.5 if phase == "taper" else 0.4 if phase == "race" else 1.0
     cp = week.get("checkpoint")
     ph_zh = T.PHASE_ZH.get(phase, phase)
@@ -387,6 +394,12 @@ def _distribute(week, ctx, S, L, long_slot, Q, mode, notes, cons_limit, tail):
             fixed[d] = build_workout(k, zones=zones, week_km=V, goal=goal, scale=scale, why=why_q(k))
         easy = [d for d in S if d not in fixed]
         rest_km = V - sum(w["distance_km"] for w in fixed.values())
+        # 超過目標頻率的可跑日改休息（量太多、平日跑不完時才多留幾天）；先拿掉緊鄰強度課／長跑的日子
+        need_easy = max(freq - len(fixed), math.ceil(max(0.0, rest_km) / max(1.0, max_wd_km * 0.9)))
+        hard_days = set(fixed)
+        while easy and len(easy) > need_easy:
+            near = [d for d in easy if any(abs((d - h).days) == 1 for h in hard_days)]
+            easy.remove((near or easy)[len(near or easy) // 2])
         # 量不夠分：減少輕鬆跑天數（與其每天 2 km 不如休息）
         while easy and rest_km / len(easy) < min_e_km and len(easy) > 1:
             easy.pop(len(easy) // 2)
