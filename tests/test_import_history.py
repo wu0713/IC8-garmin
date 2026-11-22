@@ -136,3 +136,23 @@ def test_self_report_used_when_history_short(client):
     assert ath["best_effort"]["source"] == "self_report" and ath["recent_longest_km"] == 16
     bad = c.put("/api/prefs", headers=hh, json={"self_report": {"weekly_km": 20, "race_km": 10, "race_time": "5:00"}})
     assert bad.status_code == 400
+
+
+def test_parse_strava_csv_chinese_headers_and_dates():
+    head = "活動 ID,活動日期,活動名稱,活動類型,活動說明,經過時間,距離,最大心率,相對費力指數,通勤,私人筆記,裝備,檔案名稱,運動員體重,自行車重量,經過時間,移動時間,距離,最大速度,平均速度,平均心率"
+    rows = [head,
+            '111,"2026年11月3日 下午10:15:45",晨跑,跑步,,3100,"10.02",175,,false,,,,,,3100,3000,10020.0,4.5,3.34,148.0',
+            '112,"2026/11/5 上午6:01:00",通勤,騎乘,,3600,"20.1",150,,true,,,,,,3600,3500,20100.0,9,5.7,120.0']
+    acts = file_import.parse_strava_csv("\n".join(rows))
+    run = next(a for a in acts if not a.get("cross"))
+    assert run["distance_m"] == 10020 and run["duration_s"] == 3000 and run["avg_hr"] == 148
+    assert run["start_local"] == "2026-11-04 06:15:45"                  # UTC 22:15 → 台北隔天 06:15
+    ride = next(a for a in acts if a.get("cross"))
+    assert ride["sport"] == "cycling"
+
+
+def test_parse_strava_csv_unknown_headers_fall_back_to_positions():
+    head = "A,B,C,D,E,F,G,H,I,J"
+    row = '9,"Nov 3, 2026, 10:15:45 PM",Run,Run,,3100,"10.02",175,,false'
+    a = file_import.parse_strava_csv(head + "\n" + row)[0]
+    assert a["distance_m"] == 10020 and a["duration_s"] == 3100

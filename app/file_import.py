@@ -10,6 +10,7 @@ import gzip
 import hashlib
 import io
 import math
+import re
 import zipfile
 from datetime import datetime, timezone
 from xml.etree import ElementTree as ET
@@ -40,12 +41,18 @@ def _sport(raw: str | None) -> str:
         return TYPE_MAP[low]
     if "run" in low or "跑" in low:
         return "running"
-    if "ride" in low or "bik" in low or "cycl" in low:
+    if "ride" in low or "bik" in low or "cycl" in low or any(x in low for x in ("騎", "单车", "單車", "自行車", "自行车", "サイクリング", "ライド")):
         return "cycling"
-    if "swim" in low:
+    if "swim" in low or "游泳" in low or "泳" in low or "スイム" in low:
         return "lap_swimming"
-    if "walk" in low:
+    if "hike" in low or "健行" in low or "登山" in low or "徒步" in low or "ハイキング" in low:
+        return "hiking"
+    if "walk" in low or "步行" in low or "健走" in low or "ウォーク" in low:
         return "walking"
+    if "weight" in low or "重訓" in low or "重量訓練" in low or "力量训练" in low:
+        return "strength_training"
+    if "ラン" in low or "ランニング" in low:
+        return "running"
     return "other"
 
 
@@ -93,48 +100,103 @@ def _make(source: str, ident: str, sport: str, start: datetime, dist_m, dur_s, a
 
 # ───────────────────────────── Strava activities.csv ─────────────────────────────
 
-DATE_FORMATS = ("%b %d, %Y, %I:%M:%S %p", "%d %b %Y, %H:%M:%S", "%Y-%m-%d %H:%M:%S", "%b %d, %Y %I:%M:%S %p")
+DATE_FORMATS = ("%b %d, %Y, %I:%M:%S %p", "%d %b %Y, %H:%M:%S", "%Y-%m-%d %H:%M:%S", "%b %d, %Y %I:%M:%S %p",
+                "%d %b %Y %H:%M:%S", "%Y/%m/%d %H:%M:%S", "%d.%m.%Y, %H:%M:%S", "%d/%m/%Y, %H:%M:%S")
+
+# Strava 的 activities.csv 欄位名稱會跟著帳號語言（英文、繁中、簡中、日文…），欄位順序前 8 欄是固定的
+COLS = {
+    "id": ["Activity ID", "活動 ID", "活動ID", "活动 ID", "活动ID", "アクティビティID"],
+    "date": ["Activity Date", "活動日期", "活动日期", "アクティビティの日付"],
+    "name": ["Activity Name", "活動名稱", "活动名称", "アクティビティ名"],
+    "type": ["Activity Type", "活動類型", "活動類別", "活动类型", "アクティビティタイプ"],
+    "elapsed": ["Elapsed Time", "經過時間", "耗時", "总时间", "經過的時間", "所要時間"],
+    "moving": ["Moving Time", "移動時間", "移动时间", "运动时间", "移動時間（秒）"],
+    "distance": ["Distance", "距離", "距离"],
+    "max_hr": ["Max Heart Rate", "最大心率", "最高心率", "最大心拍数"],
+    "avg_hr": ["Average Heart Rate", "平均心率", "平均心拍数"],
+    "cadence": ["Average Cadence", "平均步頻", "平均踏頻", "平均步频", "平均ケイデンス"],
+    "kcal": ["Calories", "卡路里", "熱量", "热量", "カロリー"],
+    "elev": ["Elevation Gain", "爬升高度", "總爬升", "海拔增益", "累積標高（上り）"],
+}
+POS = {"id": 0, "date": 1, "name": 2, "type": 3, "elapsed": 5, "distance": 6, "max_hr": 7}
+
+
+def _parse_date(s: str) -> datetime | None:
+    s = (s or "").strip()
+    for fmt in DATE_FORMATS:
+        try:
+            return datetime.strptime(s, fmt).replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+    # 中文／日文：「2025年11月3日 下午10:15:45」「2025/11/3 下午 10:15:45」
+    m = re.search(r"(\d{4})\D{1,2}(\d{1,2})\D{1,2}(\d{1,2})", s)
+    t = re.search(r"(\d{1,2}):(\d{2})(?::(\d{2}))?", s[m.end():] if m else s)
+    if not m or not t:
+        return None
+    h = int(t.group(1))
+    if any(x in s for x in ("下午", "PM", "pm", "午後", "晚上")) and h < 12:
+        h += 12
+    if any(x in s for x in ("上午", "AM", "am", "午前", "凌晨")) and h == 12:
+        h = 0
+    try:
+        return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), h, int(t.group(2)), int(t.group(3) or 0), tzinfo=timezone.utc)
+    except ValueError:
+        return None
+
+
+def _num_loc(v) -> float | None:
+    """數字：也接受「10,02」這種逗號小數（歐洲語系）。"""
+    if v is None:
+        return None
+    t = str(v).strip()
+    if re.fullmatch(r"-?\d+,\d{1,2}", t):
+        t = t.replace(",", ".")
+    return _num(t)
 
 
 def parse_strava_csv(text: str) -> list[dict]:
     rows = list(csv.reader(io.StringIO(text)))
     if not rows:
         return []
-    head = [h.strip() for h in rows[0]]
+    head = [h.strip().lstrip("\ufeff") for h in rows[0]]
 
-    def col(name, nth=0):
-        idx = [i for i, h in enumerate(head) if h == name]
-        return idx[nth] if len(idx) > nth else None
+    def col(key, nth=0):
+        idx = [i for i, h in enumerate(head) if h in COLS[key]]
+        if len(idx) > nth:
+            return idx[nth]
+        if nth == 0 and key in POS and POS[key] < len(head):
+            return POS[key]           # 看不懂欄名：用 Strava 固定的欄位順序
+        return None
 
-    c_id, c_date, c_name, c_type = col("Activity ID"), col("Activity Date"), col("Activity Name"), col("Activity Type")
-    c_el, c_mv = col("Elapsed Time"), col("Moving Time")
-    c_d1, c_d2 = col("Distance"), col("Distance", 1)
-    c_hr, c_mx = col("Average Heart Rate"), col("Max Heart Rate")
-    c_cad, c_kcal, c_elev = col("Average Cadence"), col("Calories"), col("Elevation Gain")
-    if c_date is None or c_type is None:
-        raise ValueError("activities.csv 的欄位看不懂")
-    out = []
+    c_id, c_date, c_name, c_type = col("id"), col("date"), col("name"), col("type")
+    c_el, c_mv = col("elapsed"), col("moving")
+    c_d1, c_d2 = col("distance"), col("distance", 1)
+    c_hr, c_mx = col("avg_hr"), col("max_hr")
+    if c_hr is not None and c_hr == c_mx:
+        c_hr = None
+    c_cad, c_kcal, c_elev = col("cadence"), col("kcal"), col("elev")
+    if len(head) < 8:
+        raise ValueError(f"activities.csv 的欄位看不懂（只有 {len(head)} 欄：{'、'.join(head[:6])}）")
+    out, bad_dates = [], 0
     for r in rows[1:]:
         g = lambda c: r[c] if c is not None and c < len(r) else None  # noqa: E731
-        start = None
-        for fmt in DATE_FORMATS:
-            try:
-                start = datetime.strptime((g(c_date) or "").strip(), fmt).replace(tzinfo=timezone.utc)
-                break
-            except ValueError:
-                continue
+        start = _parse_date(g(c_date) or "")
         if not start:
+            bad_dates += 1
             continue
         sport = _sport(g(c_type))
-        dist = _num(g(c_d2)) if c_d2 is not None and _num(g(c_d2)) else ((_num(g(c_d1)) or 0) * 1000 or None)
-        dur = _num(g(c_mv)) or _num(g(c_el))
-        cad = _num(g(c_cad))
+        d2 = _num_loc(g(c_d2)) if c_d2 is not None else None
+        dist = d2 if d2 else ((_num_loc(g(c_d1)) or 0) * 1000 or None)
+        dur = _num_loc(g(c_mv)) or _num_loc(g(c_el))
+        cad = _num_loc(g(c_cad))
         if cad and sport in RUN_KEYS and cad < 120:          # Strava 的跑步步頻是單腳
             cad *= 2
-        a = _make("strava", (g(c_id) or "").strip(), sport, start, dist, dur, _num(g(c_hr)), _num(g(c_mx)), (g(c_name) or "").strip() or None,
-                  cad, _num(g(c_kcal)), _num(g(c_elev)))
+        a = _make("strava", (g(c_id) or "").strip(), sport, start, dist, dur, _num_loc(g(c_hr)), _num_loc(g(c_mx)),
+                  (g(c_name) or "").strip() or None, cad, _num_loc(g(c_kcal)), _num_loc(g(c_elev)))
         if a:
             out.append(a)
+    if not out and bad_dates and len(rows) > 1:
+        raise ValueError(f"activities.csv 的日期格式看不懂（例如「{(rows[1][c_date] if c_date is not None and c_date < len(rows[1]) else '')[:30]}」）")
     return out
 
 
