@@ -33,6 +33,9 @@ def _keys(prefs: dict, goal: dict) -> tuple[str, str]:
     return hard, soft
 
 
+FEAS_VERSION = 2       # 可行性規則版本：改版時舊快照自動重算可行性
+
+
 def load_snap(uid: int) -> dict | None:
     r = db.q1("SELECT data FROM season_state WHERE user_id=?", (uid,))
     return json.loads(r["data"]) if r else None
@@ -80,9 +83,16 @@ def ensure_snap(uid: int, today: date, prefs: dict, goal: dict, ath: dict) -> di
         snap = {"plan_start": engine.monday(today).isoformat(), "key_hard": hard, "key_soft": soft, "diag": diag,
                 "v_base": max(diag["baseline_km"], 8.0), "start_long_km": max(ath["recent_longest_km"], 3.0),
                 "decision": None, "insertions": {}, "freeze_from": None, "triggers": {}, "results": {},
-                "resume_after": None, "created": today.isoformat()}
+                "resume_after": None, "created": today.isoformat(), "feas_v": FEAS_VERSION}
         lv = engine.athlete_level(ath, diag, prefs.get("level"))
         snap["level"], snap["level_info"] = lv["level"], lv
+        refresh_feasibility(snap, prefs, goal)
+        save_snap(uid, snap)
+    elif snap.get("feas_v") != FEAS_VERSION:     # 可行性判斷規則改過：用新規則重算（不重排整季）
+        snap["feas_v"] = FEAS_VERSION
+        if not snap.get("level"):
+            lv = engine.athlete_level(ath, snap["diag"], prefs.get("level"))
+            snap["level"], snap["level_info"] = lv["level"], lv
         refresh_feasibility(snap, prefs, goal)
         save_snap(uid, snap)
     elif not snap.get("level"):          # 舊版快照：補上程度（不重排整季）

@@ -241,9 +241,16 @@ def assess(*, diag: dict, goal: dict, level: str, weeks: int, feas: dict | None,
             risk("danger", f"目標配速比目前能力快 {round(gain * 100)}%",
                  "直接用目標配速練強度課，配速會超出身體能負荷的範圍，是最常見的受傷原因（脛前疼痛、跟腱、足底）。"
                  "課表已改用做得到的配速；如果你自己加速去追目標，請特別注意疼痛訊號。")
+    if feas and feas.get("verdict") == "infeasible" and out["verdict"] in ("realistic", "ambitious"):
+        # 速度夠、跑量來不及：跟下方「可行性檢查」說同一件事，不要一個說合理、一個說來不及
+        out["verdict"] = "ambitious"
+        out["text"] = "以速度來看目標做得到，但剩下的時間不夠把跑量疊到需要的量，所以課表先照「做得到的成績」排（見下方可行性檢查）。"
     if level == "novice" and goal["distance_km"] >= 15 and goal.get("race_date") and weeks < 16:
         risk("warn", f"新手準備{'全馬' if goal['distance_km'] >= 30 else '半馬'}只有 {weeks} 週",
              "一般建議新手至少 16 週（全馬 20 週以上）。可以完賽，但請以完賽為目標，不要追時間。")
+    if feas and feas.get("verdict") == "volume_short":
+        risk("warn", f"跑量疊不到建議值（最多約 {feas.get('v_reachable')} km／週）",
+             "速度上目標做得到，但耐力準備會比較少。每週的長跑一定要跑完，比賽前半段要比目標配速保守一點。")
     if feas and feas.get("verdict") == "infeasible" and decision == "accept_risk":
         risk("danger", "你選了在時間不夠的情況下照原目標練",
              f"跑量只會疊到每週 {feas.get('v_reachable')} km；若再自行加量，週增幅超過 10% 時受傷機率明顯上升。")
@@ -389,8 +396,14 @@ def feasibility(diag: dict, goal: dict, weeks_available: int, cap_km: float | No
         if cap_km:
             v_max = min(v_max, cap_km)
         ach = achievable_time(goal, diag, v_max, weeks_available, level)
-        out["achievable_s"] = round(max(ach, target_s))
         out["achievable_basis"] = ach_basis(diag, goal, v_max)
+        if ach <= target_s * 1.005 and not time_short:
+            # 速度夠、只是跑量疊不到建議值：目標本身做得到，不叫「來不及」，改成提醒跑量不足
+            out["verdict"] = "volume_short"
+            why.append(f"以你的速度，{fmt_time(target_s)} 做得到；但時間只夠把跑量疊到每週約 {round(v_max)} km"
+                       f"（建議 {round(lo)}–{round(hi)} km），比賽後段可能比較吃力，長跑要確實完成")
+        else:
+            out["achievable_s"] = round(max(ach, target_s))
         out["v_reachable"] = round(v_max, 1)
         out["required_weeks"] = w_need
         if goal.get("race_date") and w_need > weeks_available and not time_short:
@@ -904,7 +917,7 @@ def build_season(*, ath: dict, goal: dict, prefs: dict, snap: dict, today: date)
     # 時間不夠、使用者還沒選：不再停在「只排輕鬆跑」，先照「做得到的」跑量和成績排正常的課表（暫定）
     provisional = feas.get("verdict") == "infeasible" and decision is None and not open_mode
     hold = False
-    if feas.get("verdict") == "infeasible" and decision in ("accept_risk", None):
+    if feas.get("verdict") == "volume_short" or (feas.get("verdict") == "infeasible" and decision in ("accept_risk", None)):
         v_target = min(v_target, feas.get("v_reachable") or v_target)
     ins = {int(k): v for k, v in (snap.get("insertions") or {}).items()}
     freeze = snap.get("freeze_from")
