@@ -284,3 +284,16 @@ def test_month_explains_deload_week(ctx):
         m = c.get(f"/api/month?ym={ym}", headers=h).json()
         found = found or any("減量週" in n for n in m["notices"])
     assert found
+
+
+def test_speed_ok_but_volume_short_is_not_called_infeasible():
+    # 朋友的情況：每週 8 km、VDOT 37.9（半馬約 1:56）、目標 2:00、15 週
+    diag = {"baseline_km": 7.8, "capacity_km": 7.8, "flags": ["consistency"], "cur_vdot": 37.9, "pred_goal_s": 116 * 60}
+    g = {"distance_km": 21.0975, "target_s": 120 * 60, "race_date": "2027-03-07"}
+    f = engine.feasibility(diag, g, 15, None, "novice")
+    assert f["verdict"] == "volume_short" and "achievable_s" not in f
+    a = engine.assess(diag=diag, goal=g, level="novice", weeks=15, feas=f, ath={})
+    assert any("跑量疊不到" in r["title"] for r in a["risks"])
+    # 速度也不夠時才是「時間不夠」
+    f2 = engine.feasibility(diag, {**g, "target_s": 100 * 60}, 15, None, "novice")
+    assert f2["verdict"] == "infeasible" and f2["achievable_s"] > 100 * 60

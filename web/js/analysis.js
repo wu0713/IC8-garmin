@@ -22,7 +22,7 @@ function seasonHead(w) {
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <span class="badge ${PHASE_CLS[w.phase] || ""}">${esc(w.phase_label || "—")}</span>
       <b>第 ${(w.week_idx ?? 0) + 1} / ${w.n_weeks} 週</b>
-      ${w.hold || w.provisional ? `<span class="verdict infeasible">${w.provisional ? "暫定目標" : "目標要調整"}</span>` : w.verdict === "infeasible" && w.decision === "accept_risk" ? `<span class="verdict tight">照原目標（風險較高）</span>` : w.verdict === "tight" ? `<span class="verdict tight">沒有緩衝</span>` : ""}
+      ${w.hold || w.provisional ? `<span class="verdict infeasible">${w.provisional ? "暫定目標" : "目標要調整"}</span>` : w.verdict === "infeasible" && w.decision === "accept_risk" ? `<span class="verdict tight">照原目標（風險較高）</span>` : w.verdict === "tight" ? `<span class="verdict tight">沒有緩衝</span>` : w.verdict === "volume_short" ? `<span class="verdict tight">跑量不足</span>` : ""}
       <span class="muted" style="margin-left:auto">${esc(w.limiter_label || "")}</span></div>
     <div class="progress" style="margin-top:8px"><span style="width:${pct}%"></span></div>
     <p class="muted" style="margin-top:6px">${w.hold ? "目標在剩下的時間內做不到，點這裡選擇怎麼調整。" : `本週目標 ${fmt(w.target_km, 1)} km${w.next_checkpoint ? `；下一個檢核點 ${w.next_checkpoint.date.slice(5).replace("-", "/")}（${esc(w.next_checkpoint.label)}）` : ""}。`}

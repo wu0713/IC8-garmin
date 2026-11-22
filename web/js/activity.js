@@ -316,7 +316,7 @@ function excuseHtml(d, excused) {
 async function viewSeason() {
   const [s, rn] = await Promise.all([api("/api/season"), api("/api/runner").catch(() => null)]);
   const f = s.feasibility, g = s.goal, d = s.diag;
-  const VERDICT = { ok: ["ok", "可行，有緩衝"], tight: ["tight", "可行但沒有緩衝"], infeasible: ["infeasible", "時間不夠"] };
+  const VERDICT = { ok: ["ok", "可行，有緩衝"], tight: ["tight", "可行但沒有緩衝"], volume_short: ["tight", "做得到，但跑量不足"], infeasible: ["infeasible", "時間不夠"] };
   const TAG = { deload: "減量週", peak: "峰值", repeat: "重跑", phase_repeat: "回上一階段", flat: "固定頻率" };
   const maxK = Math.max(...s.weeks.map((w) => Math.max(w.target_km || 0, w.actual_km || 0)), 1);
   const sec = (x) => { const v = Math.round(x), h = Math.floor(v / 3600), m = Math.floor((v % 3600) / 60), ss = v % 60;
