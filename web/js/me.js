@@ -163,40 +163,40 @@ async function viewSettings() {
   const multiDay = ["travel", "illness", "endurance", "trail"];
   $app.innerHTML = `
     ${appbar("目標與課表偏好", { back: true })}
-    <form class="form" id="pf">
-      <section class="card"><h2>我的目標</h2>
+    <form class="form settings" id="pf">
+      <section class="card"><h2>我的目標</h2><p class="card-sub">課表會依這裡的方向安排。</p>
         <label><span>用一句話描述</span><input type="text" name="goal_name" value="${esc(g.name)}" placeholder="明年三月半馬破 1:45"></label>
-        <fieldset><legend>現在比較想要</legend><div class="chips">${Object.entries(m.goal_types).map(([k, v]) => rad("goal_type", k, g.type === k, v)).join("")}</div></fieldset>
+        <fieldset><legend>現在比較想要</legend><div class="chips g2">${Object.entries(m.goal_types).map(([k, v]) => rad("goal_type", k, g.type === k, v)).join("")}</div></fieldset>
         <div id="race" ${g.type === "race" ? "" : "hidden"}>
           <div class="two"><label><span>比賽日期</span><input type="date" name="event_date" value="${esc(g.event_date || "")}"></label>
             <label><span>距離（公里）</span><input type="number" step="0.0001" min="1" name="event_distance_km" value="${esc(g.event_distance_km || "")}"></label></div>
           <div class="chips" style="margin-top:6px">${[[5, "5K"], [10, "10K"], [21.0975, "半馬"], [42.195, "全馬"]].map(([k, t]) => `<button type="button" class="btn small outline" data-dist="${k}">${t}</button>`).join("")}</div>
-          <label><span>目標時間（建議填：可行性檢查和配速都靠它）</span><input type="text" name="target_time" value="${esc(g.target_time || "")}" placeholder="1:45:00"></label>
-          <p class="muted" style="margin-top:6px">儲存後會先做可行性檢查：時間不夠時不會硬排課，會請你選擇改目標、延後賽期，或接受較高風險。</p>
+          <label><span>目標時間（建議填）</span><input type="text" name="target_time" value="${esc(g.target_time || "")}" placeholder="1:45:00"></label>
+          <p class="card-sub" style="margin-top:8px">可行性檢查和配速都靠目標時間。儲存後會先做可行性檢查：時間不夠時不會硬排課，會請你選擇改目標、延後賽期，或接受較高風險。</p>
         </div></section>
 
-      <section class="card" style="margin-top:12px" id="intro"><h2>我最近的跑步狀況</h2>
-        <p class="muted" style="margin-top:4px">剛買手錶、App 裡的紀錄不到 4 週時，課表會用這裡填的當起點；紀錄滿 4 週後就改用實際資料。舊紀錄也可以到「我的 → 匯入舊紀錄」上傳。</p>
+      <section class="card" id="intro"><h2>我最近的跑步狀況</h2>
+        <p class="card-sub">剛買手錶、App 裡的紀錄不到 4 週時，課表會用這裡填的當起點；紀錄滿 4 週後就改用實際資料。舊紀錄也可以到「我的 → 匯入舊紀錄」上傳。</p>
         <div class="two" style="margin-top:8px">
-          <label><span>最近一個月，平均每週跑幾公里</span><input type="number" min="0" max="250" step="1" name="sr_weekly_km" value="${esc(sr.weekly_km ?? "")}" placeholder="20"></label>
-          <label><span>最近一個月，最長跑過幾公里</span><input type="number" min="0" max="100" step="0.5" name="sr_longest_km" value="${esc(sr.longest_km ?? "")}" placeholder="10"></label></div>
-        <fieldset style="margin-top:8px"><legend>每週有幾堂比較快的課（節奏、間歇、比賽）</legend>
-          <div class="chips">${[[0, "沒有"], [1, "1 堂"], [2, "2 堂以上"]].map(([k, t]) => rad("sr_hard", k, (sr.hard_per_week ?? -1) === k, t)).join("")}</div></fieldset>
-        <fieldset style="margin-top:8px"><legend>跑步多久了</legend>
-          <div class="chips">${[["new", "剛開始"], ["lt1", "不到 1 年"], ["1to3", "1–3 年"], ["gt3", "3 年以上"]].map(([k, t]) => rad("sr_years", k, sr.years === k, t)).join("")}</div></fieldset>
+          <label><span>近一個月每週平均（km）</span><input type="number" min="0" max="250" step="1" name="sr_weekly_km" value="${esc(sr.weekly_km ?? "")}" placeholder="20"></label>
+          <label><span>近一個月最長一次（km）</span><input type="number" min="0" max="100" step="0.5" name="sr_longest_km" value="${esc(sr.longest_km ?? "")}" placeholder="10"></label></div>
+        <fieldset><legend>每週有幾堂比較快的課（節奏、間歇、比賽）</legend>
+          <div class="chips g3">${[[0, "沒有"], [1, "1 堂"], [2, "2 堂以上"]].map(([k, t]) => rad("sr_hard", k, (sr.hard_per_week ?? -1) === k, t)).join("")}</div></fieldset>
+        <fieldset><legend>跑步多久了</legend>
+          <div class="chips g2">${[["new", "剛開始"], ["lt1", "不到 1 年"], ["1to3", "1–3 年"], ["gt3", "3 年以上"]].map(([k, t]) => rad("sr_years", k, sr.years === k, t)).join("")}</div></fieldset>
         <div class="two" style="margin-top:8px">
-          <label><span>最近半年的一場比賽或測驗（選填）</span><select name="sr_race_km"><option value="">沒有</option>
+          <label><span>近半年比賽或測驗（選填）</span><select name="sr_race_km"><option value="">沒有</option>
             ${[[5, "5K"], [10, "10K"], [21.0975, "半馬"], [42.195, "全馬"]].map(([k, t]) => `<option value="${k}" ${+sr.race_km === k ? "selected" : ""}>${t}</option>`).join("")}</select></label>
           <label><span>成績</span><input type="text" name="sr_race_time" value="${esc(sr.race_time || "")}" placeholder="25:30 或 1:52:00"></label></div>
       </section>
 
-      <section class="card" style="margin-top:12px"><h2>我的程度</h2>
-        <div class="chips" style="margin-top:8px">${Object.entries(m.levels || {}).map(([k, v]) => rad("level", k, (p.level || "auto") === k, v)).join("")}</div>
-        <p class="muted" style="margin-top:6px">決定課表一開始要不要就有強度課。「自動判斷」看你近 8 週的跑量、成績和有沒有練過強度；新手會先打有氧底子，有經驗的人從第一週就節奏、坡道、間歇混合練。</p></section>
+      <section class="card"><h2>我的程度</h2>
+        <div class="chips g2" style="margin-top:12px">${Object.entries(m.levels || {}).map(([k, v]) => rad("level", k, (p.level || "auto") === k, v)).join("")}</div>
+        <p class="card-sub" style="margin-top:8px">決定課表一開始要不要就有強度課。「自動判斷」看你近 8 週的跑量、成績和有沒有練過強度；新手會先打有氧底子，有經驗的人從第一週就節奏、坡道、間歇混合練。</p></section>
 
-      <section class="card" style="margin-top:12px"><h2>排課方式</h2>
-        <div class="chips" style="margin-top:8px">${rad("plan_mode", "auto", !["manual", "imported"].includes(p.plan_mode), "自動排課")}${rad("plan_mode", "manual", p.plan_mode === "manual", "每週固定課表")}${p.imported ? rad("plan_mode", "imported", p.plan_mode === "imported", "照匯入的課表") : ""}</div>
-        <p class="muted" id="mode-hint" style="margin-top:8px"></p>
+      <section class="card"><h2>排課方式</h2>
+        <div class="chips ${p.imported ? "g3" : "g2"}" style="margin-top:12px">${rad("plan_mode", "auto", !["manual", "imported"].includes(p.plan_mode), "自動排課")}${rad("plan_mode", "manual", p.plan_mode === "manual", "每週固定課表")}${p.imported ? rad("plan_mode", "imported", p.plan_mode === "imported", "照匯入的課表") : ""}</div>
+        <p class="card-sub" id="mode-hint" style="margin-top:8px"></p>
         <div id="tpl" ${p.plan_mode === "manual" ? "" : "hidden"}>
           ${WD.map((w, i) => { const t = (p.template || {})[i] || {}; return `<div class="two" style="grid-template-columns:3rem 1fr 6rem;align-items:center;margin-top:8px">
             <b>週${w}</b>
@@ -205,7 +205,7 @@ async function viewSettings() {
         </div>
         <div style="margin-top:14px;border-top:2px dashed var(--line, #ccd);padding-top:12px">
           <h3>匯入自己的逐日課表</h3>
-          <p class="muted" style="margin-top:4px">上傳 Word（.docx）課表：要有一張「配速與代號」表和一張每日行事曆表（週一到週日七欄，每格像「11/10 5 km E」）。匯入後每天照表排，App 不會自動改課；疼痛、晨間心率偏高等停損規則仍然有效。</p>
+          <p class="card-sub">上傳 Word（.docx）課表：要有一張「配速與代號」表和一張每日行事曆表（週一到週日七欄，每格像「11/10 5 km E」）。匯入後每天照表排，App 不會自動改課；疼痛、晨間心率偏高等停損規則仍然有效。</p>
           ${p.imported ? `<p style="margin-top:8px">目前匯入：<b>${esc(p.imported.name)}</b><br><small class="muted">${p.imported.start} 到 ${p.imported.end}，共 ${p.imported.n_days} 天</small></p>
             ${(p.imported.unknown || []).length ? `<p class="muted" style="margin-top:4px">這幾格看不懂，照原文顯示：${p.imported.unknown.map(esc).join("、")}</p>` : ""}` : ""}
           <div class="btn-row" style="margin-top:8px"><label class="btn small tonal" style="cursor:pointer">${p.imported ? "換一份課表" : "選擇 .docx 檔"}<input type="file" id="impf" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden></label>
@@ -213,47 +213,48 @@ async function viewSettings() {
           <p class="err" id="imperr" hidden></p>
         </div></section>
 
-      <section class="card" style="margin-top:12px"><h2>固定行程與比賽</h2>
-        <p class="muted" style="margin-top:4px">每種行程有自己的賽前減量和賽後恢復（按損傷類型，不是按時間長短）。例如超長單車沒有肌肉損傷，但會睡眠不足，所以隔週是恢復週、前 3 天心率壓低。行程落在目標賽前 3 週內會提醒你。</p>
+      <section class="card"><h2>固定行程與比賽</h2>
+        <p class="card-sub">每種行程有自己的賽前減量和賽後恢復（按損傷類型，不是按時間長短）。例如超長單車沒有肌肉損傷，但會睡眠不足，所以隔週是恢復週、前 3 天心率壓低。行程落在目標賽前 3 週內會提醒你。</p>
         <ul class="list" id="evs" style="margin-top:6px"></ul>
-        <div class="two" style="margin-top:4px"><label><span>類型</span><select id="et">${Object.entries(ET).map(([k, v]) => `<option value="${k}">${esc(v.label)}</option>`).join("")}</select></label>
+        <div class="race-add"><p class="race-add-h">新增一個行程或比賽</p>
+        <div class="two"><label><span>類型</span><select id="et">${Object.entries(ET).map(([k, v]) => `<option value="${k}">${esc(v.label)}</option>`).join("")}</select></label>
           <label><span>名稱</span><input type="text" id="en" maxlength="30" placeholder="河濱 10K"></label></div>
         <div class="two"><label><span>日期</span><input type="date" id="ed"></label>
           <label id="eel" hidden><span>結束日期</span><input type="date" id="ee"></label></div>
         <div class="two" id="erace"><label><span>距離（公里）</span><input type="number" id="ek" step="0.1" min="1" placeholder="10"></label>
           <label><span>目標時間（選填）</span><input type="text" id="ett" placeholder="50:00"></label></div>
         <p class="muted" id="ehint" style="margin-top:6px"></p>
-        <button class="btn tonal small" type="button" id="eadd" style="margin-top:10px">加入</button></section>
+        <button class="btn tonal block" type="button" id="eadd" style="margin-top:12px">加入</button></div></section>
 
-      <section class="card" style="margin-top:12px"><h2>什麼時候跑</h2>
-        <fieldset><legend>可以跑的日子</legend><div class="chips">${WD.map((w, i) => chk("days", i, p.days.includes(i), `週${w}`)).join("")}</div></fieldset>
+      <section class="card"><h2>什麼時候跑</h2><p class="card-sub">勾選有空的日子，課表只會排在這些天。</p>
+        <fieldset><legend>可以跑的日子</legend><div class="chips days">${WD.map((w, i) => chk("days", i, p.days.includes(i), w)).join("")}</div></fieldset>
         <div class="two"><label><span>長跑放在</span><select name="long_run_day">${WD.map((w, i) => `<option value="${i}" ${p.long_run_day == i ? "selected" : ""}>週${w}</option>`).join("")}</select></label>
           <label><span>通常幾點跑</span><input type="time" name="run_time" value="${esc(p.run_time)}"></label></div>
         <div class="two"><label><span>平日最多（分鐘）</span><input type="number" min="20" max="240" name="max_minutes_weekday" value="${p.max_minutes_weekday}"></label>
           <label><span>長跑最多（分鐘）</span><input type="number" min="30" max="400" name="max_long_minutes" value="${p.max_long_minutes}"></label></div>
-        <p class="muted" style="margin-top:6px">可跑時間撐不起目標需要的跑量時，可行性檢查會告訴你。</p></section>
+        <p class="card-sub" style="margin-top:8px">可跑時間撐不起目標需要的跑量時，可行性檢查會告訴你。</p></section>
 
-      <section class="card" style="margin-top:12px"><h2>想做的課</h2>
-        <p class="muted" style="margin-top:4px">每週幾堂強度課、跑量加多快、什麼時候減量，都由能力診斷和分期決定，不用自己調。這裡只選你喜歡的形式：沒勾的課會換成效果接近、你有勾的課（例如沒勾坡道就換成間歇，沒勾變速就換成節奏跑）；基礎期的坡道、變速沒勾就不排。沒勾快步，輕鬆跑後面就不加快步。</p>
-        <div class="chips" style="margin-top:8px">${Object.entries(m.workouts).map(([k, v]) => chk("workouts", k, p.workouts[k], v)).join("")}</div></section>
+      <section class="card"><h2>想做的課</h2>
+        <p class="card-sub">每週幾堂強度課、跑量加多快、什麼時候減量，都由能力診斷和分期決定，不用自己調。這裡只選你喜歡的形式：沒勾的課會換成效果接近、你有勾的課（例如沒勾坡道就換成間歇，沒勾變速就換成節奏跑）；基礎期的坡道、變速沒勾就不排。沒勾快步，輕鬆跑後面就不加快步。</p>
+        <div class="chips g2" style="margin-top:12px">${Object.entries(m.workouts).map(([k, v]) => chk("workouts", k, p.workouts[k], v)).join("")}</div></section>
 
-      <section class="card" style="margin-top:12px"><h2>每日目標</h2>
-        <div class="two"><label><span>步數目標（留空 = 用 Garmin 的）</span><input type="number" min="1000" step="500" name="step_goal" value="${p.step_goal ?? ""}"></label>
-          <label><span>活動熱量（kcal）</span><input type="number" min="100" step="50" name="kcal_goal" value="${p.kcal_goal ?? 500}"></label></div>
-        <label><span>睡眠目標（小時）</span><input type="number" min="5" max="12" step="0.5" name="sleep_goal" value="${p.sleep_goal ?? 8}"></label></section>
+      <section class="card"><h2>每日目標</h2>
+        <div class="three"><label><span>步數</span><input type="number" min="1000" step="500" name="step_goal" value="${p.step_goal ?? ""}" placeholder="自動"></label>
+          <label><span>熱量（kcal）</span><input type="number" min="100" step="50" name="kcal_goal" value="${p.kcal_goal ?? 500}"></label>
+        <label><span>睡眠（小時）</span><input type="number" min="5" max="12" step="0.5" name="sleep_goal" value="${p.sleep_goal ?? 8}"></label></div>
+        <p class="card-sub" style="margin-top:8px">步數留空會用 Garmin 的目標。</p></section>
 
-      <section class="card" style="margin-top:12px"><h2>個人數據</h2>
-        <div class="two"><label><span>最大心率（實測最好，留空自動）</span><input type="number" name="max_hr" value="${p.max_hr ?? ""}" placeholder="自動"></label>
-          <label><span>年齡（45 歲以上每 3 週減量一次）</span><input type="number" name="age" min="10" max="95" value="${p.age ?? ""}"></label></div>
-        <label><span>性別（心率負荷公式）</span><select name="sex"><option value="M" ${p.sex === "M" ? "selected" : ""}>男</option><option value="F" ${p.sex === "F" ? "selected" : ""}>女</option></select></label>
-        <p class="muted" style="margin-top:6px">配速區間從你的成績推算，跑滿 8 趟合格的輕鬆跑後會用心率資料自動校正，所以不用自己填配速。</p></section>
+      <section class="card"><h2>個人數據</h2><p class="card-sub">最大心率實測最好，留空會自動估算。45 歲以上每 3 週減量一次。</p>
+        <div class="two"><label><span>最大心率</span><input type="number" name="max_hr" value="${p.max_hr ?? ""}" placeholder="自動"></label>
+          <label><span>年齡</span><input type="number" name="age" min="10" max="95" value="${p.age ?? ""}"></label></div>
+        <label><span>性別（用在心率負荷公式）</span><select name="sex"><option value="M" ${p.sex === "M" ? "selected" : ""}>男</option><option value="F" ${p.sex === "F" ? "selected" : ""}>女</option></select></label>
+        <p class="card-sub" style="margin-top:8px">配速區間從你的成績推算，跑滿 8 趟合格的輕鬆跑後會用心率資料自動校正，所以不用自己填配速。</p></section>
 
-      <section class="card" style="margin-top:12px"><h2>其他</h2>
-        <label class="check"><input type="checkbox" name="push_to_garmin" ${p.push_to_garmin ? "checked" : ""} ${S.me.provider !== "garmin" ? "disabled" : ""}>把課表推到 Garmin 手錶</label>
-        <label class="check"><input type="checkbox" name="show_on_board" ${p.show_on_board !== false ? "checked" : ""}>在跑友排行顯示我</label>
-        <label><span>行事曆提醒（開始前幾分鐘，0 = 不提醒）</span><input type="number" min="0" max="240" name="calendar_alarm_min" value="${p.calendar_alarm_min}"></label></section>
-      <p class="err" id="perr" hidden></p>
-      <button class="btn block" type="submit">儲存並重排課表</button>
+      <section class="card"><h2>其他</h2>
+        <label class="check"><input type="checkbox" name="push_to_garmin" ${p.push_to_garmin ? "checked" : ""} ${S.me.provider !== "garmin" ? "disabled" : ""}><span>把課表推到 Garmin 手錶${S.me.provider !== "garmin" ? `<small>要先連結 Garmin 才能用</small>` : ""}</span></label>
+        <label class="check"><input type="checkbox" name="show_on_board" ${p.show_on_board !== false ? "checked" : ""}><span>在跑友排行顯示我</span></label>
+        <label class="inline-num"><span>行事曆提醒<small>開始前幾分鐘，0 = 不提醒</small></span><input type="number" min="0" max="240" name="calendar_alarm_min" value="${p.calendar_alarm_min}"></label></section>
+      <div class="save-bar"><p class="err" id="perr" hidden></p><button class="btn block" type="submit">儲存並重排課表</button></div>
     </form>`;
   bindCommon();
   const f = document.getElementById("pf");

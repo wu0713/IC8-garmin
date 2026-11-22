@@ -102,11 +102,10 @@ async function syncNow(btn) {
 async function viewSummary() {
   const [d, bc] = await Promise.all([api("/api/summary"), briefCard()]);
   const dev = d.device, t = d.today, r = d.readiness;
-  const listMode = localStorage.getItem("ic8_cards") === "list";
   const avatar = d.partner.species ? charThumb(d.partner.species, d.partner.stage) : ico("paw");
 
   $app.innerHTML = `
-    ${appbar("今天", { actions: `
+    ${appbar("摘要", { actions: `
       <button class="icon-btn" id="sync" aria-label="立即同步">${ico("sync")}</button>
       ` })}
     ${d.last_sync_error ? `<div class="note-card" style="margin-bottom:12px">${ico("bolt")}<span>上次同步失敗：${esc(d.last_sync_error)}。按上面的同步再試一次；一直失敗就到「我的 → 手錶與資料來源」重新連結。</span></div>` : ""}
@@ -143,12 +142,20 @@ async function viewSummary() {
     <button class="strip" data-go="#/me/device" style="margin-top:14px">${ico("watch")}
       <span><b>${esc(dev?.name || (d.provider === "demo" ? "範例資料" : "Garmin"))}</b>
         <small>${d.provider === "demo" ? "範例資料，尚未連結你的 Garmin" : agoText(d.last_sync)}</small></span>
-      <span class="chip"><span class="dot ${d.last_sync_error ? "off" : ""}"></span>${d.last_sync_error ? "同步失敗" : "已連線"}</span></button>
+      <span class="chip"><span class="dot ${d.last_sync_error ? "off" : ""}"></span>${d.last_sync_error ? "同步失敗" : "已連線"}</span></button>`;
+  bindCommon();
+  document.getElementById("sync").onclick = (e) => syncNow(e.currentTarget);
+}
 
-    <section class="section" aria-labelledby="mh">
-      <div class="section-head"><h2 id="mh">我的指標</h2>
-        <span><button class="icon-btn" id="mode" aria-label="${listMode ? "格狀顯示" : "清單顯示"}">${ico(listMode ? "grid" : "list")}</button>
-        <button class="text-btn" id="edit">編輯</button></span></div>
+// ───────────────────── 指標 ─────────────────────
+async function viewMetrics() {
+  const d = await api("/api/summary");
+  const listMode = localStorage.getItem("ic8_cards") === "list";
+  $app.innerHTML = `
+    ${appbar("指標", { actions: `
+      <button class="icon-btn" id="mode" aria-label="${listMode ? "格狀顯示" : "清單顯示"}">${ico(listMode ? "grid" : "list")}</button>
+      <button class="text-btn" id="edit">編輯</button>` })}
+    <p class="muted" style="margin-bottom:10px">點任一張卡片看週、月、6 個月、年的趨勢。按「編輯」選要顯示哪些、調整順序。</p>
       <div class="metrics ${listMode ? "list" : ""}">
         ${d.cards.map((c) => c.key === "partner" ? `
           <button class="mcard partner" style="--mc:var(--pill)" data-go="${c.species ? "#/me" : "#/me/pick"}">
@@ -163,11 +170,9 @@ async function viewSummary() {
             <span class="ms" style="display:block">${c.value == null ? "手錶沒有這項資料" : esc(c.sub || "")}</span></span>
             ${c.spark ? sparkline(c.spark, mcolor(c.key)) : ""}
           </button>`).join("")}
-      </div>
-    </section>`;
+      </div>`;
   bindCommon();
-  document.getElementById("sync").onclick = (e) => syncNow(e.currentTarget);
-  document.getElementById("mode").onclick = () => { localStorage.setItem("ic8_cards", listMode ? "grid" : "list"); viewSummary(); };
+  document.getElementById("mode").onclick = () => { localStorage.setItem("ic8_cards", listMode ? "grid" : "list"); viewMetrics(); };
   document.getElementById("edit").onclick = () => editDashboard(d);
 }
 
@@ -183,16 +188,16 @@ function editDashboard(d) {
     box.querySelectorAll("[data-up]").forEach((b) => (b.onclick = () => { const i = +b.dataset.up; if (i > 0) { [order[i - 1], order[i]] = [order[i], order[i - 1]]; draw(box); } }));
     box.querySelectorAll("[data-down]").forEach((b) => (b.onclick = () => { const i = +b.dataset.down; if (i < order.length - 1) { [order[i + 1], order[i]] = [order[i], order[i + 1]]; draw(box); } }));
   };
-  sheet(`<h2>編輯我的指標</h2><p class="muted">勾選要顯示的卡片，用箭頭調整順序。</p><ul class="edit-list" style="margin-top:8px"></ul>
+  sheet(`<h2>編輯指標</h2><p class="muted">勾選要顯示的卡片，用箭頭調整順序。</p><ul class="edit-list" style="margin-top:8px"></ul>
     <div class="btn-row"><button class="btn" id="save">儲存</button><button class="btn outline" id="reset">恢復預設</button></div>`, (box, close) => {
     draw(box);
     box.querySelector("#save").onclick = async () => {
       await api("/api/prefs", { method: "PUT", body: { dashboard: order.filter((k) => on.has(k)) } });
-      close(); toast("已更新儀表板"); viewSummary();
+      close(); toast("已更新指標"); viewMetrics();
     };
     box.querySelector("#reset").onclick = async () => {
       await api("/api/prefs", { method: "PUT", body: { dashboard: S.meta.default_cards } });
-      close(); viewSummary();
+      close(); viewMetrics();
     };
   });
 }
