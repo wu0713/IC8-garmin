@@ -26,7 +26,7 @@ PHASE_COLORS = {"base": "base", "build": "build", "specific": "specific", "taper
 
 def _keys(prefs: dict, goal: dict) -> tuple[str, str]:
     hard = json.dumps([goal["type"], goal["distance_km"], bool(goal.get("race_date")), sorted(prefs["days"]),
-                       prefs["long_run_day"], prefs.get("level") or "auto",
+                       prefs["long_run_day"], prefs.get("level") or "auto", sorted(prefs.get("excused_weeks") or []),
                        {k: v for k, v in (prefs.get("self_report") or {}).items() if k != "updated"}])
     soft = json.dumps([goal.get("race_date"), goal.get("target_s"), prefs.get("max_minutes_weekday"),
                        prefs.get("max_long_minutes")])
@@ -65,7 +65,8 @@ def weeks_until(plan_start: date, goal: dict) -> int:
 def refresh_feasibility(snap: dict, prefs: dict, goal: dict):
     ps = date.fromisoformat(snap["plan_start"])
     n = weeks_until(ps, goal)
-    snap["feasibility"] = engine.feasibility(snap["diag"], goal, n, capacity_km(prefs, snap["diag"])) if goal.get("race_date") else None
+    snap["feasibility"] = (engine.feasibility(snap["diag"], goal, n, capacity_km(prefs, snap["diag"]), snap.get("level"))
+                           if goal.get("race_date") else None)
 
 
 def ensure_snap(uid: int, today: date, prefs: dict, goal: dict, ath: dict) -> dict:
@@ -407,6 +408,7 @@ def season_plan(uid: int, today: date | None = None) -> dict:
             **cx.assess, "realistic": cx.assess.get("realistic_s") and engine.fmt_time(cx.assess["realistic_s"]),
             "pred_goal": cx.assess.get("pred_goal_s") and engine.fmt_time(cx.assess["pred_goal_s"])},
         "distance_label": T.DIST_PROFILE[T.dist_key(g["distance_km"])]["label"],
+        "excused_weeks": cx.prefs.get("excused_weeks") or [],
         "diag": cx.snap["diag"], "feasibility": feas and {**feas, "achievable": feas.get("achievable_s") and engine.fmt_time(feas["achievable_s"]),
                                                           "target": engine.fmt_time(feas["target_s"])},
         "decision": cx.snap.get("decision"), "warnings": goal_event_warnings(cx.prefs, cx.goal) + cx.season["warnings"], "phases": phases, "weeks": weeks,

@@ -28,9 +28,13 @@ def growth_rate(baseline_km: float) -> float:
     return 0.10
 
 
+# 回到「近 12 週曾經跑到的量」比從零開始安全：在那之前用較快的回升速度
+CAPACITY_SHARE = 0.90              # 曾經的量 = 近 12 週「連續兩週平均」最高值 × 0.9
+REBUILD_RATE = 0.12                # 回升期每週 +12%
+REBUILD_ABS_CAP_KM = 6.0           # 回升期單週最多 +6 km
 LOW_BASE_ABS_CAP_KM = 4.0          # 基線 < 25 km 時，單週絕對增幅上限
-CONSISTENCY_RAMP_FACTOR = 0.7      # 一致性受限：前期增幅再打七折
-CONSISTENCY_FLAT_WEEKS = 6         # 一致性受限：前 6 週不疊量
+CONSISTENCY_RAMP_FACTOR = 0.85     # 一致性受限：基礎期增幅打 85 折
+CONSISTENCY_FLAT_WEEKS = 2         # 一致性受限：前 2 週不疊量（原本 6 週太保守）
 DELOAD_FACTOR = 0.70
 TAPER_CURVE = [0.75, 0.55, 0.35]   # 減量期：峰值的 75% → 55% → 35%（最後一個是賽週）
 
@@ -117,6 +121,13 @@ VOLUME_TOLERANCE = 0.05            # 週總量與目標誤差 ≤ 5%
 MAX_CONSECUTIVE_RUN_DAYS = 3
 MAX_CONSECUTIVE_RUN_DAYS_CONSISTENCY = 2
 MIN_EASY_MINUTES = 20
+# 每週跑幾次：先定頻率，再分配距離（跑量少時每次跑短一點，不減少次數）
+FREQ_TARGET = {"novice": 3, "intermediate": 4, "experienced": 5}
+FREQ_BY_DIST = {"5k": 0, "10k": 0, "half": 0, "full": 1}       # 全馬多一次
+MIN_EASY_KM = 3.0
+# 長跑：低跑量時放寬「佔週跑量比例」，並以時間為上限（慢的人不會跑太久）
+LONG_RATIO_LOWVOL_MAX = 0.45       # 週跑量 ≤ 20 km 時長跑最多 45%，到 45 km 線性回到原本比例（入門半馬課表常見 40–45%）
+LONG_MAX_MIN = {"5k": 80, "10k": 95, "half": 120, "full": 180}
 
 # ───────────── 第 6 層：配速區間（%VO2max）與心率上限（%max HR） ─────────────
 VDOT_FRACTION = {"E": (0.62, 0.70), "T": 0.88, "I": 0.975, "R": 1.06}

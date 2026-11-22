@@ -299,6 +299,20 @@ function assessHtml(s) {
   </section>`;
 }
 
+// 跑量偏低的週：如果是生病、出差或沒戴錶，標記後不算進基線和一致性
+function excuseHtml(d, excused) {
+  const low = d.low_week_list || [];
+  const weeks = [...new Map([...low.map((x) => [x.week, x.km]), ...excused.map((w) => [w, null])]).entries()].sort();
+  if (!weeks.length) return "";
+  const md = (w) => w.slice(5).replace("-", "/");
+  return `<div class="tile" style="margin-top:10px;background:var(--page)">
+    <p class="k">這幾週跑量偏低，是生病、出差或沒戴錶嗎？</p>
+    <p class="muted" style="margin-top:2px">標記後這週不算進跑量基線和「一致性」，課表會重新診斷。</p>
+    <div class="chips" style="margin-top:6px">${weeks.map(([w, km]) => `<label><input type="checkbox" data-excuse="${w}" ${excused.includes(w) ? "checked" : ""}>
+      <span>${md(w)} 那週${km != null ? `（${fmt(km, 1)} km）` : ""}</span></label>`).join("")}</div>
+  </div>`;
+}
+
 async function viewSeason() {
   const [s, rn] = await Promise.all([api("/api/season"), api("/api/runner").catch(() => null)]);
   const f = s.feasibility, g = s.goal, d = s.diag;
@@ -329,7 +343,7 @@ async function viewSeason() {
       ${f.verdict === "infeasible" ? `
         <p style="margin-top:10px">${s.provisional ? `還沒選之前，課表先照「做得到的成績」${s.provisional_time ? `（${esc(s.provisional_time)}）` : ""}排：強度課和長跑照常，跑量只疊到時間允許的範圍。三個選項各有代價：` : "你選了照原目標練，課表會疊到時間允許的最高跑量，受傷風險較高。"}</p>
         <div class="choice">
-          ${f.achievable ? `<button data-choice="achievable"><b>把目標改成 ${f.achievable}</b><small>賽期不變，用剩下的時間做得到的成績。</small></button>` : ""}
+          ${f.achievable ? `<button data-choice="achievable"><b>把目標改成 ${f.achievable}</b><small>賽期不變，用剩下的時間做得到的成績${f.achievable_basis ? `（依據：${esc(f.achievable_basis)}）` : ""}。</small></button>` : ""}
           ${f.suggested_date ? `<button data-choice="postpone"><b>改報 ${f.suggested_date.replaceAll("-", "/")} 之後的比賽</b><small>目標不變，給身體足夠的疊量時間（需要 ${f.required_weeks} 週）。</small></button>` : ""}
           ${s.decision !== "accept_risk" ? `<button data-choice="accept_risk"><b>照原目標練，接受較高的受傷風險</b><small>跑量只疊到 ${fmt(f.v_reachable, 0)} km/週，強度課配速仍以目標推算。</small></button>` : ""}
         </div>` : ""}
@@ -341,6 +355,7 @@ async function viewSeason() {
       <p style="margin-top:6px"><b>課表形狀：</b>${esc(d.shape)}</p>
       <p class="why-line">判斷依據：${esc(d.rule)}</p>
       <ul class="why">${d.why.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
+      ${excuseHtml(d, s.excused_weeks || [])}
       <p class="muted" style="margin-top:6px">診斷在開季時做一次並固定下來，避免課表每天變樣；配速區間則會跟著新成績更新。</p>
     </section>
 
@@ -394,4 +409,9 @@ async function viewSeason() {
     await api("/api/plan/checkpoint/accept", { method: "POST", body: { date: b.dataset.accept } });
     toast("目標時間已調整"); viewSeason();
   })));
+  document.querySelectorAll("[data-excuse]").forEach((b) => (b.onchange = async () => {
+    const weeks = [...document.querySelectorAll("[data-excuse]:checked")].map((x) => x.dataset.excuse);
+    await api("/api/prefs", { method: "PUT", body: { excused_weeks: weeks } });
+    toast("已重新診斷，課表已重排"); viewSeason();
+  }));
 }

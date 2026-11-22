@@ -120,16 +120,18 @@ def test_low_base_absolute_cap_and_consistency_flat():
     d = {"flags": ["consistency"], "baseline_km": 15, "needs_frequent_deload": True}
     ph = engine.split_phases(20, d)
     v, tags = engine.ramp_volume(15, 30, ph, d)
-    assert v[:6] == [15] * 6                                     # 前 6 週不疊量
+    assert v[:2] == [15] * 2                                     # 前 2 週不疊量
     assert all(b - a <= 4.05 for a, b, ta in zip(v[:17], v[1:17], tags) if b > a and ta != "deload")
-    assert tags[8] == "deload"                                   # 每 3 週一次
+    assert tags[2] == "deload"                                   # 每 3 週一次
+    v2, _ = engine.ramp_volume(15, 30, ph, d, level="experienced")
+    assert v2[1] > 15                                            # 自己選「有經驗」：不空轉
 
 
 def test_long_run_three_caps():
     ph = ["base"] * 6
     longs = engine.long_run_series([30, 40, 60, 60, 60, 60], ph, HALF, 10, None)
-    assert longs[0] == 9.0                                       # 30 × 0.30
-    assert longs[1] == 12.0                                      # 上週 + 2
+    assert longs[0] == round(30 * engine.long_ratio(30, "base"), 1)   # 跑量低時比例放寬（30 km → 35%）
+    assert longs[1] <= longs[0] + 2                              # 上週 + 2
     assert max(longs) <= HALF * 1.4
     assert engine.long_run_series([80] * 5, ["specific"] * 5, 42.195, 30, None)[-1] <= 42.195 * 0.75
 

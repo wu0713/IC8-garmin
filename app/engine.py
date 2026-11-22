@@ -91,11 +91,21 @@ LIMITER_SHAPE = {
 def diagnose(ath: dict, goal: dict) -> dict:
     """五個指標 → 限制因子。ath 由 athlete.py 組出來。"""
     why = []
-    wk = ath.get("weekly_km") or []
+    wk_all = ath.get("weekly_km") or []
+    starts = ath.get("week_starts") or [None] * len(wk_all)
+    excused = set(ath.get("excused_weeks") or [])
+    pairs = [(s, w) for s, w in zip(starts, wk_all) if s not in excused] or list(zip(starts, wk_all))
+    wk = [w for _, w in pairs]
     base8 = wk[:8]
     baseline = round(median(base8), 1) if base8 else 0.0
-    why.append(f"跑量基線：近 {len(base8)} 週週跑量中位數 {baseline} km")
-    low_weeks = sum(1 for w in wk[:12] if baseline > 0 and w < baseline * T.CONSISTENCY_LOW_SHARE)
+    why.append(f"跑量基線：近 {len(base8)} 週週跑量中位數 {baseline} km" + (f"（排除你標記的 {len(excused & set(starts))} 週）" if excused & set(starts) else ""))
+    # 曾經跑到的量：近 12 週「連續兩週平均」最高值。回到這個量比從零開始安全，可以回升得比較快
+    two = [(wk[i] + wk[i + 1]) / 2 for i in range(min(12, len(wk)) - 1)]
+    capacity = round(max(two) * T.CAPACITY_SHARE, 1) if two else baseline
+    if capacity > baseline * 1.1:
+        why.append(f"曾經跑到的量：近 12 週連續兩週平均最高 {round(max(two), 1)} km，回到 {capacity} km 之前用較快的回升速度")
+    low = [(s, w) for s, w in pairs[:12] if baseline > 0 and w < baseline * T.CONSISTENCY_LOW_SHARE]
+    low_weeks = len(low)
     why.append(f"一致性：近 {min(12, len(wk))} 週有 {low_weeks} 週跑量不到基線一半")
 
     max_hr = ath["max_hr"]
@@ -157,12 +167,14 @@ def diagnose(ath: dict, goal: dict) -> dict:
     if not flags:
         rule = "沒有符合任何受限條件"
     return {
-        "baseline_km": baseline, "low_weeks": low_weeks, "cur_vdot": cur_vdot and round(cur_vdot, 1),
+        "baseline_km": baseline, "capacity_km": max(capacity, baseline), "low_weeks": low_weeks,
+        "low_week_list": [{"week": s, "km": w} for s, w in low if s], "cur_vdot": cur_vdot and round(cur_vdot, 1),
         "pred_goal_s": pred_goal_s and round(pred_goal_s), "decouple_ratio": ratio,
         "long_hr_pct": long_hr and round(long_hr, 3), "easy_too_fast": easy_too_fast,
         "limiter": limiter, "flags": flags, "limiter_label": LIMITER_ZH[limiter], "rule": rule,
         "shape": LIMITER_SHAPE[limiter], "why": why,
         "needs_frequent_deload": "consistency" in flags or (ath.get("age") or 0) > 45,
+        "older": (ath.get("age") or 0) > 45,
     }
 
 
@@ -298,10 +310,46 @@ def weeks_needed(w_ramp: int, consistency: bool) -> int:
     return w_ramp + w_ramp // 3 + T.TAPER_WEEKS + (T.CONSISTENCY_FLAT_WEEKS if consistency else 0)
 
 
-def feasibility(diag: dict, goal: dict, weeks_available: int, cap_km: float | None) -> dict:
+def ramp_weeks_with_rebuild(v_base: float, v_target: float, r: float, capacity: float | None) -> int:
+    """先用回升速度回到「曾經跑到的量」，之後才用一般增率。"""
+    cap = min(capacity or v_base, v_target)
+    w1 = 0
+    v = v_base
+    while v < cap - 0.01 and w1 < 60:
+        v = min(cap, v + min(v * T.REBUILD_RATE, T.REBUILD_ABS_CAP_KM))
+        w1 += 1
+    return w1 + ramp_weeks(max(v, v_base), v_target, r)
+
+
+def achievable_time(goal: dict, diag: dict, v_max: float, weeks: int, level: str | None) -> float:
+    """做得到的成績：以「目前速度 + 這段時間的合理進步」為基準，跑量撐不起時再往慢的方向調一半。
+
+    只看跑量查表會低估跑得快、但最近跑量少的人（表的最慢一格是半馬 2:00）。"""
+    km = goal["distance_km"]
+    t_vol = time_for_volume(km, v_max)
+    cur = diag.get("cur_vdot")
+    if not cur:
+        return t_vol
+    lv = level if level in T.VDOT_GAIN_PER_WEEK else "intermediate"
+    gain = min(T.VDOT_GAIN_CAP[lv], T.VDOT_GAIN_PER_WEEK[lv] * max(1, weeks))
+    t_speed = equivalent_time(cur * (1 + gain), km)
+    if t_vol <= t_speed:
+        return t_speed
+    return t_speed + 0.5 * (t_vol - t_speed)
+
+
+def ach_basis(diag: dict, goal: dict, v_max: float) -> str:
+    cur = diag.get("cur_vdot")
+    base = f"目前能力（VDOT {cur}）加上這段時間的合理進步" if cur else "跑量"
+    return base + f"；跑量最多疊到每週 {round(v_max)} km，撐不起的部分往慢的方向調"
+
+
+def feasibility(diag: dict, goal: dict, weeks_available: int, cap_km: float | None, level: str | None = None) -> dict:
     v_base = max(diag["baseline_km"], 8.0)
+    capacity = diag.get("capacity_km") or v_base
     r = T.growth_rate(diag["baseline_km"])
     cons = "consistency" in diag["flags"]
+    flat = cons and level != "experienced"        # 自己選「有經驗」：一致性只影響增率，不再空轉幾週
     r_eff = r * (T.CONSISTENCY_RAMP_FACTOR if cons else 1)
     target_s = goal.get("target_s") or diag.get("pred_goal_s")
     if not target_s:
@@ -309,12 +357,13 @@ def feasibility(diag: dict, goal: dict, weeks_available: int, cap_km: float | No
     lo, hi = volume_need(goal["distance_km"], target_s)
     v_need = round((lo + hi) / 2, 1)
     v_target = max(v_need, round(v_base, 1))
-    w_ramp = ramp_weeks(v_base, v_target, r_eff)
-    w_need = weeks_needed(w_ramp, cons)
+    w_ramp = ramp_weeks_with_rebuild(v_base, v_target, r_eff, capacity)
+    w_need = weeks_needed(w_ramp, flat)
     ratio = w_need / max(1, weeks_available)
     why = [f"目標 {fmt_time(target_s)} 需要週跑量約 {round(lo)}–{round(hi)} km（取 {v_need}）",
-           f"從 {round(v_base, 1)} km 起、週增率 {round(r_eff * 100, 1)}%：疊量 {w_ramp} 週 + 減量週 {w_ramp // 3} + 賽前減量 {T.TAPER_WEEKS}"
-           + (f" + 一致性 {T.CONSISTENCY_FLAT_WEEKS} 週不疊量" if cons else "") + f" = 需要 {w_need} 週，可用 {weeks_available} 週"]
+           f"從 {round(v_base, 1)} km 起" + (f"（{capacity:g} km 以內是回到曾經的量，每週 +{round(T.REBUILD_RATE * 100)}%）" if capacity > v_base * 1.05 else "")
+           + f"、之後週增率 {round(r_eff * 100, 1)}%：疊量 {w_ramp} 週 + 減量週 {w_ramp // 3} + 賽前減量 {T.TAPER_WEEKS}"
+           + (f" + 一致性 {T.CONSISTENCY_FLAT_WEEKS} 週不疊量" if flat else "") + f" = 需要 {w_need} 週，可用 {weeks_available} 週"]
     time_short = bool(cap_km and cap_km < v_need * 0.9)
     if time_short:
         why.append(f"你設定的可跑時間大約只撐得起每週 {round(cap_km)} km")
@@ -331,13 +380,17 @@ def feasibility(diag: dict, goal: dict, weeks_available: int, cap_km: float | No
     if verdict == "infeasible":
         # 可用週數內最多能疊到多少
         w = 0
-        while weeks_needed(w + 1, cons) <= weeks_available:
+        while weeks_needed(w + 1, flat) <= weeks_available:
             w += 1
-        v_max = v_base * (1 + r_eff) ** w
+        v_max = v_base
+        for _ in range(w):                     # 照實際的疊量規則走 w 週
+            rate, cap_abs = (T.REBUILD_RATE, T.REBUILD_ABS_CAP_KM) if v_max < capacity else (r_eff, T.LOW_BASE_ABS_CAP_KM if v_max < 25 else max(T.LOW_BASE_ABS_CAP_KM, v_max * 0.10))
+            v_max += min(v_max * rate, cap_abs)
         if cap_km:
             v_max = min(v_max, cap_km)
-        ach = max(time_for_volume(goal["distance_km"], v_max), target_s)
-        out["achievable_s"] = round(ach)
+        ach = achievable_time(goal, diag, v_max, weeks_available, level)
+        out["achievable_s"] = round(max(ach, target_s))
+        out["achievable_basis"] = ach_basis(diag, goal, v_max)
         out["v_reachable"] = round(v_max, 1)
         out["required_weeks"] = w_need
         if goal.get("race_date") and w_need > weeks_available and not time_short:
@@ -385,7 +438,8 @@ def split_phases(n_weeks: int, diag: dict, open_mode: bool = False, race_km: flo
 # ═════════════════════════════ L4 跑量疊加 ═════════════════════════════
 
 def ramp_volume(v_base: float, v_target: float, phases: list[str], diag: dict, *,
-                insertions: dict[int, str] | None = None, freeze_from: int | None = None) -> tuple[list[float], list[str]]:
+                insertions: dict[int, str] | None = None, freeze_from: int | None = None,
+                level: str | None = None) -> tuple[list[float], list[str]]:
     """回傳每週目標跑量與每週的標記（normal / deload / flat / repeat / phase_repeat / taper / peak）。
 
     insertions：停損或錯過整週造成的插入 {週索引: deload | repeat | phase_repeat}。
@@ -395,15 +449,17 @@ def ramp_volume(v_base: float, v_target: float, phases: list[str], diag: dict, *
     taper_n = sum(1 for p in phases if p == "taper")
     pre = n - taper_n
     cons = "consistency" in diag["flags"]
-    k = 3 if diag.get("needs_frequent_deload") else 4
+    # 一致性受限：每 3 週減量一次；自己選「有經驗」的人維持每 4 週（45 歲以上照舊每 3 週）
+    k = 3 if diag.get("needs_frequent_deload") and (level != "experienced" or diag.get("older")) else 4
     r = T.growth_rate(diag["baseline_km"])
     low_base = diag["baseline_km"] < 25
+    capacity = diag.get("capacity_km") or v_base
     vols, tags = [], []
     last = v_base           # 疊加曲線上「最近一個非減量週」的值
     hist: list[float] = []
     for w in range(pre):
         ins = insertions.get(w)
-        flat = cons and w < T.CONSISTENCY_FLAT_WEEKS
+        flat = cons and level != "experienced" and w < T.CONSISTENCY_FLAT_WEEKS
         if ins == "deload":
             v, tag = last * T.DELOAD_FACTOR, "deload"
         elif ins == "repeat":
@@ -417,9 +473,12 @@ def ramp_volume(v_base: float, v_target: float, phases: list[str], diag: dict, *
         elif (w + 1) % k == 0 and w < pre - 1:
             v, tag = last * T.DELOAD_FACTOR, "deload"
         else:
-            rr = r * (T.CONSISTENCY_RAMP_FACTOR if cons and phases[w] == "base" else 1)
-            inc = last * rr
-            inc = min(inc, T.LOW_BASE_ABS_CAP_KM) if low_base else min(inc, max(T.LOW_BASE_ABS_CAP_KM, last * 0.10))
+            if last < capacity:               # 回到曾經跑到的量：回升得快一點
+                inc = min(last * T.REBUILD_RATE, T.REBUILD_ABS_CAP_KM, capacity - last + 0.001)
+            else:
+                rr = r * (T.CONSISTENCY_RAMP_FACTOR if cons and phases[w] == "base" else 1)
+                inc = last * rr
+                inc = min(inc, T.LOW_BASE_ABS_CAP_KM) if last < 25 else min(inc, max(T.LOW_BASE_ABS_CAP_KM, last * 0.10))
             v = min(max(v_target, last), last + inc)
             if freeze_from is not None and w >= freeze_from:
                 v = min(v, last)
@@ -439,15 +498,28 @@ def ramp_volume(v_base: float, v_target: float, phases: list[str], diag: dict, *
     return vols, tags
 
 
+def long_ratio(v: float, phase: str) -> float:
+    """長跑佔週跑量的比例。跑量低時放寬（20 km 以下最多 40%，到 40 km 線性回到原本比例）。"""
+    base = T.LONG_RATIO.get(phase, 0.3)
+    if v >= 45:
+        return base
+    f = min(1.0, (45 - v) / 25)
+    return base + f * max(0.0, T.LONG_RATIO_LOWVOL_MAX - base)
+
+
 def long_run_series(vols: list[float], phases: list[str], race_km: float, start_long: float,
-                    max_long_km: float | None) -> list[float]:
+                    max_long_km: float | None, pace_e: float | None = None) -> list[float]:
     out, prev = [], [start_long, start_long]
     kappa = T.long_race_cap(race_km)
-    hold = T.DIST_PROFILE[T.dist_key(race_km)]["long_hold_specific"]
+    dk = T.dist_key(race_km)
+    hold = T.DIST_PROFILE[dk]["long_hold_specific"]
+    time_cap = T.LONG_MAX_MIN[dk] * 60 / pace_e if pace_e else None      # 以時間為上限：慢的人不會跑太久
     build_max = 0.0
     for v, ph in zip(vols, phases):
         cap_prev = max(prev[-1], prev[-2]) + T.LONG_STEP_KM
-        d = min(v * T.LONG_RATIO.get(ph, 0.3), race_km * kappa, cap_prev)
+        d = min(v * long_ratio(v, ph), race_km * kappa, cap_prev)
+        if time_cap:
+            d = min(d, time_cap)
         if hold and ph in ("specific", "taper", "race") and build_max:
             d = min(d, build_max)          # 5K/10K：專項期長跑不再加長，力氣留給間歇
         elif ph in ("base", "build"):
@@ -840,7 +912,7 @@ def build_season(*, ath: dict, goal: dict, prefs: dict, snap: dict, today: date)
         vols, tags = [v_base] * n, ["hold"] * n
         phases = ["hold"] * n
     else:
-        vols, tags = ramp_volume(v_base, v_target, phases, diag, insertions=ins, freeze_from=freeze)
+        vols, tags = ramp_volume(v_base, v_target, phases, diag, insertions=ins, freeze_from=freeze, level=level)
     # 插入「回到上一階段」的週：課表組成用上一階段
     for w, t in ins.items():
         if t == "phase_repeat" and 0 < w < len(phases):
@@ -848,11 +920,24 @@ def build_season(*, ath: dict, goal: dict, prefs: dict, snap: dict, today: date)
             phases[w] = prev
             if w + 1 < len(phases) and phases[w + 1] != "taper":
                 phases[w + 1] = prev
-    pace_e = 360.0
+    cur = diag.get("cur_vdot")
+    pace_e = (pace_at(cur, T.VDOT_FRACTION["E"][0]) + pace_at(cur, T.VDOT_FRACTION["E"][1])) / 2 if cur else 390.0
     max_long_km = float(prefs.get("max_long_minutes") or 150) * 60 / pace_e
-    longs = long_run_series(vols, phases, goal["distance_km"], snap.get("start_long_km") or v_base * 0.3, max_long_km)
+    longs = long_run_series(vols, phases, goal["distance_km"], snap.get("start_long_km") or v_base * 0.3, max_long_km, pace_e)
     cp_goal = {**goal, "target_s": max(goal.get("target_s") or 0, feas.get("achievable_s") or 0) or None} if provisional else goal
     cps = [] if hold else make_checkpoints(n, phases, cp_goal, plan_start)
+    # 測驗距離不能比到那時練過的長跑長太多（低跑量的人賽前 3 週直接跑 21 km 很危險）
+    for cp in cps:
+        allow = max(longs[:cp["week"]] + [snap.get("start_long_km") or 0]) + T.LONG_STEP_KM
+        if cp["test_km"] > allow and allow >= T.MIN_TEST_KM:
+            km = max(T.MIN_TEST_KM, math.floor(allow))
+            cp.update({"test_km": km, "label": f"測驗：{km:g} km {cp['effort']}",
+                       "shortened": f"原本 {goal['distance_km'] / 1:g} km，依目前長跑距離縮短，避免一次跳太多"})
+            if cp_goal.get("target_s"):
+                eq = riegel(cp_goal["target_s"], goal["distance_km"], km)
+                cp["equivalent_s"] = round(eq)
+                cp["thresholds"] = [{"max_s": round(eq * (1 + b)), "verdict": v, "action": a, "text": txt}
+                                    for b, v, a, txt in T.CHECK_BANDS]
     avail = sorted(int(d) for d in prefs.get("days") or [1, 3, 5, 6])
     lrd = int(prefs.get("long_run_day", 6))
     tests = []

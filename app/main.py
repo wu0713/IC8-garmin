@@ -394,6 +394,16 @@ def put_prefs(body: dict, user=Depends(auth.current_user)):
     prefs["max_long_minutes"] = max(30, min(400, int(prefs.get("max_long_minutes") or 150)))
     if prefs.get("level") not in planner.LEVELS:
         prefs["level"] = "auto"
+    if body.get("excused_weeks") is not None:
+        ok = []
+        for w in body["excused_weeks"] if isinstance(body["excused_weeks"], list) else []:
+            try:
+                d = date.fromisoformat(str(w))
+            except ValueError:
+                continue
+            if d.weekday() == 0 and d <= today_local():
+                ok.append(d.isoformat())
+        prefs["excused_weeks"] = sorted(set(ok))[-26:]
     if body.get("self_report") is not None:
         prefs["self_report"] = _clean_self_report(body["self_report"])
     mode = prefs.get("plan_mode")

@@ -48,6 +48,7 @@ def default_prefs() -> dict:
         "dashboard": None,
         "level": "auto",
         "self_report": {},
+        "excused_weeks": [],
         "brief_enabled": True,          # 每日晨報、晚報
         "brief_morning": "07:30",
         "brief_evening": "21:30",

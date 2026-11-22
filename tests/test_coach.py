@@ -223,3 +223,47 @@ def test_past_race_date_rejected_and_warned(ctx):
     assert c.put("/api/prefs", headers=h, json={"sleep_goal": 8}).status_code == 200
     assert any("已經過了" in w for w in c.get("/api/season", headers=h).json()["warnings"])
     c.put("/api/prefs", headers=h, json={"goal": {"type": "fun", "event_date": None}})
+
+
+def test_experienced_base_keeps_weekly_quality_when_hills_unchecked():
+    from app.week import _pick_variant
+    liked = {"tempo", "intervals", "reps", "strides"}
+    assert _pick_variant("hills", liked, 1, "base", "experienced") == "intervals"
+    assert _pick_variant("hills", liked, 1, "base", "intermediate") is None
+    assert _pick_variant("intervals", liked, 0, "build", "experienced", ("intervals",)) == "tempo"
+
+
+def test_capacity_and_excused_weeks():
+    ath = _ath()
+    ath["weekly_km"] = [20, 6, 22, 30, 32, 5, 31, 30, 28, 30, 29, 31]
+    ath["week_starts"] = [(date(2026, 11, 16) - timedelta(weeks=i)).isoformat() for i in range(12)]
+    g = {"distance_km": 21.0975, "target_s": 95 * 60}
+    d = engine.diagnose(ath, g)
+    assert "consistency" in d["flags"] and d["capacity_km"] > d["baseline_km"]
+    ath["excused_weeks"] = [ath["week_starts"][1], ath["week_starts"][5]]
+    d2 = engine.diagnose(ath, g)
+    assert "consistency" not in d2["flags"] and d2["low_weeks"] == 0
+
+
+def test_rebuild_lane_is_faster_than_normal_ramp():
+    d = {"flags": [], "baseline_km": 20, "capacity_km": 32, "needs_frequent_deload": False}
+    ph = ["base"] * 10
+    v, tags = engine.ramp_volume(20, 50, ph, d)
+    slow, _ = engine.ramp_volume(20, 50, ph, {**d, "capacity_km": 20})
+    assert v[2] > slow[2]
+    assert all(b - a <= 6.05 for a, b, ta, tb in zip(v, v[1:], tags, tags[1:]) if ta != "deload" and tb != "deload")
+
+
+def test_achievable_uses_speed_not_only_volume():
+    diag = {"baseline_km": 19.5, "capacity_km": 25, "flags": ["consistency"], "cur_vdot": 44.0}
+    g = {"distance_km": 21.0975, "target_s": 95 * 60, "race_date": "2027-03-07"}
+    f = engine.feasibility(diag, g, 15, None, "experienced")
+    assert f["verdict"] == "infeasible" and f["achievable_s"] < 115 * 60       # 不會再是 2:00
+    nospeed = engine.feasibility({**diag, "cur_vdot": None}, g, 15, None, "experienced")
+    assert nospeed["achievable_s"] >= f["achievable_s"]
+
+
+def test_frequency_target_for_experienced_low_volume():
+    se, lv, weeks = _season(21.0975, 95 * 60, "experienced", ath=_ath(base=20))
+    runs = [sum(1 for k in ks) for w, ks in weeks if w["phase"] == "base"]
+    assert min(runs) >= 4
