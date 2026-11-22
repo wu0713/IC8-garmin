@@ -165,6 +165,14 @@ def _strength_today(user_id: int, today, plan_today: dict) -> dict | None:
     return {**strength.summary_for(rid), "done": today.isoformat() in logged, "date": today.isoformat()}
 
 
+def _ask_intro(user_id: int, today: date) -> bool:
+    """紀錄不到 4 週、也還沒填過問卷：在今天頁請他填「最近的跑步狀況」。"""
+    if (db.get_prefs(user_id).get("self_report") or {}).get("weekly_km") is not None:
+        return False
+    first = db.q1("SELECT MIN(date) AS d FROM activities WHERE user_id=?", (user_id,))
+    return not (first and first["d"]) or (today - date.fromisoformat(first["d"])).days < 28
+
+
 def summary(user_id: int) -> dict:
     user = db.q1("SELECT * FROM users WHERE id=?", (user_id,))
     prefs = db.get_prefs(user_id)
@@ -220,7 +228,9 @@ def summary(user_id: int) -> dict:
         "device": device, "provider": user["provider"], "last_sync": user["last_sync"],
         "last_sync_error": user["last_sync_error"], "rings": rings, "today": dash["plan"]["days"][0],
         "strength_today": _strength_today(user_id, today, dash["plan"]["days"][0]),
-        "plan_hold": bool(dash["plan"].get("hold")),
+        "ask_intro": _ask_intro(user_id, today),
+        "plan_hold": bool(dash["plan"].get("hold")), "plan_provisional": dash["plan"].get("provisional") and {
+            "time": dash["plan"].get("provisional_time")},
         "readiness": dash["readiness"], "novice": dash.get("novice"), "cards": cards, "card_options": CARD_LABELS,
         "dashboard": prefs.get("dashboard") or DEFAULT_CARDS,
         "today_activity": (db.q1("SELECT activity_id FROM activities WHERE user_id=? AND date=? ORDER BY start_local DESC LIMIT 1",
@@ -634,7 +644,8 @@ def this_week(user_id: int) -> dict:
             "planned_km": round(planned_km, 1), "actual_km": round(actual_km, 1), "target_km": pl.get("target_km"),
             "phase_label": pl.get("phase_label"), "week_idx": pl.get("week_idx"), "n_weeks": pl.get("n_weeks"),
             "limiter_label": pl.get("limiter_label"), "verdict": pl.get("verdict"), "hold": pl.get("hold"),
-            "decision": pl.get("decision"), "imported": pl.get("imported"),
+            "decision": pl.get("decision"), "provisional": pl.get("provisional"), "provisional_time": pl.get("provisional_time"),
+            "imported": pl.get("imported"),
             "stoploss": pl.get("stoploss") or [], "next_checkpoint": pl.get("next_checkpoint"), "check": pl.get("check"),
             "readiness": dash["readiness"], "notes": pl["notes"], "tips": tips,
             "checkin": dash.get("checkin")}

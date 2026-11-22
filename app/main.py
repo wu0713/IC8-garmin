@@ -6,16 +6,18 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 from contextlib import asynccontextmanager
 from datetime import date, datetime, timedelta
 
+from starlette.concurrency import run_in_threadpool
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import analysis, apple_ingest, auth, coach, briefs, db, game, pet_voice, plan_import, planner, push, runner, season, strength, sync, views
+from . import analysis, apple_ingest, auth, coach, briefs, file_import, db, game, pet_voice, plan_import, planner, push, runner, season, strength, sync, views
 from .config import ALLOW_DEMO, INVITE_CODE, PUBLIC_BASE_URL, SYNC_HOURS, TZ, WEB_DIR
 from .garmin_client import MfaRequired, RealGarmin, today_local
 from .ics import build_ics
@@ -343,6 +345,35 @@ def get_prefs(user=Depends(auth.current_user)):
     return db.get_prefs(user["id"])
 
 
+def _clean_self_report(sr) -> dict:
+    """新手問卷：只收合理範圍的數字，填錯的欄位直接丟掉。"""
+    if not isinstance(sr, dict):
+        return {}
+
+    def num(k, lo, hi):
+        try:
+            v = float(sr.get(k))
+        except (TypeError, ValueError):
+            return None
+        return v if lo <= v <= hi else None
+
+    out = {"weekly_km": num("weekly_km", 0, 250), "longest_km": num("longest_km", 0, 100),
+           "hard_per_week": num("hard_per_week", 0, 7), "race_km": num("race_km", 1, 100),
+           "years": sr.get("years") if sr.get("years") in ("new", "lt1", "1to3", "gt3") else None}
+    rt = sr.get("race_time")
+    secs = planner.parse_hms(rt) if rt else None
+    if out["race_km"] and secs:
+        if not 2.5 * 60 * out["race_km"] <= secs <= 12 * 60 * out["race_km"]:     # 每公里 2:30–12:00 之外多半填錯
+            raise HTTPException(400, "比賽成績看起來不對，請寫成 25:30 或 1:52:00")
+        out["race_s"], out["race_time"] = secs, rt
+    else:
+        out["race_km"] = None
+    out = {k: v for k, v in out.items() if v is not None}
+    if out:
+        out["updated"] = today_local().isoformat()
+    return out
+
+
 @app.put("/api/prefs")
 def put_prefs(body: dict, user=Depends(auth.current_user)):
     prefs = db.get_prefs(user["id"])
@@ -363,6 +394,8 @@ def put_prefs(body: dict, user=Depends(auth.current_user)):
     prefs["max_long_minutes"] = max(30, min(400, int(prefs.get("max_long_minutes") or 150)))
     if prefs.get("level") not in planner.LEVELS:
         prefs["level"] = "auto"
+    if body.get("self_report") is not None:
+        prefs["self_report"] = _clean_self_report(body["self_report"])
     mode = prefs.get("plan_mode")
     prefs["plan_mode"] = mode if mode == "manual" or (mode == "imported" and prefs.get("imported")) else "auto"
     tpl = {}
@@ -746,6 +779,52 @@ def _editable_date(d: str, days: int = 60):
 
 
 MAX_IMPORT_BYTES = 5_000_000
+MAX_HISTORY_BYTES = 600_000_000      # Strava 完整封存檔含照片時可能好幾百 MB
+
+
+@app.post("/api/import-history")
+async def import_history(request: Request, user=Depends(auth.current_user)):
+    """上傳舊紀錄：Strava 封存檔 .zip，或 .fit／.gpx／.tcx（可以是 .gz）。請求內容就是檔案本身，檔名放在 X-Filename。"""
+    import tempfile
+    from urllib.parse import unquote
+
+    name = unquote(request.headers.get("x-filename") or "upload")
+    size = 0
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".upload") as tmp:
+        async for chunk in request.stream():
+            size += len(chunk)
+            if size > MAX_HISTORY_BYTES:
+                tmp.close()
+                os.unlink(tmp.name)
+                raise HTTPException(400, "檔案太大（上限 600 MB）。Strava 封存檔可以先解壓，只上傳 activities.csv")
+            tmp.write(chunk)
+        path = tmp.name
+    try:
+        if not size:
+            raise HTTPException(400, "檔案是空的")
+        try:
+            acts, bad = await run_in_threadpool(file_import.parse_upload, name, path)
+        except ValueError as e:
+            raise HTTPException(400, str(e))
+        except Exception as e:
+            log.warning("匯入舊紀錄失敗 %s: %s", name, e)
+            raise HTTPException(400, "這個檔案打不開，請確認是 Strava 封存檔 .zip，或 .fit／.gpx／.tcx 檔")
+    finally:
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+    keep, dup = file_import.dedupe(user["id"], acts)
+    if keep:
+        sync.store(user["id"], keep, [])
+        season.reset(user["id"])          # 有了舊紀錄，重新診斷能力和起始跑量
+        if user["provider"] != "none":
+            sync.replan(user["id"])
+    runs = [a for a in keep if not a.get("cross")]
+    dates = sorted(a["date"] for a in keep)
+    return {"ok": True, "runs": len(runs), "others": len(keep) - len(runs), "duplicates": dup, "unreadable": bad,
+            "run_km": round(sum((a.get("distance_m") or 0) for a in runs) / 1000, 1),
+            "first": dates[0] if dates else None, "last": dates[-1] if dates else None}
 
 
 @app.post("/api/import-plan")

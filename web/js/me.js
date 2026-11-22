@@ -57,6 +57,7 @@ async function viewMe() {
          ["#/learn", "book", "跑步小教室", "課表怎麼跑、心率怎麼看、名詞說明"],
          ["#/me/briefs", "bell", "晨報、晚報、週報", "報告時間、手機通知、休息日肌力伸展"],
          ["#/me/calendar", "cal", "放進 iPhone 行事曆", "訂閱網址，課表變動自動更新"],
+         ["#/me/import", "upload", "匯入舊紀錄", "Strava 封存檔、.fit／.gpx／.tcx"],
          ["#/me/device", "watch", "手錶與資料來源", S.me.provider === "demo" ? "目前使用範例資料" : S.me.provider === "none" ? "尚未連結，點這裡開始" : `Garmin：${S.me.garmin_email || ""}`]]
         .map(([to, ic, t, sub]) => `<button class="row" data-go="${to}"><span class="ri">${ico(ic)}</span><span><b>${t}</b><small>${esc(sub)}</small></span><span class="rv">${ico("chevron")}</span></button>`).join("")}
       <button class="row" id="big"><span class="ri">${ico("grid")}</span><span><b>大字模式</b><small>${document.documentElement.classList.contains("big") ? "目前：開啟" : "目前：關閉"}</small></span><span></span></button>
@@ -155,7 +156,7 @@ async function viewPick() {
 // ───────────────────── 目標與課表偏好 ─────────────────────
 async function viewSettings() {
   const p = await api("/api/prefs");
-  const m = S.meta, g = p.goal;
+  const m = S.meta, g = p.goal, sr = p.self_report || {};
   const chk = (n, v, on, t) => `<label><input type="checkbox" name="${n}" value="${v}" ${on ? "checked" : ""}><span>${t}</span></label>`;
   const rad = (n, v, on, t) => `<label><input type="radio" name="${n}" value="${v}" ${on ? "checked" : ""}><span>${t}</span></label>`;
   const ET = m.event_types;
@@ -173,6 +174,21 @@ async function viewSettings() {
           <label><span>目標時間（建議填：可行性檢查和配速都靠它）</span><input type="text" name="target_time" value="${esc(g.target_time || "")}" placeholder="1:45:00"></label>
           <p class="muted" style="margin-top:6px">儲存後會先做可行性檢查：時間不夠時不會硬排課，會請你選擇改目標、延後賽期，或接受較高風險。</p>
         </div></section>
+
+      <section class="card" style="margin-top:12px" id="intro"><h2>我最近的跑步狀況</h2>
+        <p class="muted" style="margin-top:4px">剛買手錶、App 裡的紀錄不到 4 週時，課表會用這裡填的當起點；紀錄滿 4 週後就改用實際資料。舊紀錄也可以到「我的 → 匯入舊紀錄」上傳。</p>
+        <div class="two" style="margin-top:8px">
+          <label><span>最近一個月，平均每週跑幾公里</span><input type="number" min="0" max="250" step="1" name="sr_weekly_km" value="${esc(sr.weekly_km ?? "")}" placeholder="20"></label>
+          <label><span>最近一個月，最長跑過幾公里</span><input type="number" min="0" max="100" step="0.5" name="sr_longest_km" value="${esc(sr.longest_km ?? "")}" placeholder="10"></label></div>
+        <fieldset style="margin-top:8px"><legend>每週有幾堂比較快的課（節奏、間歇、比賽）</legend>
+          <div class="chips">${[[0, "沒有"], [1, "1 堂"], [2, "2 堂以上"]].map(([k, t]) => rad("sr_hard", k, (sr.hard_per_week ?? -1) === k, t)).join("")}</div></fieldset>
+        <fieldset style="margin-top:8px"><legend>跑步多久了</legend>
+          <div class="chips">${[["new", "剛開始"], ["lt1", "不到 1 年"], ["1to3", "1–3 年"], ["gt3", "3 年以上"]].map(([k, t]) => rad("sr_years", k, sr.years === k, t)).join("")}</div></fieldset>
+        <div class="two" style="margin-top:8px">
+          <label><span>最近半年的一場比賽或測驗（選填）</span><select name="sr_race_km"><option value="">沒有</option>
+            ${[[5, "5K"], [10, "10K"], [21.0975, "半馬"], [42.195, "全馬"]].map(([k, t]) => `<option value="${k}" ${+sr.race_km === k ? "selected" : ""}>${t}</option>`).join("")}</select></label>
+          <label><span>成績</span><input type="text" name="sr_race_time" value="${esc(sr.race_time || "")}" placeholder="25:30 或 1:52:00"></label></div>
+      </section>
 
       <section class="card" style="margin-top:12px"><h2>我的程度</h2>
         <div class="chips" style="margin-top:8px">${Object.entries(m.levels || {}).map(([k, v]) => rad("level", k, (p.level || "auto") === k, v)).join("")}</div>
@@ -311,6 +327,10 @@ async function viewSettings() {
       push_to_garmin: d.get("push_to_garmin") === "on", show_on_board: d.get("show_on_board") === "on",
       calendar_alarm_min: +d.get("calendar_alarm_min"),
       plan_mode: d.get("plan_mode"), events, level: d.get("level") || "auto",
+      self_report: d.get("sr_weekly_km") === "" ? {} : {
+        weekly_km: num(d.get("sr_weekly_km")), longest_km: num(d.get("sr_longest_km")),
+        hard_per_week: d.get("sr_hard") == null ? null : +d.get("sr_hard"), years: d.get("sr_years"),
+        race_km: num(d.get("sr_race_km")), race_time: d.get("sr_race_time") || null },
       template: Object.fromEntries(WD.map((_, i) => [i, { kind: d.get(`tk${i}`), km: num(d.get(`tm${i}`)) }]).filter(([, t]) => t.kind && t.kind !== "rest")),
     };
     const err = q("perr");
@@ -440,5 +460,56 @@ async function viewDevice() {
   if (q("unlink")) q("unlink").onclick = async () => {
     if (!confirm("會刪除這個帳號存的跑步資料、課表和紀錄（夥伴保留），確定嗎？")) return;
     await api("/api/garmin/unlink", { method: "POST" }); go("#/summary");
+  };
+}
+
+
+// ───────────────────── 匯入舊紀錄 ─────────────────────
+function viewImport() {
+  $app.innerHTML = `${appbar("匯入舊紀錄", { back: true })}
+    <section class="card"><h2>為什麼要匯入</h2>
+      <p style="margin-top:4px">課表的起始跑量、能力判斷都看你近 8–12 週的紀錄。剛換 Garmin 或 Apple Watch 的話，把以前在 Strava 或其他 App 的紀錄匯進來，課表一開始就會貼近你的程度。</p>
+      <p class="muted" style="margin-top:6px">只會讀每趟的日期、距離、時間和心率；跟手錶已經同步過的同一趟會自動跳過。匯入後會重新診斷，整季規劃從這週重新開始。</p></section>
+
+    <section class="card" style="margin-top:12px"><h2>從 Strava 匯出</h2>
+      <ol class="steps" style="margin-top:6px">
+        <li>用電腦打開 Strava 網站，右上角頭像 →「設定」→「我的帳號」。</li>
+        <li>最下面「下載或刪除你的帳戶」→「開始」→「申請封存檔」。</li>
+        <li>Strava 會寄信給你（通常幾分鐘到幾小時），下載那個 .zip。</li>
+        <li>直接把 .zip 上傳到下面（檔案太大的話，解壓後只上傳裡面的 <b>activities.csv</b>）。</li>
+      </ol>
+      <p class="muted" style="margin-top:6px">其他 App（Garmin Connect、COROS、Polar、Suunto、Nike Run Club 匯出工具…）匯出的 .fit、.gpx、.tcx 檔也可以，一次可以選很多個。</p></section>
+
+    <section class="card" style="margin-top:12px"><h2>上傳</h2>
+      <label class="btn tonal block" style="cursor:pointer;margin-top:6px">${ico("upload")}選擇檔案
+        <input type="file" id="histf" multiple accept=".zip,.csv,.fit,.gpx,.tcx,.gz" hidden></label>
+      <div id="histst" style="margin-top:10px" aria-live="polite"></div></section>`;
+  bindCommon();
+  const q = (id) => document.getElementById(id);
+  q("histf").onchange = async (e) => {
+    const files = [...e.target.files], box = q("histst");
+    if (!files.length) return;
+    const tot = { runs: 0, others: 0, duplicates: 0, unreadable: 0, run_km: 0, first: null, last: null }, errs = [];
+    for (const [i, file] of files.entries()) {
+      box.innerHTML = `<p class="muted">上傳中 ${i + 1} / ${files.length}：${esc(file.name)}（${(file.size / 1e6).toFixed(1)} MB）…</p>`;
+      try {
+        const headers = { "Content-Type": "application/octet-stream", "X-Filename": encodeURIComponent(file.name) };
+        if (S.token) headers.Authorization = `Bearer ${S.token}`;
+        const r = await fetch("/api/import-history", { method: "POST", headers, body: file });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.detail || `錯誤 ${r.status}`);
+        for (const k of ["runs", "others", "duplicates", "unreadable", "run_km"]) tot[k] += d[k] || 0;
+        if (d.first && (!tot.first || d.first < tot.first)) tot.first = d.first;
+        if (d.last && (!tot.last || d.last > tot.last)) tot.last = d.last;
+      } catch (x) { errs.push(`${file.name}：${x.message}`); }
+    }
+    const fd = (s) => (s ? s.replaceAll("-", "/") : "");
+    box.innerHTML = `${tot.runs + tot.others ? `<p class="note-card">${ico("check")}<span>匯入 <b>${tot.runs}</b> 趟跑步（${fmt(tot.run_km, 0)} km）${tot.others ? `、${tot.others} 筆其他運動` : ""}，期間 ${fd(tot.first)} 到 ${fd(tot.last)}。課表已依新紀錄重新診斷。</span></p>` : `<p class="muted">沒有新的紀錄。</p>`}
+      ${tot.duplicates ? `<p class="muted" style="margin-top:6px">${tot.duplicates} 趟手錶已經同步過，跳過。</p>` : ""}
+      ${tot.unreadable ? `<p class="muted" style="margin-top:6px">${tot.unreadable} 個檔案看不懂，跳過。</p>` : ""}
+      ${errs.map((x) => `<p class="err" style="margin-top:6px">${esc(x)}</p>`).join("")}
+      ${tot.runs ? `<button class="btn block" style="margin-top:10px" data-go="#/season">看重新排好的整季規劃</button>` : ""}`;
+    bindCommon(box);
+    e.target.value = "";
   };
 }

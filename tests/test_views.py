@@ -304,11 +304,14 @@ def test_season_api_and_decision(ctx):
                                              "max_minutes_weekday": 150, "max_long_minutes": 300})
     assert r.status_code == 200
     s = c.get("/api/season", headers=h).json()
-    assert s["feasibility"]["verdict"] == "infeasible" and s["hold"]
+    assert s["feasibility"]["verdict"] == "infeasible" and s["provisional"] and not s["hold"]
     assert s["feasibility"]["achievable"] and s["feasibility"]["suggested_date"] > ev
-    assert all(w["phase"] == "hold" for w in s["weeks"][:-1])
+    # 還沒選：先照做得到的成績排正常課表，不是整季只排輕鬆跑
+    assert not any(w["phase"] == "hold" for w in s["weeks"]) and s["provisional_time"]
+    m = c.get("/api/month?ym=" + date.today().strftime("%Y-%m"), headers=h).json()
+    assert any("先照做得到的成績" in n for n in m["notices"])
     s2 = c.post("/api/plan/decision", headers=h, json={"choice": "accept_risk"}).json()
-    assert not s2["hold"] and s2["decision"] == "accept_risk"
+    assert not s2["provisional"] and s2["decision"] == "accept_risk"
     s3 = c.post("/api/plan/decision", headers=h, json={"choice": "postpone"}).json()
     assert s3["goal"]["race_date"] == s["feasibility"]["suggested_date"]
     c.put("/api/prefs", headers=h, json={"goal": {"type": "fun", "event_date": None, "target_time": ""},

@@ -829,8 +829,10 @@ def build_season(*, ath: dict, goal: dict, prefs: dict, snap: dict, today: date)
     v_base = snap["v_base"]
     v_target = feas.get("v_target") or v_base * 1.15
     decision = snap.get("decision")
-    hold = (feas.get("verdict") == "infeasible" and decision not in ("accept_risk",)) and not open_mode
-    if feas.get("verdict") == "infeasible" and decision == "accept_risk":
+    # 時間不夠、使用者還沒選：不再停在「只排輕鬆跑」，先照「做得到的」跑量和成績排正常的課表（暫定）
+    provisional = feas.get("verdict") == "infeasible" and decision is None and not open_mode
+    hold = False
+    if feas.get("verdict") == "infeasible" and decision in ("accept_risk", None):
         v_target = min(v_target, feas.get("v_reachable") or v_target)
     ins = {int(k): v for k, v in (snap.get("insertions") or {}).items()}
     freeze = snap.get("freeze_from")
@@ -849,7 +851,8 @@ def build_season(*, ath: dict, goal: dict, prefs: dict, snap: dict, today: date)
     pace_e = 360.0
     max_long_km = float(prefs.get("max_long_minutes") or 150) * 60 / pace_e
     longs = long_run_series(vols, phases, goal["distance_km"], snap.get("start_long_km") or v_base * 0.3, max_long_km)
-    cps = [] if hold else make_checkpoints(n, phases, goal, plan_start)
+    cp_goal = {**goal, "target_s": max(goal.get("target_s") or 0, feas.get("achievable_s") or 0) or None} if provisional else goal
+    cps = [] if hold else make_checkpoints(n, phases, cp_goal, plan_start)
     avail = sorted(int(d) for d in prefs.get("days") or [1, 3, 5, 6])
     lrd = int(prefs.get("long_run_day", 6))
     tests = []
@@ -911,6 +914,6 @@ def build_season(*, ath: dict, goal: dict, prefs: dict, snap: dict, today: date)
             eff_warn = f"行程讓 {lost} 週的訓練量大減，有效訓練週數 {n_eff} 少於需要的 {feas['w_need']} 週：可行性變更"
         elif feas["w_need"] > n_eff * T.FEASIBLE_BUFFER and feas["verdict"] == "ok":
             eff_warn = f"行程讓 {lost} 週的訓練量大減，時間變得沒有緩衝"
-    return {"mode": "open" if open_mode else "race", "hold": hold, "plan_start": plan_start.isoformat(), "n_weeks": n,
+    return {"mode": "open" if open_mode else "race", "hold": hold, "provisional": provisional, "plan_start": plan_start.isoformat(), "n_weeks": n,
             "weeks": weeks, "checkpoints": cps, "event_days": ev["days"], "warnings": ev["warnings"] + ([eff_warn] if eff_warn else []),
             "diag": diag, "feasibility": feas, "v_base": v_base, "v_target": v_target, "level": level}
