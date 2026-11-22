@@ -365,6 +365,22 @@ def schedule_week(week: dict, ctx: dict) -> dict:
     return _distribute(week, ctx, S, L, long_slot, Q, mode, notes, cons_limit, tail)
 
 
+def _least_needed(easy: list, hard_days: set, week_start: str):
+    """要拿掉一天輕鬆跑時，挑「拿掉之後跑步日分布最平均」的那天：
+    不要讓輕鬆跑擠在強度課隔天、然後連休三四天。"""
+    ws = date.fromisoformat(week_start)
+
+    def spread(days):
+        pts = sorted({(d - ws).days for d in days} | {-1, 7})     # 前後各補一個邊界（上週日、下週一）
+        gaps = [b - a for a, b in zip(pts, pts[1:])]
+        return (max(gaps), -min(gaps))                            # 最長空檔越短越好，其次最短間隔越長越好
+
+    def adj_hard(d):
+        return any(abs((d - h).days) == 1 for h in hard_days)
+
+    return min(easy, key=lambda d: (spread([x for x in easy if x != d] + list(hard_days)), not adj_hard(d)))
+
+
 def _distribute(week, ctx, S, L, long_slot, Q, mode, notes, cons_limit, tail):
     zones, goal = ctx["zones"], ctx["goal"]
     V = week["target_km"]
@@ -398,11 +414,10 @@ def _distribute(week, ctx, S, L, long_slot, Q, mode, notes, cons_limit, tail):
         need_easy = max(freq - len(fixed), math.ceil(max(0.0, rest_km) / max(1.0, max_wd_km * 0.9)))
         hard_days = set(fixed)
         while easy and len(easy) > need_easy:
-            near = [d for d in easy if any(abs((d - h).days) == 1 for h in hard_days)]
-            easy.remove((near or easy)[len(near or easy) // 2])
+            easy.remove(_least_needed(easy, hard_days, week["week_start"]))
         # 量不夠分：減少輕鬆跑天數（與其每天 2 km 不如休息）
         while easy and rest_km / len(easy) < min_e_km and len(easy) > 1:
-            easy.pop(len(easy) // 2)
+            easy.remove(_least_needed(easy, hard_days, week["week_start"]))
         per = max(min_e_km if easy else 0, rest_km / len(easy)) if easy else 0
         out = dict(fixed)
         stride_quota = (1 if Q else 2) if phase == "base" else 0 if phase in ("taper", "race", "hold", "recover") else 1

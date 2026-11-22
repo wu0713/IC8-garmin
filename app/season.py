@@ -459,6 +459,7 @@ def projected_days(uid: int, upto: date) -> dict[str, dict]:
             x = build_workout("rest", zones=z) if o["kind"] == "rest" else build_to_km(o["kind"], float(km), zones=z, goal=cx.goal)
             x["override"] = True
         out[d.isoformat()] = {**x, "date": d.isoformat(), "projected": d.isoformat() not in imported, "phase_label": (w or {}).get("phase_label"),
+                              "week_tag": (w or {}).get("tag"),
                               "weekday": f"週{planner.WEEKDAY_ZH[d.weekday()]}",
                               "time": cx.prefs.get("run_time", "06:30")}
         d += timedelta(days=1)
@@ -534,6 +535,20 @@ def month(user_id: int, ym: str) -> dict:
     fut = [x for x in days if x["plan"] and not x["past"] and x["plan"]["kind"] not in ("rest", "race", "event")]
     unplanned = any(not x["past"] and not x["plan"] and not x["event"] and x["date"] > (td + timedelta(days=7)).isoformat() for x in days)
     notices = goal_event_warnings(prefs, goal)
+    # 減量週：月曆上看起來「怎麼突然變少」，直接說明
+    try:
+        cx_m = Ctx(user_id)
+        dl = []
+        for w in cx_m.season["weeks"]:
+            ws = date.fromisoformat(w["week_start"])
+            if w.get("tag") == "deload" and first - timedelta(days=6) <= ws <= last and ws + timedelta(days=6) >= td:
+                dl.append(ws.strftime("%m/%d").lstrip("0").replace("/0", "/"))
+        if dl:
+            every = 3 if cx_m.season.get("deload_every") == 3 else 4
+            notices.append(f"{'、'.join(dl)} 那週是減量週：跑量少三成、長跑縮短，強度課保留但量減少。"
+                           f"每 {every} 週一次，讓身體吸收前幾週的訓練，下一週再往上加。")
+    except Exception:
+        pass
     snap = load_snap(user_id) or {}
     feas = snap.get("feasibility") or {}
     if goal.get("race_date") and feas.get("verdict") == "infeasible" and not snap.get("decision"):
