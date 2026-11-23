@@ -21,6 +21,7 @@ from .config import TZ
 from .garmin_client import sport_info
 
 MAX_FILES = 5000
+MAX_MEMBER_BYTES = 50_000_000      # 壓縮檔裡單一檔案解壓後的上限
 
 # Strava／GPX／TCX／FIT 的運動類型 → 我們的運動代碼
 TYPE_MAP = {
@@ -286,7 +287,11 @@ def parse_fit(data: bytes, ident: str) -> list[dict]:
 def _one(name: str, data: bytes) -> list[dict]:
     low = name.lower()
     if low.endswith(".gz"):
-        data, low = gzip.decompress(data), low[:-3]
+        with gzip.GzipFile(fileobj=io.BytesIO(data)) as gz:
+            data = gz.read(MAX_MEMBER_BYTES + 1)
+        if len(data) > MAX_MEMBER_BYTES:
+            raise ValueError("檔案解壓後太大")
+        low = low[:-3]
     ident = hashlib.sha1(data[:4096] + name.encode()).hexdigest()[:16]
     if low.endswith(".fit"):
         return parse_fit(data, ident)
@@ -305,12 +310,17 @@ def parse_upload(name: str, path: str) -> tuple[list[dict], int]:
             names = [n for n in z.namelist() if not n.endswith("/")]
             csvs = [n for n in names if n.rsplit("/", 1)[-1].lower() == "activities.csv"]
             if csvs:
+                if z.getinfo(csvs[0]).file_size > MAX_MEMBER_BYTES:
+                    raise ValueError("activities.csv 解壓後超過 50 MB，請確認檔案")
                 return parse_strava_csv(z.read(csvs[0]).decode("utf-8-sig", errors="replace")), 0
             out = []
             files = [n for n in names if n.lower().endswith((".fit", ".gpx", ".tcx", ".fit.gz", ".gpx.gz", ".tcx.gz"))][:MAX_FILES]
             if not files:
                 raise ValueError("壓縮檔裡沒有 activities.csv，也沒有 .fit／.gpx／.tcx 檔")
             for n in files:
+                if z.getinfo(n).file_size > MAX_MEMBER_BYTES:      # 解壓後太大（或壓縮炸彈）：跳過
+                    bad += 1
+                    continue
                 try:
                     out += _one(n, z.read(n))
                 except Exception:

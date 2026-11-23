@@ -941,9 +941,11 @@ def build_season(*, ath: dict, goal: dict, prefs: dict, snap: dict, today: date)
     cps = [] if hold else make_checkpoints(n, phases, cp_goal, plan_start)
     # 測驗距離不能比到那時練過的長跑長太多（低跑量的人賽前 3 週直接跑 21 km 很危險）
     for cp in cps:
-        allow = max(longs[:cp["week"]] + [snap.get("start_long_km") or 0]) + T.LONG_STEP_KM
-        if cp["test_km"] > allow and allow >= T.MIN_TEST_KM:
-            km = max(T.MIN_TEST_KM, math.floor(allow))
+        # 測驗課總長 = 熱身 2 + 測驗 + 緩和 1.5：整堂不超過「練過最長的長跑 + 2 km」，也不超過長跑時間上限
+        allow = max(longs[:cp["week"]] + [snap.get("start_long_km") or 0]) + T.LONG_STEP_KM - 3.5
+        allow = min(allow, max_long_km - 3.5, T.LONG_MAX_MIN[T.dist_key(goal["distance_km"])] * 60 / pace_e - 3.5)
+        if cp["test_km"] > max(allow, T.MIN_TEST_KM):
+            km = max(T.MIN_TEST_KM, math.floor(allow))           # 跑量很低時就測最短的 3 km
             cp.update({"test_km": km, "label": f"測驗：{km:g} km {cp['effort']}",
                        "shortened": f"原本 {goal['distance_km'] / 1:g} km，依目前長跑距離縮短，避免一次跳太多"})
             if cp_goal.get("target_s"):

@@ -156,3 +156,13 @@ def test_parse_strava_csv_unknown_headers_fall_back_to_positions():
     row = '9,"Nov 3, 2026, 10:15:45 PM",Run,Run,,3100,"10.02",175,,false'
     a = file_import.parse_strava_csv(head + "\n" + row)[0]
     assert a["distance_m"] == 10020 and a["duration_s"] == 3100
+
+
+def test_zip_bomb_member_skipped(tmp_path, monkeypatch):
+    monkeypatch.setattr(file_import, "MAX_MEMBER_BYTES", 1000)
+    p = tmp_path / "bomb.zip"
+    with zipfile.ZipFile(p, "w", compression=zipfile.ZIP_DEFLATED) as z:
+        z.writestr("activities/big.gpx", "x" * 5000)
+        z.writestr("activities/ok.tcx", TCX[:900] if len(TCX) < 1000 else TCX)
+    acts, bad = file_import.parse_upload("bomb.zip", str(p))
+    assert bad >= 1
