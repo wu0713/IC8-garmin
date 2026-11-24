@@ -4,6 +4,7 @@ import tempfile
 
 os.environ.setdefault("DATA_DIR", tempfile.mkdtemp())
 os.environ["SYNC_HOURS"] = ""
+os.environ["POLL_MINUTES"] = "0"
 
 from datetime import date, timedelta  # noqa: E402
 

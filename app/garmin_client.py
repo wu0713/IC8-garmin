@@ -262,6 +262,12 @@ class RealGarmin:
 
         return acts, [d for k, d in days.items() if k]
 
+    def last_upload(self) -> str | None:
+        """手錶最後一次上傳到 Garmin Connect 的時間（UTC ISO）。只打一支很輕的 API，給自動偵測用。"""
+        last = self.api.get_device_last_used() or {}
+        up = last.get("lastUsedDeviceUploadTime")
+        return datetime.fromtimestamp(up / 1000, timezone.utc).isoformat() if isinstance(up, (int, float)) else None
+
     def fetch_device(self) -> dict | None:
         devs = self._safe("devices", self.api.get_devices) or []
         last = self._safe("device_last_used", self.api.get_device_last_used) or {}

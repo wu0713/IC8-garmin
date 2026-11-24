@@ -19,6 +19,12 @@ INVITE_CODE = os.getenv("INVITE_CODE", "")
 # 每天自動同步的時間（24h，逗號分隔）
 SYNC_HOURS = [int(h) for h in os.getenv("SYNC_HOURS", "5,13,21").split(",") if h.strip()]
 
+# 自動偵測新資料：每隔幾分鐘問一次 Garmin「手錶最後上傳時間」，時間有變才真的同步（0 = 關閉）。
+# 只在 POLL_HOURS 這段時間內偵測（例如 5-23 = 早上 5 點到晚上 11 點前）。
+POLL_MINUTES = int(os.getenv("POLL_MINUTES", "10"))
+_ph = os.getenv("POLL_HOURS", "5-23").split("-")
+POLL_HOURS = (int(_ph[0]), int(_ph[1])) if len(_ph) == 2 and all(x.strip().isdigit() for x in _ph) else (5, 23)
+
 # 對外網址（用來產生行事曆訂閱連結），例如 https://my-pc.tailnet-xxxx.ts.net
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
 

@@ -423,7 +423,7 @@ async function viewDevice() {
     </section>` : ""}
     <section class="card" style="margin-top:12px"><h2>資料來源</h2>
       <p class="muted" style="margin-top:4px">${me.provider === "garmin" ? `Garmin Connect：${esc(me.garmin_email)}` : me.provider === "demo" ? "目前使用範例資料" : me.provider === "apple" ? "Apple Watch（iPhone 捷徑上傳）" : "尚未連結"}</p>
-      <p style="color:var(--ink-2);font-size:.9375rem;margin-top:8px">${me.provider === "apple" ? "資料由你 iPhone 上的捷徑送過來：每天早上一次身體資料，跑完一次運動紀錄。" : "手錶先同步到 Garmin Connect App，這裡再從 Garmin Connect 抓資料，每天自動 3 次。"}</p>
+      <p style="color:var(--ink-2);font-size:.9375rem;margin-top:8px">${me.provider === "apple" ? "資料由你 iPhone 上的捷徑送過來：每天早上一次身體資料，跑完一次運動紀錄。" : "手錶同步到 Garmin Connect App 之後，這裡大約 10 分鐘內就會自己抓進來（早上 5 點到晚上 11 點），抓到新的跑步會推播通知你，不用再按同步。"}</p>
       ${me.provider === "apple" ? `<button class="btn tonal block" data-go="#/me/apple" style="margin-top:10px">${ico("watch")}Apple Watch 上傳設定與狀態</button>` : ""}
       ${me.provider === "demo" ? `<div class="note-card" style="margin-top:10px">${ico("bolt")}<span><b>現在看到的不是你的手錶。</b>這個帳號目前是範例資料，所以顯示「Forerunner 165（範例）」。按下面的「連結 Garmin」登入後，才會換成你自己的手錶和資料。</span></div>` : ""}
       <div class="btn-row">

@@ -3,6 +3,7 @@ import tempfile
 
 os.environ.setdefault("DATA_DIR", tempfile.mkdtemp())
 os.environ["SYNC_HOURS"] = ""
+os.environ["POLL_MINUTES"] = "0"
 os.environ["INVITE_CODE"] = "friends"
 
 import pytest  # noqa: E402
