@@ -299,11 +299,15 @@ def activity_overview(user_id: int, before: str | None = None, limit: int = 40) 
         w["baseline"] = round(mean(p["load"] for p in prev)) if len(prev) == 4 else None
     this = weeks[-1]
 
-    # 近 7 天（含今天）總活動量 vs 前 4 週平均：週中也能比較
+    # 近 7 天（含今天）總活動量 vs 再往前 28 天（第 8–35 天）的平均週負荷。
+    # 兩段完全不重疊；以前拿「前 4 個日曆週」當基準，會跟近 7 天重疊好幾天，比值被拉向 100%。
+    def _load_between(lo: str, hi: str) -> float:
+        return sum(metrics.trimp(a.get("duration_s"), a.get("avg_hr"), rest, max_hr, sex) for a in acts if lo <= a["date"] <= hi) + \
+            sum(metrics.cross_trimp(a, rest, max_hr, sex) for a in cross if lo <= a["date"] <= hi)
     d7 = (today - timedelta(days=6)).isoformat()
-    last7 = sum(metrics.trimp(a.get("duration_s"), a.get("avg_hr"), rest, max_hr, sex) for a in acts if a["date"] >= d7) + \
-        sum(metrics.cross_trimp(a, rest, max_hr, sex) for a in cross if a["date"] >= d7)
-    base4 = [w["load"] for w in weeks[-5:-1]]
+    last7 = _load_between(d7, today.isoformat())
+    base_lo, base_hi = today - timedelta(days=34), today - timedelta(days=7)
+    base4 = [_load_between((base_lo + timedelta(weeks=k)).isoformat(), (base_lo + timedelta(weeks=k, days=6)).isoformat()) for k in range(4)]
     first = db.q1("SELECT MIN(d) d FROM (SELECT MIN(date) d FROM activities WHERE user_id=? UNION ALL "
                   "SELECT MIN(date) FROM cross_activities WHERE user_id=?)", (user_id, user_id))["d"]
     enough = bool(first) and (today - date.fromisoformat(first)).days >= 35 and mean(base4) > 0
@@ -316,6 +320,7 @@ def activity_overview(user_id: int, before: str | None = None, limit: int = 40) 
             s["minutes"] += round((a.get("duration_s") or 0) / 60)
             s["count"] += 1
     volume = {"last7_load": round(last7), "baseline": round(mean(base4)) if enough else None, "ratio": ratio,
+              "baseline_range": [base_lo.isoformat(), base_hi.isoformat()], "last7_range": [d7, today.isoformat()],
               "verdict": load_verdict(ratio), "run_minutes": this["minutes"], "other_minutes": this["other_minutes"],
               "run_share": round(this["run_load"] / this["load"] * 100) if this["load"] else None,
               "sports": sorted(by_sport.values(), key=lambda s: -s["minutes"])}

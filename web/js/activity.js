@@ -103,23 +103,23 @@ function volumeHtml(a) {
   if (!v) return "";
   const V = { ok: ["done", "適中"], low: ["warn", v.verdict?.label], warn: ["warn", "偏多"], bad: ["missed", "過多"] };
   const pts = a.weeks.map((x) => ({ label: x.week_start.slice(5).replace("-", "/"), value: x.run_load, stack: x.other_load }));
-  const base = a.weeks.slice(-5, -1).map((x) => x.load);
-  const avg = base.length === 4 ? base.reduce((p, c) => p + c, 0) / 4 : null;
-  const hm = (m) => (m >= 60 ? `${Math.floor(m / 60)}<small>h</small>${m % 60}<small>m</small>` : `${m}<small>m</small>`);
+  const avg = v.baseline ?? null;   // 第 8–35 天的平均週負荷（跟近 7 天不重疊）
+  const hm = (m) => (m >= 60 ? `${Math.floor(m / 60)}<small>時</small>${m % 60 ? `${m % 60}<small>分</small>` : ""}` : `${m}<small>分</small>`);
+  const md = (iso) => `${+iso.slice(5, 7)}/${+iso.slice(8)}`;
   return `<section class="card" style="margin-top:16px" aria-labelledby="vh">
     <div class="section-head" style="margin:0"><h2 id="vh" style="display:flex;gap:6px;align-items:center">${ico("bolt")}總活動量</h2>
       ${v.verdict ? `<span class="badge ${(V[v.verdict.level] || ["", ""])[0]}">${esc((V[v.verdict.level] || ["", v.verdict.label || ""])[1])}</span>` : ""}</div>
-    <p style="margin-top:4px">${v.verdict ? `近 7 天訓練負荷是前 4 週平均的 <b class="num">${Math.round(v.ratio * 100)}%</b>。${esc(v.verdict.text)}`
+    <p style="margin-top:4px">${v.verdict ? `近 7 天訓練負荷是之前 4 週平均的 <b class="num">${Math.round(v.ratio * 100)}%</b>。${esc(v.verdict.text)}`
       : "跑步加上其他運動的總負荷。累積滿 5 週紀錄後，會開始判斷活動量是否過多。"}</p>
     ${barChart(pts, { color: "var(--c-run)", stackColor: SPORT_COLOR.other, avg, h: 160, highlightLast: true })}
-    <div class="legend"><span><i style="background:var(--c-run)"></i>跑步</span><span><i style="background:${SPORT_COLOR.other}"></i>其他運動</span><span>虛線：前 4 週平均</span></div>
+    <div class="legend"><span><i style="background:var(--c-run)"></i>跑步</span><span><i style="background:${SPORT_COLOR.other}"></i>其他運動</span><span>虛線：之前 4 週平均${v.baseline_range ? `（${md(v.baseline_range[0])}–${md(v.baseline_range[1])}）` : ""}</span></div>
     <div class="tiles" style="margin-top:8px">
       <div class="tile"><p class="k">本週跑步</p><p class="v num">${hm(v.run_minutes)}</p></div>
       <div class="tile"><p class="k">本週其他運動</p><p class="v num">${hm(v.other_minutes)}</p></div>
       <div class="tile"><p class="k">跑步占負荷</p><p class="v num">${v.run_share ?? "–"}<small>%</small></p></div>
     </div>
     ${v.sports.length ? `<p class="muted" style="margin-top:8px">本週其他運動：${v.sports.map((s) => `${esc(s.label)} ${s.count} 次 ${s.minutes} 分`).join("、")}</p>` : ""}
-    <p class="muted" style="margin-top:6px">負荷用心率和時間估算；其他運動也會算進恢復分數和課表的疲勞判斷。</p>
+    <p class="muted" style="margin-top:6px">負荷用心率和時間估算；其他運動也會算進恢復分數和課表的疲勞判斷。${v.last7_range && v.baseline_range ? `比較的是近 7 天（${md(v.last7_range[0])}–${md(v.last7_range[1])}）和再往前 4 週（${md(v.baseline_range[0])}–${md(v.baseline_range[1])}）的平均，兩段不重疊。` : ""}</p>
   </section>`;
 }
 
