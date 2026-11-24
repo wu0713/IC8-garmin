@@ -9,6 +9,7 @@ from pathlib import Path
 
 os.environ.setdefault("DATA_DIR", tempfile.mkdtemp())
 os.environ["SYNC_HOURS"] = ""
+os.environ["POLL_MINUTES"] = "0"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

@@ -17,7 +17,7 @@ App 有四個分頁（今天／紀錄／課表／夥伴）。視覺是自己的�
 | **夥伴** | 跑步夥伴（12 種角色 × 5 個成長階段）、跑友排行、目標與課表偏好、健康參考範圍（心率區間、訓練配速）、行事曆訂閱、手錶與資料來源 |
 
 ```
-Garmin 手錶 → Garmin Connect ──(python-garminconnect，每天 3 次)──┐
+Garmin 手錶 → Garmin Connect ──(python-garminconnect，每 10 分鐘偵測＋每天 3 次)──┐
                                                                    ▼
                      你的電腦：FastAPI + SQLite（Docker 或直接跑 Python）
                      ├─ 計算 訓練負荷 / 體能 CTL / 疲勞 ATL / 狀態 TSB / 恢復分數

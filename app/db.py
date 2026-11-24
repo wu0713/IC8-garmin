@@ -202,6 +202,7 @@ def conn() -> sqlite3.Connection:
 
 
 MIGRATIONS = {
+    "users": {"last_upload_seen": "TEXT"},
     "daily": {"steps": "REAL", "steps_goal": "REAL", "active_kcal": "REAL", "intensity_min": "REAL",
               "bb_now": "REAL", "bb_low": "REAL"},
     "activities": {"calories": "REAL", "elevation_gain": "REAL", "avg_cadence": "REAL",

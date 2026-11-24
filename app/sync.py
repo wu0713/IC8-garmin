@@ -7,7 +7,7 @@ import threading
 from datetime import date, datetime, timedelta
 
 from . import athlete, auth, db, metrics, season
-from .config import HISTORY_DAYS, TZ
+from .config import HISTORY_DAYS, POLL_HOURS, TZ
 from .garmin_client import provider_for, today_local
 
 log = logging.getLogger(__name__)
@@ -149,7 +149,8 @@ def replan(user_id: int, api=None) -> dict:
     return result
 
 
-def sync_user(user_id: int, full: bool = False) -> dict:
+def sync_user(user_id: int, full: bool = False, days: int | None = None, prov=None) -> dict:
+    """days：一般同步往回抓幾天（預設 10）；自動偵測只抓 2 天。prov：已經建好的連線就沿用，不用再載入一次 token。"""
     with _lock(user_id):
         user = db.q1("SELECT * FROM users WHERE id=?", (user_id,))
         if user["provider"] == "apple":
@@ -159,12 +160,12 @@ def sync_user(user_id: int, full: bool = False) -> dict:
             return result
         tokens = auth.decrypt(user["garmin_tokens"])
         try:
-            prov = provider_for(user, tokens)
+            prov = prov or provider_for(user, tokens)
             if prov is None:
                 raise RuntimeError("尚未連結 Garmin 帳號")
             today = today_local()
             has_data = db.q1("SELECT 1 AS x FROM activities WHERE user_id=? LIMIT 1", (user_id,))
-            start = today - timedelta(days=HISTORY_DAYS if (full or not has_data) else 10)
+            start = today - timedelta(days=HISTORY_DAYS if (full or not has_data) else (days or 10))
             acts, days = prov.fetch(start, today)
             store(user_id, acts, days)
             enrich_recent(user_id, prov, days=120 if (full or not has_data) else 14, limit=40 if (full or not has_data) else 6)
@@ -212,6 +213,98 @@ def sync_user(user_id: int, full: bool = False) -> dict:
             with db.tx() as c:
                 c.execute("UPDATE users SET last_sync_error=? WHERE id=?", (str(e)[:500], user_id))
             raise
+
+
+# ───────── 自動偵測：在 Garmin Connect 同步後，這裡自己把資料抓進來 ─────────
+_poll_backoff: dict[int, tuple[int, datetime]] = {}   # user_id → (連續失敗次數, 下次再試的時間)
+
+
+def _parse_dt(s: str | None) -> datetime | None:
+    if not s:
+        return None
+    try:
+        d = datetime.fromisoformat(s)
+    except ValueError:
+        return None
+    return d if d.tzinfo else d.replace(tzinfo=TZ)
+
+
+def needs_sync(upload: str | None, seen: str | None, last_sync: str | None) -> bool:
+    """手錶上傳時間跟上次看到的不一樣，而且比上次同步還晚，才需要同步。"""
+    up = _parse_dt(upload)
+    if up is None or upload == seen:
+        return False
+    ls = _parse_dt(last_sync)
+    return ls is None or up > ls
+
+
+def poll_user(user_id: int, notify=None) -> dict | None:
+    """問一次「手錶最後上傳時間」；有新上傳就只同步最近 2 天，抓到新活動就推播。回傳同步結果，沒同步回傳 None。"""
+    user = db.q1("SELECT * FROM users WHERE id=?", (user_id,))
+    if not user or user["provider"] != "garmin" or not user["garmin_tokens"]:
+        return None
+    tokens = auth.decrypt(user["garmin_tokens"])
+    prov = provider_for(user, tokens)
+    if prov is None or not hasattr(prov, "last_upload"):
+        return None
+    upload = prov.last_upload()
+    if not needs_sync(upload, user.get("last_upload_seen"), user.get("last_sync")):
+        if upload and upload != user.get("last_upload_seen"):
+            with db.tx() as c:
+                c.execute("UPDATE users SET last_upload_seen=? WHERE id=?", (upload, user_id))
+        new_tokens = prov.tokens()
+        if new_tokens and new_tokens != tokens:
+            with db.tx() as c:
+                c.execute("UPDATE users SET garmin_tokens=? WHERE id=?", (auth.encrypt(new_tokens), user_id))
+        return None
+    since = (today_local() - timedelta(days=2)).isoformat()
+    before_runs = {r["activity_id"] for r in db.q("SELECT activity_id FROM activities WHERE user_id=? AND date>=?", (user_id, since))}
+    before_cross = {r["activity_id"] for r in db.q("SELECT activity_id FROM cross_activities WHERE user_id=? AND date>=?", (user_id, since))}
+    result = sync_user(user_id, days=2, prov=prov)
+    with db.tx() as c:
+        c.execute("UPDATE users SET last_upload_seen=? WHERE id=?", (upload, user_id))
+    new_runs = [r for r in db.q("SELECT * FROM activities WHERE user_id=? AND date>=? ORDER BY date DESC, start_local DESC",
+                                (user_id, since)) if r["activity_id"] not in before_runs]
+    new_cross = [r for r in db.q("SELECT * FROM cross_activities WHERE user_id=? AND date>=? ORDER BY date DESC, start_local DESC",
+                                 (user_id, since)) if r["activity_id"] not in before_cross]
+    send = notify
+    if send is None:
+        from . import push
+        send = push.send
+    try:
+        if new_runs:
+            a = new_runs[0]
+            km = (a.get("distance_m") or 0) / 1000
+            send(user_id, "新的跑步已同步", f"{a.get('name') or '跑步'} {km:.1f} km，來看訓練報告",
+                 f"/#/workout/{a['activity_id']}")
+        elif new_cross:
+            a = new_cross[0]
+            send(user_id, "新的活動已同步", f"{a.get('sport_label') or a.get('name') or '運動'} "
+                 f"{round((a.get('duration_s') or 0) / 60)} 分，已算進總活動量", "/#/activity")
+    except Exception as e:
+        log.warning("同步通知送不出去 user=%s: %s", user_id, e)
+    result["new_activities"] = len(new_runs) + len(new_cross)
+    return result
+
+
+def poll_all(now: datetime | None = None):
+    """排程每幾分鐘呼叫一次。只在 POLL_HOURS 時段內做；失敗的帳號逐步拉長間隔，避免一直打 Garmin。"""
+    now = now or datetime.now(TZ)
+    lo, hi = POLL_HOURS
+    if not (lo <= now.hour < hi):
+        return
+    for u in db.q("SELECT id FROM users WHERE provider='garmin' AND garmin_tokens IS NOT NULL"):
+        uid = u["id"]
+        fails, until = _poll_backoff.get(uid, (0, None))
+        if until and now < until:
+            continue
+        try:
+            poll_user(uid)
+            _poll_backoff.pop(uid, None)
+        except Exception as e:
+            fails += 1
+            _poll_backoff[uid] = (fails, now + timedelta(minutes=min(240, 10 * 2 ** fails)))
+            log.warning("自動偵測失敗 user=%s（第 %s 次）: %s", uid, fails, e)
 
 
 def sync_all():

@@ -18,7 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import analysis, apple_ingest, auth, coach, briefs, file_import, db, game, pet_voice, plan_import, planner, push, runner, season, strength, sync, views
-from .config import ALLOW_DEMO, INVITE_CODE, PUBLIC_BASE_URL, SYNC_HOURS, TZ, WEB_DIR
+from .config import ALLOW_DEMO, INVITE_CODE, POLL_HOURS, POLL_MINUTES, PUBLIC_BASE_URL, SYNC_HOURS, TZ, WEB_DIR
 from .garmin_client import MfaRequired, RealGarmin, today_local
 from .ics import build_ics
 from . import plan_tables
@@ -40,15 +40,20 @@ except OSError:
 async def lifespan(app: FastAPI):
     db.conn()
     sched = None
-    if SYNC_HOURS:
+    if SYNC_HOURS or POLL_MINUTES > 0:
         from apscheduler.schedulers.background import BackgroundScheduler
 
         sched = BackgroundScheduler(timezone=TZ)
-        sched.add_job(sync.sync_all, "cron", hour=",".join(map(str, SYNC_HOURS)), minute=7,
-                      id="sync_all", max_instances=1, coalesce=True)
+        if SYNC_HOURS:
+            sched.add_job(sync.sync_all, "cron", hour=",".join(map(str, SYNC_HOURS)), minute=7,
+                          id="sync_all", max_instances=1, coalesce=True)
+        if POLL_MINUTES > 0:
+            # 在 Garmin Connect 同步後，最慢 POLL_MINUTES 分鐘這裡就會自己抓進來
+            sched.add_job(sync.poll_all, "interval", minutes=POLL_MINUTES, id="poll", max_instances=1, coalesce=True)
         sched.add_job(briefs.tick, "cron", minute="*/10", id="briefs", max_instances=1, coalesce=True)
         sched.start()
-        log.info("每日自動同步時間：%s 點；晨報、晚報、週報每 10 分鐘檢查一次", SYNC_HOURS)
+        log.info("每日自動同步：%s 點；自動偵測新資料：每 %s 分鐘（%s–%s 點）；晨報、晚報、週報每 10 分鐘檢查一次",
+                 SYNC_HOURS, POLL_MINUTES, *POLL_HOURS)
     yield
     if sched:
         sched.shutdown(wait=False)
