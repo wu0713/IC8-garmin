@@ -653,3 +653,26 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
   .form .chips label > span { font-size: .875rem; }
 }
 .settings input[type=range] { min-height: 32px; }
+
+/* ── 夥伴頁設定選單：分組、緊湊 ── */
+.menu-group { margin-top: 20px; }
+.menu-group > h2 { font-size: .8125rem; font-weight: 800; color: var(--ink-3); letter-spacing: .08em; margin: 0 0 6px 4px; }
+.card.menu { padding: 0 14px; }
+.mrow { display: grid; grid-template-columns: 24px 1fr auto; gap: 12px; align-items: center; width: 100%; min-height: 52px; padding: 8px 0;
+  border: 0; background: none; text-align: left; font: inherit; color: var(--ink); cursor: pointer; }
+.mrow + .mrow { border-top: 1px solid var(--line); }
+.mrow:active { background: var(--surface-hi); }
+.mrow .mi svg { width: 22px; height: 22px; stroke: var(--ink-2); fill: none; stroke-width: 2; display: block; }
+.mrow .mt { min-width: 0; }
+.mrow .mt b { display: block; font-weight: 700; font-size: .9375rem; }
+.mrow .mt small { display: block; color: var(--ink-3); font-size: .75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mrow .mv { display: flex; align-items: center; gap: 4px; color: var(--ink-3); font-size: .8125rem; }
+.mrow .mv svg { width: 18px; height: 18px; stroke: var(--ink-3); fill: none; stroke-width: 2; }
+.mstat { padding: 1px 8px; border-radius: 999px; background: var(--surface-hi); color: var(--ink-2); font-weight: 700; font-size: .75rem; }
+.mrow.danger .mt b, .mrow.danger .mi svg { color: var(--bad); stroke: var(--bad); }
+.switch { appearance: none; -webkit-appearance: none; width: 46px; height: 28px; border-radius: 999px; background: var(--line); border: 2px solid var(--ink);
+  position: relative; cursor: pointer; margin: 0; transition: background .15s; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 2px solid var(--ink); box-sizing: border-box; transition: transform .15s; }
+.switch:checked { background: var(--primary); }
+.switch:checked::after { transform: translateX(18px); }
+.switch:focus-visible { outline: 3px solid var(--pill); outline-offset: 2px; }
