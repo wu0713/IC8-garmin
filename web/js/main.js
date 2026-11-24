@@ -3,7 +3,8 @@
 route(/^#\/login$/, () => viewGate("login"));
 route(/^#\/register$/, () => viewGate("register"));
 route(/^#\/summary$/, viewSummary, "summary");
-route(/^#\/metric\/(\w+)$/, viewMetric, "summary");
+route(/^#\/metrics$/, viewMetrics, "metrics");
+route(/^#\/metric\/(\w+)$/, viewMetric, "metrics");
 route(/^#\/activity$/, viewActivity, "activity");
 route(/^#\/workout\/(.+)$/, (id) => viewWorkout(decodeURIComponent(id)), "activity");
 route(/^#\/season$/, viewSeason, "activity");

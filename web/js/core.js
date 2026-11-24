@@ -289,7 +289,7 @@ const ROUTES = [];
 const route = (re, fn, tab) => ROUTES.push({ re, fn, tab });
 function go(hash) { if (location.hash === hash) render(); else location.hash = hash; }
 
-const TABS = [["summary", "今天", "flag"], ["activity", "紀錄", "run"], ["analysis", "課表", "cal"], ["me", "夥伴", "paw"]];
+const TABS = [["summary", "摘要", "flag"], ["metrics", "指標", "chart"], ["activity", "紀錄", "run"], ["analysis", "課表", "cal"], ["me", "夥伴", "paw"]];
 function setNav(tab) {
   const nav = document.getElementById("nav");
   nav.hidden = !tab;

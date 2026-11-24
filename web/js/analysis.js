@@ -36,31 +36,84 @@ function decideNudge(t) {
       <span><b>原目標來不及：先照 ${esc(t || "做得到的成績")} 排</b><small>課表照常有強度課和長跑。要延後賽期或照原目標練，點這裡選。</small></span>${ico("chevron")}</button>`;
 }
 
+// 本週課表：最上面是「今天」大卡；下面的清單，過去變淡、今天反白、未來正常。整列點下去就能看內容或調整。
+const actText = (x) => `${fmt(x.km, 1)} km · ${x.minutes} 分${x.avg_hr ? ` · ${x.avg_hr} bpm` : ""}`;
+const isRunPlan = (p) => p && !["rest", "done", "strength"].includes(p.kind);
+const planText = (p) => `${p.time ? `${p.time}，` : ""}${p.distance_km ? `${fmt(p.distance_km, 1)} km、` : ""}約 ${p.minutes} 分${p.hr_cap ? `，心率 ≤ ${p.hr_cap}` : ""}`;
+
+// 每一天點下去要做什麼：看報告／看內容／調整／肌力
+function dayAction(d, past) {
+  if (d.actual.length) return `go:#/workout/${encodeURIComponent(d.actual[0].id)}`;
+  if (past) return "";
+  if (isRunPlan(d.plan) && d.plan.steps?.length) return `detail:${d.date}`;
+  if (d.editable) return `adjust:${d.date}`;
+  return d.strength ? `go:#/strength/${d.date}` : "";
+}
+
+function todayHero(d) {
+  if (!d) return "";
+  const p = d.plan, act = d.actual[0];
+  const md = `${+d.date.slice(5, 7)}/${+d.date.slice(8)}`;
+  let state, title, line, btns;
+  if (act) {
+    state = `<span class="th-state ok">${ico("check")}已完成</span>`;
+    title = isRunPlan(p) ? p.title : act.name;
+    line = `實際 ${actText(act)}`;
+    btns = `<button class="btn small" data-go="#/workout/${encodeURIComponent(act.id)}">看訓練報告</button>`;
+  } else if (d.status === "skipped") {
+    state = `<span class="th-state off">已跳過</span>`; title = p?.title || "休息"; line = "今天改成休息。"; btns = "";
+  } else if (isRunPlan(p)) {
+    state = `<span class="th-state todo">還沒跑</span>`;
+    title = p.title;
+    line = planText(p);
+    btns = `${p.steps?.length ? `<button class="btn small" data-detail="${d.date}">看內容</button>` : ""}
+      ${d.editable ? `<button class="btn small outline" data-adjust="${d.date}">調整</button>` : ""}`;
+  } else {
+    state = `<span class="th-state rest">${p?.kind === "strength" ? "肌力日" : "休息日"}</span>`;
+    title = d.strength ? `${d.strength.title} ${d.strength.minutes} 分` : p?.kind === "strength" ? p.title : "好好休息";
+    line = d.strength ? (d.strength.done ? "肌力伸展做完了" : "不用器材，做完夥伴 +15 經驗值") : "今天不跑步。";
+    btns = `${d.strength ? `<button class="btn small" data-go="#/strength/${d.date}">${d.strength.done ? "看內容" : "開始"}</button>` : ""}
+      ${d.editable ? `<button class="btn small outline" data-adjust="${d.date}">想跑？排一堂</button>` : ""}`;
+  }
+  return `<div class="today-hero ${act ? "is-done" : ""}">
+    <div class="th-top"><span class="th-date">今天 · ${esc(d.weekday)} ${md}</span>${state}</div>
+    <p class="th-title"><span class="int ${isRunPlan(p) ? p.intensity : "rest"}"></span>${esc(title)}</p>
+    <p class="th-line">${esc(line)}</p>
+    ${btns.trim() ? `<div class="th-btns">${btns}</div>` : ""}</div>`;
+}
+
 function weekHtml(w) {
   const pct = w.planned ? Math.round((w.done / w.planned) * 100) : 0;
+  const todayISO = localISO();
+  let sepDone = false;
+  const rows = w.days.map((d) => {
+    const past = d.date < todayISO, today = d.is_today, p = d.plan, act = d.actual[0];
+    const run = isRunPlan(p);
+    const cls = past ? "past" : today ? "today" : "future";
+    const title = run ? p.title : act ? act.name : p?.kind === "strength" ? p.title : "休息日";
+    let badge = "";
+    if (act) badge = `<span class="st ok">${ico("check")}完成</span>`;
+    else if (past && run) badge = `<span class="st bad">沒跑到</span>`;
+    else if (d.status === "skipped") badge = `<span class="st bad">跳過</span>`;
+    let sub = "";
+    if (act) sub = actText(act);
+    else if (run && !past && p.minutes) sub = planText(p);
+    else if (d.strength) sub = `${d.strength.done ? "✓ " : ""}${d.strength.title} ${d.strength.minutes} 分`;
+    const action = today ? "" : dayAction(d, past);
+    let sep = "";
+    if (!past && !today && !sepDone) { sepDone = true; sep = `<li class="wk-sep" aria-hidden="true">接下來</li>`; }
+    return `${sep}<li class="${cls} ${run || act ? "" : "rest-day"}" ${action ? `data-act="${action}" tabindex="0" role="button"` : ""}
+        aria-label="${esc(`${d.weekday} ${+d.date.slice(8)} 日，${title}${badge ? `，${badge.replace(/<[^>]+>/g, "")}` : ""}`)}">
+      <span class="wd"><b class="num">${+d.date.slice(8)}</b><small>${today ? "今天" : d.weekday}</small></span>
+      <span class="wbody"><span class="wt"><span class="int ${run ? p.intensity : "rest"}"></span><span class="wtitle">${esc(title)}</span>${badge}${p?.override ? `<span class="badge edit">已調整</span>` : ""}</span>
+        ${sub ? `<span class="ws">${esc(sub)}</span>` : ""}</span>
+      <span class="wgo">${action ? ico("chevron") : ""}</span></li>`;
+  }).join("");
   return `
-    <p style="font-size:1.75rem;font-weight:600" class="num">${w.done}<small style="font-size:1rem;font-weight:400;color:var(--ink-2)"> / ${w.planned} 堂完成</small></p>
-    <div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="本週完成度"><span style="width:${pct}%"></span></div>
-    <p class="muted">已跑 ${fmt(w.actual_km, 1)} km，本週排了 ${fmt(w.planned_km, 1)} km${w.target_km ? `（目標 ${fmt(w.target_km, 1)} km）` : ""}</p>
-    <ul class="wk" style="margin-top:8px">
-      ${w.days.map((d) => {
-        const p = d.plan, [cls, txt] = STATUS[d.status] || ["", ""];
-        const act = d.actual[0];
-        const isRest = (!p || p.kind === "rest") && !d.actual.length;
-        return `<li class="${d.is_today ? "is-today" : ""} ${isRest ? "rest-day" : ""}">
-          <span class="wd"><b class="num">${+d.date.slice(8)}</b><small>${d.weekday}</small></span>
-          <span>
-            <span class="wt"><span class="int ${p && p.kind !== "rest" ? p.intensity : "rest"}"></span>${p && p.steps?.length && d.status !== "done" ? `<button data-detail="${d.date}" aria-label="看${esc(p.title)}的內容">${esc(p.title)}</button>` : esc(p && p.kind !== "done" ? p.title : act ? act.name : p ? p.title : "休息日")}
-              ${txt ? `<span class="badge ${cls}">${txt}</span>` : ""}${p?.override ? `<span class="badge edit">已調整</span>` : ""}
-              ${(isRest || p?.kind === "strength") && d.strength ? `<button class="mini st-chip ${d.strength.done ? "done" : ""}" data-go="#/strength/${d.date}">${ico(d.strength.done ? "check" : "gym")}${esc(d.strength.title)} ${d.strength.minutes} 分</button>` : ""}
-              ${isRest && d.editable ? `<button class="mini" data-adjust="${d.date}">想跑？排一堂</button>` : ""}</span>
-            ${p && p.minutes && d.status !== "done" ? `<span class="ws">${p.time ? `${p.time}，` : ""}${p.distance_km ? `${fmt(p.distance_km, 1)} km、` : ""}約 ${p.minutes} 分${p.hr_cap ? `，心率 ≤ ${p.hr_cap}` : ""}</span>` : ""}
-            ${d.actual.map((x) => `<button class="text-btn" data-go="#/workout/${encodeURIComponent(x.id)}" style="padding:2px 0;min-height:0;display:block;text-align:left">
-              實際：${fmt(x.km, 1)} km，${x.minutes} 分${x.avg_hr ? `，${x.avg_hr} bpm` : ""}。看訓練報告</button>`).join("")}
-            ${d.editable && d.status !== "done" && !isRest ? `<span class="wk-actions"><button class="btn small tonal" data-adjust="${d.date}">調整</button></span>` : ""}
-          </span></li>`;
-      }).join("")}
-    </ul>`;
+    ${todayHero(w.days.find((d) => d.is_today))}
+    <div class="wk-sum"><p><b class="num">${w.done}</b> / ${w.planned} 堂完成<span class="muted">　已跑 ${fmt(w.actual_km, 1)} / ${fmt(w.planned_km, 1)} km${w.target_km ? `（目標 ${fmt(w.target_km, 1)}）` : ""}</span></p>
+      <div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="本週完成度"><span style="width:${pct}%"></span></div></div>
+    <ul class="wk">${rows}</ul>`;
 }
 
 function monthHtml(m) {
@@ -152,8 +205,12 @@ async function viewAnalysis() {
   bindCommon();
   const refresh = () => viewAnalysis();
   document.querySelectorAll("[data-pv]").forEach((b) => (b.onclick = () => { S.planView = b.dataset.pv; refresh(); }));
-  document.querySelectorAll("[data-detail]").forEach((b) => (b.onclick = () => {
-    const day = w.days.find((d) => d.date === b.dataset.detail), p = day.plan;
+  const openAdjust = (date) => {
+    const day = w.days.find((d) => d.date === date);
+    adjustSheet(day, w.days.filter((d) => d.editable && d.date !== day.date && d.status !== "done"), refresh);
+  };
+  const openDetail = (date) => {
+    const day = w.days.find((d) => d.date === date), p = day.plan;
     sheet(`<h2>${day.weekday} ${+day.date.slice(5, 7)}/${+day.date.slice(8)}：${esc(p.title)}</h2>
       <p class="muted" style="margin-top:4px">${p.time ? `${p.time} 開始，` : ""}${fmt(p.distance_km, 1)} 公里、約 ${p.minutes} 分鐘${p.hr_cap ? `，心率上限 ${p.hr_cap} bpm` : ""}</p>
       <p style="margin-top:8px">${esc(p.summary || "")}</p>
@@ -165,11 +222,17 @@ async function viewAnalysis() {
       box.querySelector("#d-x").onclick = close;
       box.querySelector("#d-adj").onclick = () => { close(); adjustSheet(day, w.days.filter((x) => x.editable && x.date !== day.date && x.status !== "done"), refresh); };
     });
-  }));
-  document.querySelectorAll("[data-adjust]").forEach((b) => (b.onclick = () => {
-    const day = w.days.find((d) => d.date === b.dataset.adjust);
-    adjustSheet(day, w.days.filter((d) => d.editable && d.date !== day.date && d.status !== "done"), refresh);
-  }));
+  };
+  document.querySelectorAll("[data-detail]").forEach((b) => (b.onclick = () => openDetail(b.dataset.detail)));
+  document.querySelectorAll("[data-adjust]").forEach((b) => (b.onclick = () => openAdjust(b.dataset.adjust)));
+  document.querySelectorAll(".wk [data-act]").forEach((li) => {
+    const run = () => {
+      const i = li.dataset.act.indexOf(":"), k = li.dataset.act.slice(0, i), v = li.dataset.act.slice(i + 1);
+      if (k === "go") go(v); else if (k === "detail") openDetail(v); else if (k === "adjust") openAdjust(v);
+    };
+    li.onclick = run;
+    li.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); run(); } };
+  });
   if (m) {
     const [y, mo] = m.month.split("-").map(Number);
     const shift = (n) => { S.pym = localISO(new Date(y, mo - 1 + n, 1)).slice(0, 7); refresh(); };
