@@ -96,7 +96,8 @@ def build_workout(kind: str, *, km: float = 0, zones: dict, week_km: float = 30,
         return _wrap(kind, KIND_ZH[kind], "hard", st,
                      f"{km:g} km 長跑，最後 {m:g} km 用比賽配速 {fmt_pace(z['RP']['min'] + 3)}/km。", why)
 
-    wu, cd = 2.0, 1.5
+    # 熱身／緩和跟著週跑量縮：每週 10 km 的人，一堂強度課不該就佔掉 6–7 km
+    wu, cd = (1.0, 1.0) if week_km < 12 else (1.5, 1.0) if week_km < 20 else (2.0, 1.5)
     if kind == "tempo":
         block = max(3.0, min(10.0, week_km * 0.10)) * scale
         block = max(2.0, round(block * 2) / 2)
@@ -169,7 +170,7 @@ def build_workout(kind: str, *, km: float = 0, zones: dict, week_km: float = 30,
         main = _step("interval", z, "RP" if control else None, km=t["test_km"],
                      note="照比賽配速控速，演練裝備與補給" if control else "全力跑完，跑完會依成績重算配速")
         main["zone"] = "TEST"
-        st = [_step("warmup", z, "E", km=2.5, note="熱身，最後加 3–4 次快步"), main, _step("cooldown", z, "E", km=1.5)]
+        st = [_step("warmup", z, "E", km=max(wu, 1.5) if week_km < 20 else 2.5, note="熱身，最後加 3–4 次快步"), main, _step("cooldown", z, "E", km=cd)]
         eq = t.get("equivalent_s")
         return _wrap("test", f"🎯 {t.get('label') or '測驗'}", "hard", st,
                      f"{t['purpose'] if t.get('purpose') else '檢核點'}。" + (f"目標進度的等效成績約 {_fmt(eq)}。" if eq else ""), why)
@@ -289,6 +290,11 @@ def schedule_week(week: dict, ctx: dict) -> dict:
     cands = [d for d in dates if d.weekday() in ctx["avail"] and mode[d] not in ("rest", "event")]
     normal = {d for d in cands if mode[d] is None}
     tail = {date.fromisoformat(k): v for k, v in (ctx.get("prev_tail") or {}).items()}
+    # 上週已經發生的事不能改：只看「跟這週有關」的違規（例如上週進展期的間歇＋長跑，套到這週專項期的規則不算）
+    tail_bad = set(_violations(tail, phase, cons_limit)) if tail else set()
+
+    def violates(a):
+        return [v for v in _violations(a, phase, cons_limit) if v not in tail_bad]
 
     q_kinds, long_kind = phase_quality(phase, diag, goal, week["week_in_phase"], len(cands), ctx.get("level") or "novice")
     picked: list[str] = []
@@ -307,6 +313,10 @@ def schedule_week(week: dict, ctx: dict) -> dict:
         if long_kind == "long_m":
             long_kind = "long"
         q_kinds = q_kinds[:max(0, len(q_kinds) - 1)]     # 測驗本身就是一堂質量課
+    # 跑量低時強度課的次數上限：每週 15 km 以下最多 1 堂、25 km 以下最多 2 堂（測驗也算一堂）
+    V0 = week["target_km"]
+    q_cap = 1 if V0 < 15 else 2 if V0 < 25 else 9
+    q_kinds = q_kinds[:max(0, q_cap - (1 if cp else 0))]
     max_runs = week.get("max_runs")
     pref_long = int(ctx.get("long_run_day", 6))
 
@@ -326,7 +336,7 @@ def schedule_week(week: dict, ctx: dict) -> dict:
             if max_runs and len(S) > max_runs:
                 continue
             base_assign = {**tail, **{d: "easy" for d in S}}
-            if _violations(base_assign, phase, cons_limit):
+            if violates(base_assign):
                 continue
             Ls = [d for d in S if d in normal] if long_slot else [None]
             if cp and cp.get("date"):
@@ -341,7 +351,7 @@ def schedule_week(week: dict, ctx: dict) -> dict:
                                 a[L] = long_slot
                             for d, k in zip(Q, perm):
                                 a[d] = k
-                            if _violations(a, phase, cons_limit):
+                            if violates(a):
                                 continue
                             sc = score(S, L, Q)
                             if not best or sc > best[0]:
@@ -402,7 +412,7 @@ def _distribute(week, ctx, S, L, long_slot, Q, mode, notes, cons_limit, tail):
         fixed: dict[date, dict] = {}
         if L:
             if long_slot == "test":
-                fixed[L] = build_workout("test", zones=zones, test=cp, goal=goal, why="檢核點：測驗日")
+                fixed[L] = build_workout("test", zones=zones, test=cp, goal=goal, week_km=V, why="檢核點：測驗日")
             else:
                 fixed[L] = build_workout(long_slot, km=week["long_km"], zones=zones, goal=goal,
                                          why=f"長跑 = min(週量 × ρ, 比賽距離 × κ, 上週 + 2 km) = {week['long_km']:g} km")
@@ -424,6 +434,7 @@ def _distribute(week, ctx, S, L, long_slot, Q, mode, notes, cons_limit, tail):
             lk = fixed[L]["distance_km"]
             pool = rest_km + lk
             want = round(min(pool - len(easy) * min_e_km, max(lk, pool / (len(easy) + 1) * 1.3), lk + T.LONG_STEP_KM) * 2) / 2
+            want = max(want, math.ceil((min_e_km + 1) * 2) / 2)    # 跑量極低時，長跑至少比最短的輕鬆跑長 1 km
             if want > lk:
                 fixed[L] = build_workout(long_slot, km=want, zones=zones, goal=goal,
                                          why=f"這週跑量少，長跑至少要比輕鬆跑長：{want:g} km")
@@ -448,7 +459,9 @@ def _distribute(week, ctx, S, L, long_slot, Q, mode, notes, cons_limit, tail):
         total_min = sum(w["minutes"] for w in out.values())
         hard_min = sum(w["hard_minutes"] for w in out.values())
         share = hard_min / total_min if total_min else 0
-        if share <= T.HARD_TIME_SHARE_MAX or scale <= 0.4 or not Q:
+        q_km = sum(w["distance_km"] for d, w in out.items() if d in Q)
+        q_heavy = V < 30 and q_km > max(0.35 * V, 4.0)      # 跑量低：強度課（含熱身緩和）不超過週跑量 35%
+        if (share <= T.HARD_TIME_SHARE_MAX and not q_heavy) or scale <= 0.4 or not Q:
             break
         scale *= 0.8
     if share > T.HARD_TIME_SHARE_MAX:
@@ -457,7 +470,8 @@ def _distribute(week, ctx, S, L, long_slot, Q, mode, notes, cons_limit, tail):
         notes.append("高強度時間原本超過 20%：質量課主課已縮短")
     total = sum(w["distance_km"] for w in out.values())
     assign = {**tail, **{d: w["kind"] for d, w in out.items()}}
-    viol = _violations(assign, phase, cons_limit)
+    tail_bad = set(_violations(tail, phase, cons_limit)) if tail else set()
+    viol = [v for v in _violations(assign, phase, cons_limit) if v not in tail_bad]
     err = (total - V) / V if V else 0
     if V and abs(err) > T.VOLUME_TOLERANCE:
         if err < 0:

@@ -297,3 +297,24 @@ def test_speed_ok_but_volume_short_is_not_called_infeasible():
     # 速度也不夠時才是「時間不夠」
     f2 = engine.feasibility(diag, {**g, "target_s": 100 * 60}, 15, None, "novice")
     assert f2["verdict"] == "infeasible" and f2["achievable_s"] > 100 * 60
+
+
+def test_login_lockout_after_repeated_failures(ctx):
+    c, h, uid = ctx
+    from app import main as m
+    m._FAILS.clear()
+    for _ in range(5):
+        assert c.post("/api/login", json={"username": "coach", "password": "wrongpass"}).status_code == 401
+    r = c.post("/api/login", json={"username": "coach", "password": "secret12"})
+    assert r.status_code == 429 and "嘗試太多次" in r.json()["detail"]
+    m._FAILS.clear()
+    assert c.post("/api/login", json={"username": "coach", "password": "secret12"}).status_code == 200
+
+
+def test_low_volume_week_quality_is_limited():
+    from app.week import schedule_week
+    se, lv, weeks = _season(10, 60 * 60, "experienced", ath=_ath(base=8))
+    for w, ks in weeks:
+        q = [k for k in ks if k in engine.QUALITY_KINDS]
+        if w["target_km"] < 15:
+            assert len(q) <= 1, (w["week_start"], ks)

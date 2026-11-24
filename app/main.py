@@ -78,7 +78,10 @@ def _set_cookie(request: Request, resp: Response, token: str):
 
 @app.post("/api/register")
 def register(body: RegisterIn, request: Request, response: Response):
+    ipk = f"ip:{_client_ip(request)}"
+    _check_fails(ipk)
     if INVITE_CODE and body.invite != INVITE_CODE:
+        _note_fail(ipk)
         raise HTTPException(403, "邀請碼不正確")
     if not re.fullmatch(r"[A-Za-z0-9_.\-]+", body.username):
         raise HTTPException(400, "帳號只能用英數字與 _ . -")
@@ -90,11 +93,45 @@ def register(body: RegisterIn, request: Request, response: Response):
     return {"token": token}
 
 
+# ───────── 登入、邀請碼：連續猜錯就暫停（App 透過 Funnel 公開在網路上） ─────────
+_FAILS: dict[str, list[float]] = {}
+FAIL_WINDOW_S = 15 * 60
+FAIL_LIMIT = {"user": 5, "ip": 20}
+
+
+def _client_ip(request: Request) -> str:
+    fwd = request.headers.get("x-forwarded-for") or ""
+    return fwd.split(",")[0].strip() or (request.client.host if request.client else "?")
+
+
+def _check_fails(*keys: str):
+    import time
+    now = time.time()
+    for k in keys:
+        lst = [t for t in _FAILS.get(k, []) if now - t < FAIL_WINDOW_S]
+        _FAILS[k] = lst
+        if len(lst) >= FAIL_LIMIT[k.split(":", 1)[0]]:
+            wait = int((FAIL_WINDOW_S - (now - lst[0])) // 60) + 1
+            raise HTTPException(429, f"嘗試太多次，請 {wait} 分鐘後再試")
+
+
+def _note_fail(*keys: str):
+    import time
+    for k in keys:
+        _FAILS.setdefault(k, []).append(time.time())
+    if len(_FAILS) > 5000:                     # 防止被灌爆記憶體
+        _FAILS.clear()
+
+
 @app.post("/api/login")
 def login(body: LoginIn, request: Request, response: Response):
+    keys = (f"user:{body.username.lower()}", f"ip:{_client_ip(request)}")
+    _check_fails(*keys)
     u = db.q1("SELECT * FROM users WHERE username=?", (body.username,))
     if not u or not auth.verify_pw(body.password, u["pw_hash"], u["pw_salt"]):
+        _note_fail(*keys)
         raise HTTPException(401, "帳號或密碼錯誤")
+    _FAILS.pop(keys[0], None)
     token = auth.create_session(u["id"])
     _set_cookie(request, response, token)
     return {"token": token}
