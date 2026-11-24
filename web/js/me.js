@@ -7,6 +7,16 @@ function xpLine(g) {
     <p class="muted num">${g.xp - g.level_floor} / ${g.level_ceil - g.level_floor} XP，再約 ${Math.ceil((g.level_ceil - g.xp) / 10)} 公里升級</p>`;
 }
 
+// 夥伴頁的設定選單：分組、一行一項，副標只留重點；右邊可以放狀態（例如「已連結」）
+function menuGroup(title, items) {
+  const id = `mg-${title.length}-${items.length}`;
+  return `<section class="menu-group" aria-labelledby="${id}"><h2 id="${id}">${esc(title)}</h2><div class="card menu">
+    ${items.map(([to, ic, t, sub, status]) => `<button class="mrow" data-go="${to}"><span class="mi">${ico(ic)}</span>
+      <span class="mt"><b>${esc(t)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</span>
+      <span class="mv">${status ? `<span class="mstat">${esc(status)}</span>` : ""}${ico("chevron")}</span></button>`).join("")}
+  </div></section>`;
+}
+
 async function viewMe() {
   const [g, lb] = await Promise.all([api("/api/game"), api("/api/leaderboard")]);
   const sort = S.lbSort || "week_km";
@@ -51,23 +61,26 @@ async function viewMe() {
       ${lb.length < 2 ? `<p class="muted" style="margin-top:6px">把網址和邀請碼傳給朋友，他們註冊後就會出現在這裡。</p>` : ""}
     </section>
 
-    <section class="section"><div class="card" style="padding:4px 12px">
-      ${[["#/me/settings", "flag", "目標與課表偏好", "目標賽、固定行程、可跑日"],
-         ["#/me/health", "shield", "配速與心率上限", "區間、個人最佳、成績預測、最大攝氧量"],
-         ["#/learn", "book", "跑步小教室", "課表怎麼跑、心率怎麼看、名詞說明"],
-         ["#/me/briefs", "bell", "晨報、晚報、週報", "報告時間、手機通知、休息日肌力伸展"],
-         ["#/me/calendar", "cal", "放進 iPhone 行事曆", "訂閱網址，課表變動自動更新"],
-         ["#/me/import", "upload", "匯入舊紀錄", "Strava 封存檔、.fit／.gpx／.tcx"],
-         ["#/me/device", "watch", "手錶與資料來源", S.me.provider === "demo" ? "目前使用範例資料" : S.me.provider === "none" ? "尚未連結，點這裡開始" : `Garmin：${S.me.garmin_email || ""}`]]
-        .map(([to, ic, t, sub]) => `<button class="row" data-go="${to}"><span class="ri">${ico(ic)}</span><span><b>${t}</b><small>${esc(sub)}</small></span><span class="rv">${ico("chevron")}</span></button>`).join("")}
-      <button class="row" id="big"><span class="ri">${ico("grid")}</span><span><b>大字模式</b><small>${document.documentElement.classList.contains("big") ? "目前：開啟" : "目前：關閉"}</small></span><span></span></button>
-      <button class="row" id="logout"><span class="ri">${ico("logout")}</span><span><b>登出</b><small>${esc(S.me.username)}</small></span><span></span></button>
+    ${menuGroup("訓練", [
+      ["#/me/settings", "flag", "目標與課表偏好", "比賽、可跑日、想做的課"],
+      ["#/me/health", "shield", "配速與心率上限", "區間、個人最佳、成績預測"],
+      ["#/learn", "book", "跑步小教室", "課表、心率、名詞說明"]])}
+    ${menuGroup("資料與通知", [
+      ["#/me/device", "watch", "手錶與資料來源", "", S.me.provider === "demo" ? "範例資料" : S.me.provider === "none" ? "未連結" : "已連結"],
+      ["#/me/import", "upload", "匯入舊紀錄", "Strava、.fit／.gpx／.tcx"],
+      ["#/me/calendar", "cal", "放進 iPhone 行事曆", "課表變動自動更新"],
+      ["#/me/briefs", "bell", "晨報、晚報、週報", "時間、通知、肌力伸展"]])}
+    <section class="menu-group" aria-labelledby="mg-acc"><h2 id="mg-acc">帳號與顯示</h2><div class="card menu">
+      <label class="mrow"><span class="mi">${ico("grid")}</span><span class="mt"><b>大字模式</b></span>
+        <input type="checkbox" class="switch" id="big" ${document.documentElement.classList.contains("big") ? "checked" : ""} aria-label="大字模式"></label>
+      <button class="mrow danger" id="logout"><span class="mi">${ico("logout")}</span><span class="mt"><b>登出</b><small>${esc(S.me.username)}</small></span><span></span></button>
     </div></section>`;
   bindCommon();
   document.querySelectorAll("[data-sort]").forEach((b) => (b.onclick = () => { S.lbSort = b.dataset.sort; viewMe(); }));
-  document.getElementById("big").onclick = () => {
-    const on = document.documentElement.classList.toggle("big");
-    localStorage.setItem("ic8_big", on ? "1" : "0"); viewMe();
+  document.getElementById("big").onchange = (e) => {
+    const on = e.target.checked;
+    document.documentElement.classList.toggle("big", on);
+    localStorage.setItem("ic8_big", on ? "1" : "0");
   };
   document.getElementById("logout").onclick = async () => {
     await api("/api/logout", { method: "POST" }).catch(() => {});
