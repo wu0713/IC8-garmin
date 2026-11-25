@@ -132,6 +132,16 @@ def drop_outside(a, mask, dark=80, grow=1, max_sat=255, protect=(), boxes=None):
     return mask & ~reach
 
 
+def colorize(img, hue, sat=90, max_sat=70, darken=1.0):
+    """把灰黑的盔甲染色（例如黑甲染成暗紅甲）：不鮮豔的像素換成指定色相，亮度不變；原本就鮮豔的火光、寶石不動。"""
+    hsv = np.array(img.convert("HSV")).astype(int)
+    sel = hsv[..., 1] <= max_sat
+    hsv[..., 0] = np.where(sel, hue * 256 // 360, hsv[..., 0])
+    hsv[..., 1] = np.where(sel, np.maximum(hsv[..., 1], sat), hsv[..., 1])
+    hsv[..., 2] = np.where(sel, (hsv[..., 2] * darken).clip(0, 255), hsv[..., 2])
+    return Image.fromarray(hsv.astype(np.uint8), "HSV").convert("RGB")
+
+
 def shift_hue(img, lo, hi, by, darken=1.0, min_sat=40):
     """把某段色相（0–360 度）整段轉到別的顏色，例如粉紅轉成紫紅；金髮、膚色不在範圍內就不動。"""
     hsv = np.array(img.convert("HSV")).astype(int)
@@ -143,7 +153,7 @@ def shift_hue(img, lo, hi, by, darken=1.0, min_sat=40):
     return Image.fromarray(hsv.astype(np.uint8), "HSV").convert("RGB")
 
 
-def polish(path, colors=96, sat=1.12, contrast=1.06, holes=False, hue=None, debris=False, aura=None, min_bit=8, tint=None, smooth=None, outside=None):
+def polish(path, colors=96, sat=1.12, contrast=1.06, holes=False, hue=None, debris=False, aura=None, min_bit=8, tint=None, smooth=None, outside=None, recolor=None):
     im = Image.open(path).convert("RGBA")
     a = np.array(im)
     mask = a[..., 3] > 0
@@ -181,6 +191,8 @@ def polish(path, colors=96, sat=1.12, contrast=1.06, holes=False, hue=None, debr
     img = ImageEnhance.Contrast(ImageEnhance.Color(img).enhance(sat)).enhance(contrast)
     for hs in hue or []:
         img = shift_hue(img, *hs)
+    if recolor:
+        img = colorize(img, **recolor)
     arr = np.array(img)
     fill = arr[mask]
     arr[~mask] = np.median(fill, axis=0).astype(np.uint8) if len(fill) else 0
@@ -222,6 +234,9 @@ TUNE = {
     # 魔像：第 5 階段綠色光芒裡的棋盤格 → 身體描邊清楚，直接挖乾淨（保護鬍子），光芒改用程式畫
     "golem": {"sat": 1.15, "contrast": 1.08, "debris": True, "min_bit": 24, "holes": True, "stages": {
         5: {"tint": {"hue": (80, 190), "max_sat": 95, "vmin": 85, "vmax": 240, "protect": [(68, 50, 102, 100)]}}}},
+    # 惡魔：第 3 階段整片紅色棋盤格蓋在身上、修不回來 → 換新外觀：用第 4 階段的騎士，黑甲染成暗紅甲（地獄領主）
+    "demon": {"sat": 1.12, "contrast": 1.1, "debris": True, "min_bit": 24, "holes": True, "stages": {
+        3: {"source": 4, "contrast": 1.12, "recolor": {"hue": 354, "sat": 165, "max_sat": 70, "darken": 0.82}}}},
     "fox_spirit": {"sat": 1.25, "contrast": 1.08},   # 和服的紅、紫、金更華麗
     # 魅魔：跟九尾狐的粉紅分開 → 粉紅轉成深紫紅、整體暗一點；翅膀和魔力圈裡夾著背景棋盤格
     "succubus": {"sat": 1.2, "contrast": 1.12, "holes": True, "hue": [(296, 8, -30, 0.84)]},
@@ -249,6 +264,8 @@ if __name__ == "__main__":
                 shutil.copy2(chars / sp / f"{i}.png", src_png)
             tune = dict(TUNE.get(sp, {}))
             tune.update(tune.pop("stages", {}).get(i, {}))   # 個別階段的設定
+            if "source" in tune:                             # 換新外觀：借用別的階段的原圖（再染色）
+                src_png = orig / sp / f"{tune.pop('source')}.png"
             out = polish(src_png, **tune)
             out.save(chars / sp / f"{i}.png", optimize=True)
             st["w"], st["h"] = out.width, out.height

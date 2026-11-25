@@ -74,6 +74,15 @@ RIGS: dict[str, dict[int, list]] = {
         4: [("head", [60, 6, 106, 55], [83, 55], "tilt"), ("torso", [38, 55, 126, 95], [83, 95], "breath")],
         5: [("head", [36, 8, 140, 70], [88, 70], "tilt"), ("armL", [18, 82, 56, 152], [50, 86], "swayL"),
             ("armR", [118, 82, 156, 150], [124, 86], "swayR"), ("torso", [55, 70, 120, 120], [88, 120], "breath")]},
+    # 惡魔：頭、上半身；小惡魔拍翅、搖尾巴；騎士型態只動頭和上半身；最終階段披風飄
+    "demon": {
+        1: [("head", [36, 6, 74, 40], [55, 40], "tilt"), ("wingL", [2, 12, 36, 52], [34, 30], "flapL"), ("torso", [30, 40, 72, 62], [50, 62], "breath")],
+        2: [("head", [50, 8, 94, 48], [70, 48], "tilt"), ("wingL", [2, 12, 50, 74], [48, 30], "flapL"), ("wingR", [94, 12, 121, 74], [96, 30], "flapR"),
+            ("tail", [22, 74, 48, 96], [46, 85], "wag"), ("torso", [44, 48, 96, 78], [70, 78], "breath")],
+        3: [("head", [40, 6, 100, 48], [70, 48], "tilt"), ("torso", [28, 48, 110, 90], [70, 90], "breath")],
+        4: [("head", [40, 6, 100, 48], [70, 48], "tilt"), ("torso", [28, 48, 110, 90], [70, 90], "breath")],
+        5: [("head", [50, 8, 100, 45], [75, 45], "tilt"), ("cape", [108, 60, 154, 154], [110, 62], "swayR"),
+            ("torso", [44, 45, 108, 88], [76, 88], "breath")]},
     "fox_spirit": {
         1: [("head", [36, 0, 77, 42], [52, 40], "tilt"), ("tail", [4, 18, 36, 66], [36, 52], "wag")],
         2: [("head", [48, 8, 82, 46], [64, 46], "tilt"), ("tailL", [6, 38, 50, 112], [50, 70], "fanL"), ("torso", [46, 46, 85, 95], [64, 95], "breath")],
@@ -109,9 +118,12 @@ def split(species: str, stage: int, parts: list) -> dict:
         taken |= m
         masks.append((name, m, pivot, motion))
     body = solid & ~taken
-    # 關節附近多留一點重疊在身體層，部位轉動時才不會露出縫
-    near = ndimage.binary_dilation(body, iterations=OVERLAP)
-    keep = solid & (body | (taken & near))
+    # 關節附近多留一點重疊在身體層，部位轉動時才不會露出縫。
+    # 部位和部位相接的地方（例如頭和上半身）也要墊，不然兩塊各動各的會露出縫
+    keep = body.copy()
+    for _, m, _, _ in masks:
+        keep |= m & ndimage.binary_dilation(solid & ~m, iterations=OVERLAP)
+    keep &= solid
     out_dir = CHARS / species / "rig"
     out_dir.mkdir(exist_ok=True)
     base = im.copy()

@@ -1243,5 +1243,207 @@
     }
    ]
   }
+ },
+ "demon": {
+  "1": {
+   "w": 110,
+   "h": 96,
+   "base": "/characters/demon/rig/1_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/demon/rig/1_head.png",
+     "x": 36,
+     "y": 6,
+     "w": 38,
+     "h": 34,
+     "px": 55,
+     "py": 40,
+     "motion": "tilt"
+    },
+    {
+     "name": "wingL",
+     "file": "/characters/demon/rig/1_wingL.png",
+     "x": 2,
+     "y": 12,
+     "w": 34,
+     "h": 40,
+     "px": 34,
+     "py": 30,
+     "motion": "flapL"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/demon/rig/1_torso.png",
+     "x": 30,
+     "y": 40,
+     "w": 42,
+     "h": 22,
+     "px": 50,
+     "py": 62,
+     "motion": "breath"
+    }
+   ]
+  },
+  "2": {
+   "w": 122,
+   "h": 117,
+   "base": "/characters/demon/rig/2_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/demon/rig/2_head.png",
+     "x": 50,
+     "y": 10,
+     "w": 44,
+     "h": 38,
+     "px": 70,
+     "py": 48,
+     "motion": "tilt"
+    },
+    {
+     "name": "wingL",
+     "file": "/characters/demon/rig/2_wingL.png",
+     "x": 4,
+     "y": 15,
+     "w": 46,
+     "h": 59,
+     "px": 48,
+     "py": 30,
+     "motion": "flapL"
+    },
+    {
+     "name": "wingR",
+     "file": "/characters/demon/rig/2_wingR.png",
+     "x": 94,
+     "y": 15,
+     "w": 26,
+     "h": 59,
+     "px": 96,
+     "py": 30,
+     "motion": "flapR"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/demon/rig/2_tail.png",
+     "x": 25,
+     "y": 74,
+     "w": 23,
+     "h": 22,
+     "px": 46,
+     "py": 85,
+     "motion": "wag"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/demon/rig/2_torso.png",
+     "x": 48,
+     "y": 48,
+     "w": 48,
+     "h": 30,
+     "px": 70,
+     "py": 78,
+     "motion": "breath"
+    }
+   ]
+  },
+  "3": {
+   "w": 138,
+   "h": 156,
+   "base": "/characters/demon/rig/3_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/demon/rig/3_head.png",
+     "x": 40,
+     "y": 6,
+     "w": 58,
+     "h": 42,
+     "px": 70,
+     "py": 48,
+     "motion": "tilt"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/demon/rig/3_torso.png",
+     "x": 28,
+     "y": 48,
+     "w": 82,
+     "h": 42,
+     "px": 70,
+     "py": 90,
+     "motion": "breath"
+    }
+   ]
+  },
+  "4": {
+   "w": 138,
+   "h": 156,
+   "base": "/characters/demon/rig/4_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/demon/rig/4_head.png",
+     "x": 40,
+     "y": 6,
+     "w": 58,
+     "h": 42,
+     "px": 70,
+     "py": 48,
+     "motion": "tilt"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/demon/rig/4_torso.png",
+     "x": 28,
+     "y": 48,
+     "w": 82,
+     "h": 42,
+     "px": 70,
+     "py": 90,
+     "motion": "breath"
+    }
+   ]
+  },
+  "5": {
+   "w": 156,
+   "h": 156,
+   "base": "/characters/demon/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/demon/rig/5_head.png",
+     "x": 50,
+     "y": 8,
+     "w": 50,
+     "h": 37,
+     "px": 75,
+     "py": 45,
+     "motion": "tilt"
+    },
+    {
+     "name": "cape",
+     "file": "/characters/demon/rig/5_cape.png",
+     "x": 108,
+     "y": 60,
+     "w": 46,
+     "h": 89,
+     "px": 110,
+     "py": 62,
+     "motion": "swayR"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/demon/rig/5_torso.png",
+     "x": 44,
+     "y": 45,
+     "w": 64,
+     "h": 43,
+     "px": 76,
+     "py": 88,
+     "motion": "breath"
+    }
+   ]
+  }
  }
 }

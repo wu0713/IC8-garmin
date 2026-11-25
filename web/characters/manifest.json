@@ -184,36 +184,36 @@
      "name": "小惡魔",
      "en": "Imp",
      "file": "/characters/demon/1.png",
-     "w": 108,
-     "h": 94
+     "w": 110,
+     "h": 96
     },
     {
      "name": "低階惡魔",
      "en": "Lesser Demon",
      "file": "/characters/demon/2.png",
-     "w": 120,
-     "h": 115
+     "w": 122,
+     "h": 117
     },
     {
      "name": "地獄領主",
      "en": "Hell Lord",
      "file": "/characters/demon/3.png",
-     "w": 240,
-     "h": 160
+     "w": 138,
+     "h": 156
     },
     {
      "name": "深淵領主",
      "en": "Pit Lord",
      "file": "/characters/demon/4.png",
-     "w": 136,
-     "h": 154
+     "w": 138,
+     "h": 156
     },
     {
      "name": "惡魔使節",
      "en": "Demon Envoy",
      "file": "/characters/demon/5.png",
-     "w": 154,
-     "h": 154
+     "w": 156,
+     "h": 156
     }
    ]
   },
