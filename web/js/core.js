@@ -191,6 +191,8 @@ const PET_FX = {
   paladin: { from: 2, aura: "255,215,120", orb: "holy", colors: ["#8A6A1A", "#FFD24A", "#FFFFFF"], spark: "#FFF2B0", float: 5, sway: 4 },
   // 天海神龍：水藍色光暈，環繞龍珠；整隻浮空
   sea_dragon: { from: 2, aura: "90,200,255", orb: "pearl", colors: ["#1A4A7A", "#7FD4FF", "#FFFFFF"], spark: "#CFF2FF", float: 1, sway: 3 },
+  // 火龍：烈焰的橘色光暈，環繞火焰；最終階段飛在空中
+  flame_dragon: { from: 2, aura: "255,140,40", orb: "flame", colors: ["#7A1A08", "#FF7A1F", "#FFF0A0"], spark: "#FFC070", float: 5 },
   beast_tamer: { from: 2, aura: "140,215,100", orb: "leaf", colors: ["#28501C", "#68AE36", "#D2F59A"], spark: "#CFF59A", sway: 2 },
 };
 const ORB_GRID = {
@@ -421,6 +423,27 @@ const PET_SCENE = {
     s += PX(104, 50, 32, 2, "#FFE9B0") + PX(110, 54, 20, 1, "#FFE9B0");
     return `<svg class="scene-art" viewBox="0 0 160 80" preserveAspectRatio="xMidYMax slice" shape-rendering="crispEdges">${s}</svg><i class="cloud" style="--i:0"></i><i class="cloud" style="--i:1"></i><i class="cloud" style="--i:2"></i>`;
   },
+  // 火龍：夕陽下的龍巢，赤紅山峰、懸崖上的骨頭巢、遠方火山冒煙，灰燼慢慢飄落
+  flame_dragon: () => {
+    let s = bands(0, ["#3A1E4A", "#4E2350", "#662A52", "#7E3250", "#983C4C", "#B04A46", "#C45C3E", "#D47038", "#E08634", "#E89A34"], 5);
+    s += pxCircle(50, 42, 11, "#FFB04A") + pxCircle(50, 42, 9, "#FFD27A");
+    // 晚霞雲條
+    [[10, 14, 40], [90, 10, 50], [60, 24, 34], [118, 22, 36]].forEach(([x, y, w]) => (s += PX(x, y, w, 2, "#E8785A") + PX(x + 4, y + 2, w - 8, 1, "#B84A52")));
+    // 遠方火山和煙
+    for (let x = 108; x < 160; x += 2) { const h = Math.max(0, 22 - Math.round(Math.abs(x - 134) * 0.8)); s += PX(x, 46 - h, 2, h, "#4A2026"); }
+    s += PX(130, 20, 8, 4, "#6A4A50") + PX(126, 14, 10, 5, "#5A3E46") + PX(132, 8, 8, 5, "#4E363E");
+    // 赤紅山峰（尖銳）
+    const peak = (x, b, h, w, c) => { let t = ""; for (let i = 0; i < h; i++) { const ww = Math.max(1, Math.round(w * (i / h))); t += PX(x - ww, b - h + i, ww * 2, 1, c); } return t; };
+    s += peak(14, 48, 34, 12, "#5A2228") + peak(34, 48, 22, 9, "#6E2A2C") + peak(96, 48, 26, 11, "#5A2228") + peak(150, 48, 30, 10, "#6E2A2C");
+    // 懸崖地面
+    s += PX(0, 48, 160, 32, "#4A2A26") + PX(0, 48, 160, 2, "#6A3A30") + PX(0, 62, 160, 18, "#3A201E");
+    // 骨頭巢
+    s += PX(116, 56, 30, 4, "#5E3A28") + PX(118, 54, 26, 2, "#7A4E34");
+    [[118, 53, 8], [128, 52, 10], [136, 54, 7]].forEach(([x, y, w]) => (s += PX(x, y, w, 1, "#E8DCC4") + PX(x - 1, y - 1, 2, 2, "#E8DCC4") + PX(x + w - 1, y - 1, 2, 2, "#E8DCC4")));
+    s += PX(14, 58, 6, 4, "#E8DCC4") + PX(15, 59, 1, 1, "#3A201E") + PX(18, 59, 1, 1, "#3A201E");
+    const ash = Array.from({ length: 6 }, (_, i) => `<i class="petal ash" style="--i:${i}"></i>`).join("");
+    return `<svg class="scene-art" viewBox="0 0 160 80" preserveAspectRatio="xMidYMax slice" shape-rendering="crispEdges">${s}</svg>${ash}`;
+  },
   // 精靈使：月夜的精靈泉，極光、古樹、發光的蘑菇，螢火慢慢往上飄
   spirit: () => {
     let s = bands(0, ["#0B1430", "#0E1B3B", "#112346", "#142C50", "#17365A", "#1A4062", "#1D4A69", "#20536E", "#235B72", "#266274"], 5);
@@ -522,6 +545,11 @@ const PET_FRONT = {
     let s = "";
     for (let x = 0; x < 160; x += 4) { const h = 2 + ((x * 5) % 3); s += PX(x, 10 - h, 4, h, "#3E86B6") + PX(x, 10 - h, 3, 1, "#E8F6FF"); }
     return `<svg class="front-art waves" viewBox="0 0 160 10" preserveAspectRatio="none" shape-rendering="crispEdges">${s}</svg>`;
+  },
+  flame_dragon: () => {
+    let s = "";
+    for (let x = 0; x < 160; x += 4) { const h = 2 + ((x * 9) % 4); s += PX(x, 10 - h, 4, h, x % 8 ? "#2E1816" : "#3E2220") + PX(x, 10 - h, 4, 1, "#7A3A2C"); }
+    return `<svg class="front-art" viewBox="0 0 160 10" preserveAspectRatio="none" shape-rendering="crispEdges">${s}</svg><i class="firefly ember front" style="--i:4"></i>`;
   },
   necromancer: () => `<i class="mist green front"></i><i class="mist green front m2"></i>`,
   spirit: () => {

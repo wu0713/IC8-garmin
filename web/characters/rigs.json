@@ -2275,5 +2275,251 @@
     }
    ]
   }
+ },
+ "flame_dragon": {
+  "1": {
+   "w": 50,
+   "h": 65,
+   "base": "/characters/flame_dragon/rig/1_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/flame_dragon/rig/1_head.png",
+     "x": 4,
+     "y": 6,
+     "w": 40,
+     "h": 28,
+     "px": 25,
+     "py": 34,
+     "motion": "tilt"
+    }
+   ]
+  },
+  "2": {
+   "w": 176,
+   "h": 83,
+   "base": "/characters/flame_dragon/rig/2_base.png",
+   "parts": [
+    {
+     "name": "flame",
+     "file": "/characters/flame_dragon/rig/2_flame.png",
+     "x": 132,
+     "y": 28,
+     "w": 44,
+     "h": 39,
+     "px": 134,
+     "py": 48,
+     "motion": "flicker"
+    },
+    {
+     "name": "beast",
+     "file": "/characters/flame_dragon/rig/2_beast.png",
+     "x": 96,
+     "y": 10,
+     "w": 36,
+     "h": 41,
+     "px": 100,
+     "py": 40,
+     "motion": "nod"
+    },
+    {
+     "name": "wingL",
+     "file": "/characters/flame_dragon/rig/2_wingL.png",
+     "x": 4,
+     "y": 2,
+     "w": 92,
+     "h": 38,
+     "px": 80,
+     "py": 35,
+     "motion": "flapL"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/flame_dragon/rig/2_tail.png",
+     "x": 2,
+     "y": 36,
+     "w": 42,
+     "h": 36,
+     "px": 40,
+     "py": 50,
+     "motion": "wag"
+    }
+   ]
+  },
+  "3": {
+   "w": 196,
+   "h": 133,
+   "base": "/characters/flame_dragon/rig/3_base.png",
+   "parts": [
+    {
+     "name": "beast",
+     "file": "/characters/flame_dragon/rig/3_beast.png",
+     "x": 115,
+     "y": 20,
+     "w": 47,
+     "h": 62,
+     "px": 118,
+     "py": 60,
+     "motion": "nod"
+    },
+    {
+     "name": "flame",
+     "file": "/characters/flame_dragon/rig/3_flame.png",
+     "x": 112,
+     "y": 88,
+     "w": 81,
+     "h": 44,
+     "px": 116,
+     "py": 110,
+     "motion": "flicker"
+    },
+    {
+     "name": "wingL",
+     "file": "/characters/flame_dragon/rig/3_wingL.png",
+     "x": 1,
+     "y": 2,
+     "w": 95,
+     "h": 58,
+     "px": 90,
+     "py": 45,
+     "motion": "flapL"
+    },
+    {
+     "name": "wingR",
+     "file": "/characters/flame_dragon/rig/3_wingR.png",
+     "x": 128,
+     "y": 8,
+     "w": 45,
+     "h": 44,
+     "px": 130,
+     "py": 40,
+     "motion": "flapR"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/flame_dragon/rig/3_tail.png",
+     "x": 26,
+     "y": 84,
+     "w": 60,
+     "h": 45,
+     "px": 80,
+     "py": 95,
+     "motion": "wag"
+    }
+   ]
+  },
+  "4": {
+   "w": 195,
+   "h": 145,
+   "base": "/characters/flame_dragon/rig/4_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/flame_dragon/rig/4_head.png",
+     "x": 100,
+     "y": 1,
+     "w": 36,
+     "h": 49,
+     "px": 117,
+     "py": 50,
+     "motion": "tilt"
+    },
+    {
+     "name": "wingL",
+     "file": "/characters/flame_dragon/rig/4_wingL.png",
+     "x": 8,
+     "y": 4,
+     "w": 92,
+     "h": 58,
+     "px": 98,
+     "py": 45,
+     "motion": "flapL"
+    },
+    {
+     "name": "wingR",
+     "file": "/characters/flame_dragon/rig/4_wingR.png",
+     "x": 136,
+     "y": 2,
+     "w": 54,
+     "h": 60,
+     "px": 138,
+     "py": 40,
+     "motion": "flapR"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/flame_dragon/rig/4_torso.png",
+     "x": 96,
+     "y": 50,
+     "w": 54,
+     "h": 60,
+     "px": 120,
+     "py": 110,
+     "motion": "breath"
+    }
+   ]
+  },
+  "5": {
+   "w": 231,
+   "h": 134,
+   "base": "/characters/flame_dragon/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/flame_dragon/rig/5_head.png",
+     "x": 98,
+     "y": 11,
+     "w": 32,
+     "h": 34,
+     "px": 114,
+     "py": 45,
+     "motion": "tilt"
+    },
+    {
+     "name": "flame",
+     "file": "/characters/flame_dragon/rig/5_flame.png",
+     "x": 126,
+     "y": 45,
+     "w": 98,
+     "h": 87,
+     "px": 130,
+     "py": 55,
+     "motion": "flicker"
+    },
+    {
+     "name": "wingL",
+     "file": "/characters/flame_dragon/rig/5_wingL.png",
+     "x": 8,
+     "y": 1,
+     "w": 90,
+     "h": 69,
+     "px": 96,
+     "py": 35,
+     "motion": "flapL"
+    },
+    {
+     "name": "wingR",
+     "file": "/characters/flame_dragon/rig/5_wingR.png",
+     "x": 130,
+     "y": 1,
+     "w": 86,
+     "h": 44,
+     "px": 132,
+     "py": 35,
+     "motion": "flapR"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/flame_dragon/rig/5_tail.png",
+     "x": 47,
+     "y": 84,
+     "w": 63,
+     "h": 38,
+     "px": 100,
+     "py": 90,
+     "motion": "wag"
+    }
+   ]
+  }
  }
 }

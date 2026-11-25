@@ -879,6 +879,7 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
   clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%); }
 .scene .cloud { position: absolute; top: calc(8% + var(--i) * 13%); left: -30%; width: 46px; height: 12px; background: #F6F8F8;
   box-shadow: 8px -6px 0 -1px #F6F8F8, 22px -4px 0 0 #F6F8F8, 0 3px 0 #D6E0E6; opacity: .9; }
+.scene .petal.ash { width: 3px; height: 2px; background: #8A7A78; box-shadow: 1px 1px 0 #5A4A48; }
 .scene .star { position: absolute; width: 3px; height: 3px; background: #FFF4D6; box-shadow: 0 0 4px #FFF4D6; }
 .scene .mist { position: absolute; left: -40%; bottom: 14%; width: 180%; height: 22px; opacity: .55;
   background: repeating-linear-gradient(90deg, rgba(190, 130, 230, .0) 0 18px, rgba(190, 130, 230, .35) 18px 60px, rgba(190, 130, 230, 0) 60px 90px); }
@@ -948,6 +949,9 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
 .stage[data-scene="sea_dragon"] .pet img, .stage[data-scene="sea_dragon"] .pet .wavy {
   filter: drop-shadow(2px 0 0 rgba(255, 236, 190, .6)) drop-shadow(0 0 10px rgba(90, 200, 255, .35)); }
 .stage[data-scene="sea_dragon"] .pet-shadow { background: rgba(10, 40, 70, .45); }
+.stage[data-scene="flame_dragon"] .pet img, .stage[data-scene="flame_dragon"] .pet .wavy {
+  filter: drop-shadow(-2px 0 0 rgba(255, 200, 120, .6)) drop-shadow(0 0 10px rgba(255, 140, 40, .35)); }
+.stage[data-scene="flame_dragon"] .pet-shadow { background: rgba(30, 8, 4, .6); }
 .stage[data-scene="spirit"] .pet img, .stage[data-scene="spirit"] .pet .wavy {
   filter: brightness(.95) drop-shadow(-2px 0 0 rgba(220, 255, 245, .55)) drop-shadow(0 0 10px rgba(110, 230, 205, .35)); }
 .stage[data-scene="spirit"] .pet-shadow { background: rgba(5, 20, 25, .55); box-shadow: 0 0 14px 4px rgba(110, 230, 205, .2); }
