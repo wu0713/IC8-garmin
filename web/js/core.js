@@ -166,6 +166,31 @@ async function loadChars() {
 }
 const species = (id) => S.chars?.species.find((s) => s.id === id);
 
+// ── 夥伴特效：每個種族自己的光暈和環繞小物（從第 from 階段開始；越高階越亮）──
+// 之後其他種族照這個格式加：aura 是光暈的 RGB，orb 是環繞的像素小圖（顏色 3 個：外、中、心）
+const PET_FX = {
+  fox_spirit: { from: 2, aura: "255,105,190", orb: "flame", colors: ["#C2369E", "#FF7AD0", "#FFE6F7"], spark: "#FFB8E6" },
+};
+
+// 像素火焰（7×9 格），用 SVG 的小方塊畫，放大也是銳利的像素
+function pixelOrb(kind, [c1, c2, c3]) {
+  const F = ["...1...", "..121..", "..121..", ".12221.", ".12321.", "1223321", "1233321", ".12321.", "..111.."];
+  const fill = { 1: c1, 2: c2, 3: c3 };
+  let r = "";
+  F.forEach((row, y) => [...row].forEach((ch, x) => { if (fill[ch]) r += `<rect x="${x}" y="${y}" width="1" height="1" fill="${fill[ch]}"/>`; }));
+  return `<svg viewBox="0 0 7 9" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`;
+}
+
+function petFx(speciesId, stage) {
+  const fx = PET_FX[speciesId];
+  if (!fx || stage < fx.from) return "";
+  const n = stage >= 4 ? 4 : stage >= 3 ? 3 : 2;
+  return `<span class="pet-aura" style="--aura:${fx.aura}" aria-hidden="true"></span>
+    <span class="pet-orbit${stage >= 4 ? " fast" : ""}" aria-hidden="true">${Array.from({ length: n }, (_, i) =>
+      `<i style="--k:${i};--n:${n}"><b>${pixelOrb(fx.orb, fx.colors)}</b></i>`).join("")}</span>`;
+}
+const petSpark = (speciesId) => PET_FX[speciesId]?.spark || "";
+
 // scale：同一系列所有階段用同一個倍率，所以越後面的階段畫面上越大
 function charImg(id, stage, boxH = 200, cls = "") {
   const sp = species(id);

@@ -57,6 +57,12 @@ def polish(path, colors=96, sat=1.12, contrast=1.06):
     return Image.fromarray(pad)
 
 
+# 每個種族可以個別調整：sat 彩度、contrast 對比、colors 顏色數
+TUNE = {
+    "fox_spirit": {"sat": 1.25, "contrast": 1.08},   # 和服的紅、紫、金更華麗
+}
+
+
 # ───────── 指令列：python tools/pixel_polish.py fox_spirit [golem …] ─────────
 if __name__ == "__main__":
     import json, shutil, sys
@@ -73,7 +79,7 @@ if __name__ == "__main__":
             src_png = orig / sp / f"{i}.png"
             if not src_png.exists():                       # 第一次：先把原圖收好，之後都從原圖重做
                 shutil.copy2(chars / sp / f"{i}.png", src_png)
-            out = polish(src_png)
+            out = polish(src_png, **TUNE.get(sp, {}))
             out.save(chars / sp / f"{i}.png", optimize=True)
             st["w"], st["h"] = out.width, out.height
         print(f"{sp}: 完成 {len(entry['stages'])} 張")

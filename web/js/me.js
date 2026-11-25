@@ -32,8 +32,8 @@ async function viewMe() {
     const sp = species(g.character.species);
     const nextLv = g.next_stage_level;
     hero = `<section class="hero" aria-labelledby="pet">
-      <div class="stage"><button class="pet s${g.stage}" id="pet-btn" aria-label="跟${esc(g.character.nickname)}互動">
-        <span class="pet-fx" aria-hidden="true"><i></i><i></i><i></i><i></i></span>${charImg(sp.id, g.stage, 200)}<span class="pet-shadow"></span></button></div>
+      <div class="stage"><button class="pet s${g.stage}" id="pet-btn" data-sp="${sp.id}" style="${petSpark(sp.id) ? `--spark:${petSpark(sp.id)}` : ""}" aria-label="跟${esc(g.character.nickname)}互動">
+        ${petFx(sp.id, g.stage)}<span class="pet-fx" aria-hidden="true"><i></i><i></i><i></i><i></i></span>${charImg(sp.id, g.stage, 200)}<span class="pet-shadow"></span></button></div>
       <div class="hero-info">
         <p class="sp">${esc(sp.name)}，第 ${g.stage + 1} 階段「${esc(g.character.stage_name)}」</p>
         <h2 id="pet">${esc(g.character.nickname)}</h2>
@@ -101,7 +101,10 @@ function celebrate(g) {
   const evolved = g.stage > prev.stage;
   const ov = document.createElement("div");
   ov.className = "levelup"; ov.setAttribute("role", "dialog"); ov.setAttribute("aria-label", evolved ? "進化" : "升級");
-  ov.innerHTML = `<div class="card">${charImg(g.character.species, g.stage, 180)}
+  const burst = evolved && PET_FX[g.character.species]
+    ? `<span class="evo-burst" style="--aura:${PET_FX[g.character.species].aura}" aria-hidden="true">${Array.from({ length: 10 }, (_, i) =>
+      `<i style="--k:${i}">${pixelOrb(PET_FX[g.character.species].orb, PET_FX[g.character.species].colors)}</i>`).join("")}</span>` : "";
+  ov.innerHTML = `<div class="card"><div class="evo-pic">${burst}${charImg(g.character.species, g.stage, 180)}</div>
     <h2>${evolved ? `進化成「${esc(g.character.stage_name)}」！` : "升級了！"}</h2>
     <p class="num" style="font-size:1.25rem;margin:4px 0 14px">Lv ${prev.level} → <b style="font-size:1.75rem;color:var(--c-run)">${g.level}</b></p>
     <button class="btn" type="button">太棒了</button></div>`;
