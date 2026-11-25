@@ -18,7 +18,7 @@ function routeShape(points) {
   return pts.slice(cut, pts.length - cut);
 }
 
-function drawRoute(ctx, pts, box) {
+function drawRoute(ctx, pts, box, style = null) {
   const k = Math.cos((pts[0].lat * Math.PI) / 180);
   const xs = pts.map((p) => p.lon * k), ys = pts.map((p) => -p.lat);
   const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
@@ -28,8 +28,13 @@ function drawRoute(ctx, pts, box) {
   ctx.lineJoin = "round"; ctx.lineCap = "round";
   ctx.beginPath();
   pts.forEach((_, i) => { const X = ox + (xs[i] - minX) * s, Y = oy + (ys[i] - minY) * s; i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); });
-  ctx.strokeStyle = CARD_C.ink; ctx.lineWidth = 26; ctx.stroke();
-  ctx.strokeStyle = CARD_C.pill; ctx.lineWidth = 14; ctx.stroke();
+  if (style === "white") {
+    ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = 12;
+    ctx.strokeStyle = "#FFFFFF"; ctx.lineWidth = 12; ctx.stroke();
+  } else {
+    ctx.strokeStyle = CARD_C.ink; ctx.lineWidth = 26; ctx.stroke();
+    ctx.strokeStyle = CARD_C.pill; ctx.lineWidth = 14; ctx.stroke();
+  }
   ctx.restore();
 }
 
@@ -137,6 +142,93 @@ async function drawShareCard(w, game, { showRoute = true } = {}) {
   return cv;
 }
 
+// 白字數據（照片版、透明版共用）：Strava 那種「小標＋大數字」
+function statBlock(ctx, x, y, label, value, unit, size = 96, align = "left") {
+  ctx.save();
+  ctx.textBaseline = "alphabetic";
+  ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = 10; ctx.shadowOffsetY = 2;
+  ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.font = `600 ${Math.round(size * 0.36)}px ${CARD_FONT}`;
+  ctx.textAlign = align; ctx.fillText(label, x, y);
+  ctx.textAlign = "left";
+  ctx.font = `800 ${size}px ${CARD_FONT}`;
+  const vw = ctx.measureText(value).width;
+  const uFont = `700 ${Math.round(size * 0.42)}px ${CARD_FONT}`;
+  ctx.font = uFont;
+  const uw = unit ? ctx.measureText(unit).width + 12 : 0;
+  const x0 = align === "center" ? x - (vw + uw) / 2 : x, yv = y + size * 1.02;
+  ctx.fillStyle = "#FFFFFF"; ctx.font = `800 ${size}px ${CARD_FONT}`; ctx.fillText(value, x0, yv);
+  if (unit) { ctx.font = uFont; ctx.fillText(unit, x0 + vw + 12, yv); }
+  ctx.restore();
+}
+
+function wordmark(ctx, x, y, size = 40, align = "left") {
+  ctx.save();
+  ctx.font = `800 ${size}px ${CARD_FONT}`; ctx.textBaseline = "middle"; ctx.textAlign = "left";
+  const tw = ctx.measureText("跑課").width, bw = size * 0.38, total = bw + 12 + tw;
+  const x0 = align === "center" ? x - total / 2 : x;
+  ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = 8;
+  ctx.fillStyle = CARD_C.pill; ctx.fillRect(x0, y - size * 0.5, bw, size);
+  ctx.fillStyle = "#FFFFFF"; ctx.fillText("跑課", x0 + bw + 12, y + 2);
+  ctx.restore();
+}
+
+const paceTxt = (w) => (w.pace ? `${w.pace.replace(":", "'")}"` : "–");
+
+// 照片版：自己的照片當背景（裁成直式），下面一層漸層讓白字看得清楚
+async function drawPhotoCard(w, photo, { showRoute = true } = {}) {
+  const cv = document.createElement("canvas");
+  cv.width = CARD_W; cv.height = CARD_H;
+  const ctx = cv.getContext("2d");
+  if (photo) {
+    const s = Math.max(CARD_W / photo.width, CARD_H / photo.height);
+    const dw = photo.width * s, dh = photo.height * s;
+    ctx.drawImage(photo, (CARD_W - dw) / 2, (CARD_H - dh) / 2, dw, dh);
+  } else {
+    const g = ctx.createLinearGradient(0, 0, 0, CARD_H);
+    g.addColorStop(0, "#4B45C6"); g.addColorStop(1, "#1B1E3C");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, CARD_W, CARD_H);
+  }
+  const top = ctx.createLinearGradient(0, 0, 0, 360);
+  top.addColorStop(0, "rgba(0,0,0,.45)"); top.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = top; ctx.fillRect(0, 0, CARD_W, 360);
+  const bot = ctx.createLinearGradient(0, CARD_H * 0.45, 0, CARD_H);
+  bot.addColorStop(0, "rgba(0,0,0,0)"); bot.addColorStop(1, "rgba(0,0,0,.72)");
+  ctx.fillStyle = bot; ctx.fillRect(0, CARD_H * 0.45, CARD_W, CARD_H * 0.55);
+
+  const d = new Date(`${w.date}T00:00:00`);
+  ctx.save(); ctx.shadowColor = "rgba(0,0,0,.5)"; ctx.shadowBlur = 10;
+  ctx.fillStyle = "#FFFFFF"; ctx.font = `800 60px ${CARD_FONT}`; ctx.textBaseline = "alphabetic";
+  ctx.fillText(w.name || "跑步", 80, 170);
+  ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.font = `600 38px ${CARD_FONT}`;
+  ctx.fillText(`${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}${w.start ? `　${w.start.slice(11, 16)}` : ""}`, 80, 228);
+  ctx.restore();
+
+  const shape = showRoute ? routeShape(w.points) : null;
+  if (shape) drawRoute(ctx, shape, { x: 120, y: 980, w: 840, h: 420 }, "white");
+  statBlock(ctx, 80, 1520, "距離", (w.km || 0).toFixed(2), "km", 110);
+  statBlock(ctx, 80, 1720, "配速", paceTxt(w), "/km", 72);
+  statBlock(ctx, 420, 1720, "時間", fmtDur(w.minutes), "", 72);
+  if (w.avg_hr) statBlock(ctx, 760, 1720, "心率", `${w.avg_hr}`, "", 72);
+  wordmark(ctx, CARD_W - 80 - 140, 1560, 44);
+  return cv;
+}
+
+// 透明版：只有白字和路線，背景透明，可以貼到 IG 限時動態的任何照片上
+async function drawStickerCard(w, { showRoute = true } = {}) {
+  const shape = showRoute ? routeShape(w.points) : null;
+  const H = shape ? 1500 : 1000;
+  const cv = document.createElement("canvas");
+  cv.width = CARD_W; cv.height = H;
+  const ctx = cv.getContext("2d");
+  const cx = CARD_W / 2;
+  statBlock(ctx, cx, 120, "距離", (w.km || 0).toFixed(2), "km", 130, "center");
+  statBlock(ctx, cx, 400, "配速", paceTxt(w), "/km", 88, "center");
+  statBlock(ctx, cx, 620, "時間", fmtDur(w.minutes), "", 88, "center");
+  if (shape) drawRoute(ctx, shape, { x: 240, y: 880, w: 600, h: 430 }, "white");
+  wordmark(ctx, cx, H - 70, 44, "center");
+  return cv;
+}
+
 function fmtDur(min) {
   const s = Math.round((min || 0) * 60), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
   return h ? `${h}:${String(m).padStart(2, "0")}:${String(x).padStart(2, "0")}` : `${m}:${String(x).padStart(2, "0")}`;
@@ -146,29 +238,54 @@ async function openShareCard(w) {
   const game = await api("/api/game").catch(() => null);
   await loadChars().catch(() => null);
   const hasRoute = !!routeShape(w.points);
-  let showRoute = hasRoute, blob = null;
+  let showRoute = hasRoute, blob = null, mode = "card", photo = null;
   sheet(`<h2>分享這一趟</h2>
-    <div class="share-prev"><p class="muted">產生圖卡中…</p></div>
+    <div class="seg share-mode" role="group" aria-label="圖片樣式">
+      <button data-mode="card" aria-pressed="true">圖卡</button><button data-mode="photo" aria-pressed="false">照片</button><button data-mode="sticker" aria-pressed="false">透明</button></div>
+    <div class="share-photo" hidden><label class="btn tonal small">${ico("upload")}選一張照片<input type="file" accept="image/*" id="sh-photo" hidden></label>
+      <span class="muted" id="sh-photo-hint">沒選照片會用預設底色</span></div>
+    <div class="share-prev"><p class="muted">產生圖片中…</p></div>
+    <p class="muted share-note" hidden>透明背景的 PNG：在 IG 限時動態裡用「貼圖 → 相片」貼到任何照片上。</p>
     ${hasRoute ? `<label class="toggle-row"><span>顯示路線形狀<small>不畫地圖，頭尾各去掉一小段</small></span><input type="checkbox" class="switch" id="sr" checked></label>` : ""}
     <div class="btn-row"><button class="btn" id="sh-go">${ico("share")}分享</button><button class="btn outline" id="sh-dl">下載圖片</button></div>`,
   async (box) => {
     const prev = box.querySelector(".share-prev");
+    let gen = 0;
     const draw = async () => {
-      prev.innerHTML = `<p class="muted">產生圖卡中…</p>`;
-      const cv = await drawShareCard(w, game, { showRoute });
-      blob = await new Promise((ok) => cv.toBlob(ok, "image/png"));
+      const my = ++gen;   // 連續切換時只保留最後一次的結果
+      prev.innerHTML = `<p class="muted">產生圖片中…</p>`;
+      const cv = mode === "photo" ? await drawPhotoCard(w, photo, { showRoute })
+        : mode === "sticker" ? await drawStickerCard(w, { showRoute }) : await drawShareCard(w, game, { showRoute });
+      const out = await new Promise((ok) => cv.toBlob(ok, "image/png"));
+      if (my !== gen) return;
+      blob = out;
       prev.innerHTML = "";
-      const im = new Image(); im.src = URL.createObjectURL(blob); im.alt = "分享圖卡預覽";
+      prev.classList.toggle("checker", mode === "sticker");
+      const im = new Image(); im.src = URL.createObjectURL(blob); im.alt = "分享圖片預覽";
       prev.append(im);
     };
     await draw();
+    box.querySelectorAll("[data-mode]").forEach((b) => (b.onclick = () => {
+      mode = b.dataset.mode;
+      box.querySelectorAll("[data-mode]").forEach((x) => x.setAttribute("aria-pressed", x === b));
+      box.querySelector(".share-photo").hidden = mode !== "photo";
+      box.querySelector(".share-note").hidden = mode !== "sticker";
+      draw();
+    }));
+    box.querySelector("#sh-photo").onchange = async (e) => {
+      const f = e.target.files?.[0];
+      if (!f) return;
+      photo = await loadImg(URL.createObjectURL(f));
+      box.querySelector("#sh-photo-hint").textContent = photo ? f.name : "這張照片讀不出來，換一張試試";
+      draw();
+    };
     const sr = box.querySelector("#sr");
     if (sr) sr.onchange = () => { showRoute = sr.checked; draw(); };
-    const fname = `跑課-${w.date}.png`;
-    const dl = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = fname; a.click(); };
+    const fname = () => `跑課-${w.date}${mode === "sticker" ? "-透明" : mode === "photo" ? "-照片" : ""}.png`;
+    const dl = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = fname(); a.click(); };
     box.querySelector("#sh-dl").onclick = dl;
     box.querySelector("#sh-go").onclick = async () => {
-      const file = new File([blob], fname, { type: "image/png" });
+      const file = new File([blob], fname(), { type: "image/png" });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try { await navigator.share({ files: [file], title: "跑課" }); } catch (e) { if (e.name !== "AbortError") toast("沒辦法分享，改用下載"); }
       } else { dl(); toast("這個瀏覽器不能直接分享，已經下載圖片"); }

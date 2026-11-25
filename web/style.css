@@ -765,3 +765,9 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
 .drag-ghost .grip svg { width: 18px; height: 18px; fill: var(--ink-3); }
 .wk-hint { margin-top: 8px; font-size: .75rem; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .wk-hint svg { width: 14px; height: 14px; fill: var(--ink-3); }
+.share-mode { margin-top: 10px; }
+.share-photo { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.share-photo .btn { cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.share-photo svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+.share-prev.checker img { background: repeating-conic-gradient(#C9CCDD 0 25%, #EEF0F8 0 50%) 0 0 / 24px 24px; }
+.share-note { margin-bottom: 6px; }
