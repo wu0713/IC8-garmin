@@ -70,6 +70,68 @@ def drop_aura(a, mask, hue=(190, 300), min_sat=12, grow=3, boxes=None):
     return mask & ~aura & ~grey
 
 
+def drop_tint(a, mask, protect=(), max_sat=70, vmin=70, vmax=222, hue=None):
+    """光芒裡帶顏色的棋盤格：保護角色本體的範圍，範圍外「不太鮮豔、不太亮」的像素挖掉。
+    很亮的白（翅膀、光環）、很暗的描邊、鮮豔的寶石保留。hue 可以再限制色相範圍。"""
+    hsv = np.array(Image.fromarray(a[..., :3]).convert("HSV")).astype(int)
+    h = hsv[..., 0] * 360 // 256
+    sel = mask & (hsv[..., 1] <= max_sat) & (hsv[..., 2] >= vmin) & (hsv[..., 2] <= vmax)
+    if hue:
+        lo, hi = hue
+        sel &= ((h >= lo) | (h < hi)) if lo > hi else ((h >= lo) & (h < hi))
+    for x0, y0, x1, y1 in protect:
+        sel[y0:y1, x0:x1] = False
+    return mask & ~sel
+
+
+def smooth_tint(a, mask, protect=(), max_sat=90, vmin=70, vmax=228, hue=None, sigma=5.0, lift=1.0, boxes=None,
+                glow=None, mix=0.0, alpha=255):
+    """光芒和棋盤格交錯得太密、挖不乾淨時：不挖，改成把那一片「抹平」成柔和的光（棋盤格紋路消失，形狀保留）。"""
+    hsv = np.array(Image.fromarray(a[..., :3]).convert("HSV")).astype(int)
+    h = hsv[..., 0] * 360 // 256
+    sel = mask & (hsv[..., 1] <= max_sat) & (hsv[..., 2] >= vmin) & (hsv[..., 2] <= vmax)
+    if hue:
+        lo, hi = hue
+        sel &= ((h >= lo) | (h < hi)) if lo > hi else ((h >= lo) & (h < hi))
+    if boxes:
+        keep = np.zeros_like(sel)
+        for x0, y0, x1, y1 in boxes:
+            keep[y0:y1, x0:x1] = True
+        sel &= keep
+    for x0, y0, x1, y1 in protect:
+        sel[y0:y1, x0:x1] = False
+    w = ndimage.gaussian_filter(sel.astype(float), sigma)
+    out = a.copy()
+    for c in range(3):
+        sm = ndimage.gaussian_filter(a[..., c].astype(float) * sel, sigma) / np.maximum(w, 1e-6)
+        if glow:                                   # 再往發光的顏色靠（例如金白色）
+            sm = sm * (1 - mix) + glow[c] * mix
+        out[..., c] = np.where(sel, np.clip(sm * lift, 0, 255), a[..., c])
+    return out, sel, alpha
+
+
+def drop_outside(a, mask, dark=80, grow=1, max_sat=255, protect=(), boxes=None):
+    """從圖片外面往內淹：碰到深色描邊就停。淹得到、又不鮮豔的像素就是背景殘渣（光芒裡的棋盤格），挖掉。
+    角色有完整描邊的部位淹不進去，所以不會被挖。"""
+    hsv = np.array(Image.fromarray(a[..., :3]).convert("HSV")).astype(int)
+    wall = mask & (hsv[..., 2] < dark)
+    wall = ndimage.binary_dilation(wall, CROSS, iterations=grow) & mask
+    open_ = ~wall
+    for x0, y0, x1, y1 in protect:
+        open_[y0:y1, x0:x1] = False
+    lab, _ = ndimage.label(open_, structure=CROSS)
+    H, W = mask.shape
+    seeds = set(np.unique(lab[~mask])) | set(np.unique(np.r_[lab[0], lab[-1], lab[:, 0], lab[:, -1]]))
+    seeds.discard(0)
+    reach = np.isin(lab, list(seeds)) & mask & (hsv[..., 1] <= max_sat)
+    if boxes:
+        keep = np.zeros_like(reach)
+        for x0, y0, x1, y1 in boxes:
+            keep[y0:y1, x0:x1] = True
+        reach &= keep
+    return mask & ~reach
+
+
 def shift_hue(img, lo, hi, by, darken=1.0, min_sat=40):
     """把某段色相（0–360 度）整段轉到別的顏色，例如粉紅轉成紫紅；金髮、膚色不在範圍內就不動。"""
     hsv = np.array(img.convert("HSV")).astype(int)
@@ -81,12 +143,22 @@ def shift_hue(img, lo, hi, by, darken=1.0, min_sat=40):
     return Image.fromarray(hsv.astype(np.uint8), "HSV").convert("RGB")
 
 
-def polish(path, colors=96, sat=1.12, contrast=1.06, holes=False, hue=None, debris=False, aura=None, min_bit=8):
+def polish(path, colors=96, sat=1.12, contrast=1.06, holes=False, hue=None, debris=False, aura=None, min_bit=8, tint=None, smooth=None, outside=None):
     im = Image.open(path).convert("RGBA")
     a = np.array(im)
     mask = a[..., 3] > 0
+    soft = []                                      # 抹平後要半透明的區域
+    if smooth:
+        for sm in (smooth if isinstance(smooth, list) else [smooth]):
+            a, sel, al = smooth_tint(a, mask, **sm)
+            if al < 255:
+                soft.append((sel, al))
     if aura:
         mask = drop_aura(a, mask, **aura)
+    if tint:
+        mask = drop_tint(a, mask, **tint)
+    if outside:
+        mask = drop_outside(a, mask, **outside)
     mask = peel_grey(a, mask)
     if holes:
         mask = drop_grey_holes(a, mask)
@@ -113,7 +185,11 @@ def polish(path, colors=96, sat=1.12, contrast=1.06, holes=False, hue=None, debr
     fill = arr[mask]
     arr[~mask] = np.median(fill, axis=0).astype(np.uint8) if len(fill) else 0
     q = np.array(Image.fromarray(arr).quantize(colors=colors, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE).convert("RGB"))
-    out = np.dstack([q, np.where(mask, 255, 0).astype(np.uint8)])
+    alpha = np.where(mask, 255, 0).astype(np.uint8)
+    for sel, al in soft:
+        alpha[sel & mask] = al
+        body &= ~sel                               # 半透明的光不加墨線
+    out = np.dstack([q, alpha])
     H, W = mask.shape
     pad = np.zeros((H + 2, W + 2, 4), np.uint8)
     pad[1:-1, 1:-1] = out
@@ -126,6 +202,13 @@ def polish(path, colors=96, sat=1.12, contrast=1.06, holes=False, hue=None, debr
 
 # 每個種族可以個別調整：sat 彩度、contrast 對比、colors 顏色數
 TUNE = {
+    # 精靈使：第 3、4 階段的精靈旁邊夾著棋盤格（保護人和精靈，範圍外的暗灰格挖掉）；
+    # 第 5 階段的光芒和棋盤格交錯太密 → 換新外觀：抹平成半透明的金白柔光，翅膀和光環的亮線保留
+    "spirit": {"sat": 1.15, "contrast": 1.08, "debris": True, "min_bit": 24, "holes": True, "stages": {
+        3: {"tint": {"max_sat": 80, "vmin": 40, "vmax": 215, "protect": [(38, 35, 86, 162), (0, 28, 22, 105), (98, 28, 128, 74)]}},
+        4: {"tint": {"hue": (0, 70), "max_sat": 95, "vmin": 40, "vmax": 205, "protect": [(52, 28, 122, 155), (30, 18, 62, 150)]}},
+        5: {"holes": False, "smooth": {"protect": [(86, 44, 104, 70), (66, 72, 120, 160)], "max_sat": 95, "vmax": 224, "sigma": 3,
+                                       "glow": (255, 236, 190), "mix": 0.55, "alpha": 120}}}},
     "fox_spirit": {"sat": 1.25, "contrast": 1.08},   # 和服的紅、紫、金更華麗
     # 魅魔：跟九尾狐的粉紅分開 → 粉紅轉成深紫紅、整體暗一點；翅膀和魔力圈裡夾著背景棋盤格
     "succubus": {"sat": 1.2, "contrast": 1.12, "holes": True, "hue": [(296, 8, -30, 0.84)]},

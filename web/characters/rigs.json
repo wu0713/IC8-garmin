@@ -692,5 +692,207 @@
     }
    ]
   }
+ },
+ "spirit": {
+  "1": {
+   "w": 77,
+   "h": 96,
+   "base": "/characters/spirit/rig/1_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/spirit/rig/1_head.png",
+     "x": 8,
+     "y": 4,
+     "w": 36,
+     "h": 36,
+     "px": 26,
+     "py": 40,
+     "motion": "tilt"
+    },
+    {
+     "name": "wisp",
+     "file": "/characters/spirit/rig/1_wisp.png",
+     "x": 51,
+     "y": 7,
+     "w": 22,
+     "h": 32,
+     "px": 61,
+     "py": 22,
+     "motion": "bob"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/spirit/rig/1_torso.png",
+     "x": 3,
+     "y": 40,
+     "w": 43,
+     "h": 38,
+     "px": 24,
+     "py": 78,
+     "motion": "breath"
+    }
+   ]
+  },
+  "2": {
+   "w": 125,
+   "h": 126,
+   "base": "/characters/spirit/rig/2_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/spirit/rig/2_head.png",
+     "x": 22,
+     "y": 23,
+     "w": 38,
+     "h": 35,
+     "px": 40,
+     "py": 58,
+     "motion": "tilt"
+    },
+    {
+     "name": "fairy",
+     "file": "/characters/spirit/rig/2_fairy.png",
+     "x": 72,
+     "y": 3,
+     "w": 42,
+     "h": 51,
+     "px": 92,
+     "py": 30,
+     "motion": "bob"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/spirit/rig/2_torso.png",
+     "x": 16,
+     "y": 58,
+     "w": 46,
+     "h": 40,
+     "px": 38,
+     "py": 98,
+     "motion": "breath"
+    }
+   ]
+  },
+  "3": {
+   "w": 143,
+   "h": 162,
+   "base": "/characters/spirit/rig/3_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/spirit/rig/3_head.png",
+     "x": 42,
+     "y": 35,
+     "w": 36,
+     "h": 37,
+     "px": 60,
+     "py": 72,
+     "motion": "tilt"
+    },
+    {
+     "name": "fairy",
+     "file": "/characters/spirit/rig/3_fairy.png",
+     "x": 100,
+     "y": 28,
+     "w": 37,
+     "h": 64,
+     "px": 118,
+     "py": 60,
+     "motion": "bob"
+    },
+    {
+     "name": "flame",
+     "file": "/characters/spirit/rig/3_flame.png",
+     "x": 78,
+     "y": 21,
+     "w": 22,
+     "h": 71,
+     "px": 90,
+     "py": 90,
+     "motion": "flicker"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/spirit/rig/3_torso.png",
+     "x": 38,
+     "y": 72,
+     "w": 47,
+     "h": 40,
+     "px": 62,
+     "py": 112,
+     "motion": "breath"
+    }
+   ]
+  },
+  "4": {
+   "w": 170,
+   "h": 158,
+   "base": "/characters/spirit/rig/4_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/spirit/rig/4_head.png",
+     "x": 65,
+     "y": 32,
+     "w": 40,
+     "h": 40,
+     "px": 85,
+     "py": 72,
+     "motion": "tilt"
+    },
+    {
+     "name": "ghost",
+     "file": "/characters/spirit/rig/4_ghost.png",
+     "x": 118,
+     "y": 20,
+     "w": 49,
+     "h": 92,
+     "px": 140,
+     "py": 100,
+     "motion": "bob"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/spirit/rig/4_torso.png",
+     "x": 55,
+     "y": 72,
+     "w": 63,
+     "h": 40,
+     "px": 86,
+     "py": 112,
+     "motion": "breath"
+    }
+   ]
+  },
+  "5": {
+   "w": 171,
+   "h": 162,
+   "base": "/characters/spirit/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/spirit/rig/5_head.png",
+     "x": 84,
+     "y": 44,
+     "w": 22,
+     "h": 28,
+     "px": 95,
+     "py": 72,
+     "motion": "tilt"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/spirit/rig/5_torso.png",
+     "x": 66,
+     "y": 72,
+     "w": 54,
+     "h": 40,
+     "px": 93,
+     "py": 112,
+     "motion": "breath"
+    }
+   ]
+  }
  }
 }

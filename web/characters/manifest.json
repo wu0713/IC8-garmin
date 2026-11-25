@@ -58,36 +58,36 @@
      "name": "精靈學徒",
      "en": "Spirit Initiate",
      "file": "/characters/spirit/1.png",
-     "w": 75,
-     "h": 94
+     "w": 77,
+     "h": 96
     },
     {
      "name": "元素見習生",
      "en": "Elemental Apprentice",
      "file": "/characters/spirit/2.png",
-     "w": 123,
-     "h": 124
+     "w": 125,
+     "h": 126
     },
     {
      "name": "精靈召喚師",
      "en": "Spirit Summoner",
      "file": "/characters/spirit/3.png",
-     "w": 141,
-     "h": 160
+     "w": 143,
+     "h": 162
     },
     {
      "name": "元素使者",
      "en": "Elemental Envoy",
      "file": "/characters/spirit/4.png",
-     "w": 168,
-     "h": 156
+     "w": 170,
+     "h": 158
     },
     {
      "name": "太初精靈賢者",
      "en": "Primordial Spirit Sage",
      "file": "/characters/spirit/5.png",
-     "w": 169,
-     "h": 160
+     "w": 171,
+     "h": 162
     }
    ]
   },

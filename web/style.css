@@ -796,6 +796,8 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
   .pet-orbit.fast i { animation-duration: 6.5s; animation-delay: calc(-6.5s * var(--k) / var(--n)); }
   .pet-orbit i b { animation: flicker .5s steps(2) infinite; }
   .pet-orbit svg.orb-bat { animation: flap .32s steps(2) infinite; }
+  .pet-orbit svg.orb-wisp { animation: wisp-pulse 1.2s steps(3) infinite alternate; }
+  @keyframes wisp-pulse { to { filter: brightness(1.35) drop-shadow(0 0 3px rgba(190, 255, 240, .9)); } }
   .pet-orbit svg.orb-leaf { animation: leaf-flip 1.6s steps(4) infinite; }
   @keyframes leaf-flip { 25% { scale: .5 1; } 50% { scale: -1 1; } 75% { scale: -.5 1; } }
   @keyframes flap { 50% { transform: scaleY(.55); } }
@@ -858,6 +860,8 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
 .scene .bird { position: absolute; top: calc(12% + var(--i) * 9%); left: -10%; width: 7px; height: 3px;
   background: linear-gradient(#2E3B36, #2E3B36) 0 0 / 3px 1px no-repeat, linear-gradient(#2E3B36, #2E3B36) 4px 0 / 3px 1px no-repeat,
   linear-gradient(#2E3B36, #2E3B36) 2px 1px / 3px 1px no-repeat; }
+.scene .firefly, .scene-front .firefly { position: absolute; bottom: 12%; left: calc(6% + var(--i) * 12%); width: 3px; height: 3px;
+  background: #E4FFB0; box-shadow: 0 0 5px 1px rgba(200, 255, 150, .8); opacity: 0; }
 .scene .star { position: absolute; width: 3px; height: 3px; background: #FFF4D6; box-shadow: 0 0 4px #FFF4D6; }
 .scene .mist { position: absolute; left: -40%; bottom: 14%; width: 180%; height: 22px; opacity: .55;
   background: repeating-linear-gradient(90deg, rgba(190, 130, 230, .0) 0 18px, rgba(190, 130, 230, .35) 18px 60px, rgba(190, 130, 230, 0) 60px 90px); }
@@ -871,6 +875,9 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
     50% { transform: translate(-22px, 120px) rotate(180deg); } 90% { opacity: 1; } 100% { opacity: 0; transform: translate(10px, 250px) rotate(360deg); } }
   @keyframes star-blink { 50% { opacity: .25; } }
   @keyframes mist-drift { to { transform: translateX(90px); } }
+  .scene .firefly, .scene-front .firefly { animation: firefly-rise calc(5s + var(--i) * .8s) linear calc(var(--i) * -1.1s) infinite; }
+  @keyframes firefly-rise { 0% { opacity: 0; transform: translate(0, 0); } 15% { opacity: 1; } 50% { transform: translate(8px, -60px); }
+    85% { opacity: .9; } 100% { opacity: 0; transform: translate(-6px, -130px); } }
   .scene .bird { animation: bird-fly calc(11s + var(--i) * 4s) linear calc(var(--i) * -6s) infinite, bird-flap .5s steps(2) infinite; }
   @keyframes bird-fly { 0% { left: -10%; } 100% { left: 110%; transform: translateY(-14px); } }
   @keyframes bird-flap { 50% { background-position: 0 1px, 4px 1px, 2px 0; } }
@@ -889,6 +896,9 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
   filter: drop-shadow(-2px 0 0 rgba(255, 240, 214, .55)) drop-shadow(0 0 9px rgba(255, 150, 180, .35)) sepia(.06) saturate(1.04); }
 .stage[data-scene="succubus"] .pet img, .stage[data-scene="succubus"] .pet .wavy {
   filter: brightness(.9) drop-shadow(2px 0 0 rgba(225, 60, 95, .7)) drop-shadow(0 0 10px rgba(130, 60, 210, .4)); }
+.stage[data-scene="spirit"] .pet img, .stage[data-scene="spirit"] .pet .wavy {
+  filter: brightness(.95) drop-shadow(-2px 0 0 rgba(220, 255, 245, .55)) drop-shadow(0 0 10px rgba(110, 230, 205, .35)); }
+.stage[data-scene="spirit"] .pet-shadow { background: rgba(5, 20, 25, .55); box-shadow: 0 0 14px 4px rgba(110, 230, 205, .2); }
 .stage[data-scene="beast_tamer"] .pet img, .stage[data-scene="beast_tamer"] .pet .wavy {
   filter: drop-shadow(-2px 0 0 rgba(255, 238, 186, .6)) drop-shadow(0 0 8px rgba(150, 215, 110, .3)) saturate(1.05); }
 .stage[data-scene="beast_tamer"] .pet-shadow { background: rgba(25, 45, 20, .55); }
