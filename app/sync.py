@@ -149,6 +149,20 @@ def replan(user_id: int, api=None) -> dict:
     return result
 
 
+def friendly_error(e: Exception) -> str:
+    """把 Garmin／網路的例外翻成使用者看得懂、知道下一步怎麼做的中文。"""
+    t = f"{type(e).__name__} {e}".lower()
+    if "429" in t or "too many" in t or "rate" in t:
+        return "Garmin 暫時限制連線次數，過幾分鐘會自動再試。"
+    if any(k in t for k in ("401", "403", "unauthorized", "forbidden", "login", "token", "auth")):
+        return "Garmin 登入已失效，請到「夥伴 → 手錶與資料來源」重新連結。"
+    if any(k in t for k in ("timeout", "timed out", "connection", "resolve", "unreachable", "ssl")):
+        return "連不到 Garmin，可能是網路不穩，稍後會自動再試。"
+    if "500" in t or "502" in t or "503" in t:
+        return "Garmin 伺服器暫時有問題，稍後會自動再試。"
+    return "同步時發生錯誤，稍後會自動再試；一直失敗請到「手錶與資料來源」按「開始檢查」。"
+
+
 def sync_user(user_id: int, full: bool = False, days: int | None = None, prov=None) -> dict:
     """days：一般同步往回抓幾天（預設 10）；自動偵測只抓 2 天。prov：已經建好的連線就沿用，不用再載入一次 token。"""
     with _lock(user_id):
@@ -211,7 +225,7 @@ def sync_user(user_id: int, full: bool = False, days: int | None = None, prov=No
         except Exception as e:
             log.exception("同步失敗 user=%s", user_id)
             with db.tx() as c:
-                c.execute("UPDATE users SET last_sync_error=? WHERE id=?", (str(e)[:500], user_id))
+                c.execute("UPDATE users SET last_sync_error=? WHERE id=?", (friendly_error(e), user_id))
             raise
 
 

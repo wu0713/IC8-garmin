@@ -94,7 +94,7 @@ function renderBrief(b) {
     acts.className = `chat-actions${chips ? " chips-row" : ""}`;
     acts.innerHTML = list.map((a, i) => `<button class="btn ${chips ? "small outline" : i === 0 && a.type === "option" ? "" : "outline"}" data-i="${i}">
       ${esc(a.label)}${a.detail && !chips ? `<small style="display:block;font-weight:400;opacity:.8">${esc(a.detail)}</small>` : ""}</button>`).join("");
-    acts.querySelectorAll("[data-i]").forEach((btn) => (btn.onclick = () => busy(btn, async () => {
+    acts.querySelectorAll("[data-i]").forEach((btn) => (btn.onclick = () => act(btn, async () => {
       const a = list[+btn.dataset.i];
       acts.innerHTML = ""; say(a.label, true);
       if (a.type === "legacy") {
@@ -119,7 +119,7 @@ function renderBrief(b) {
   });
   sayAll(c.lines).then(() => showActions());
 
-  document.getElementById("rf").onclick = (e) => busy(e.currentTarget, async () => {
+  document.getElementById("rf").onclick = (e) => act(e.currentTarget, async () => {
     sessionStorage.removeItem(seenKey);
     renderBrief(await api(`/api/brief/${kind}?refresh=true`)); toast("已同步並更新");
   });
@@ -173,7 +173,7 @@ async function viewBriefSettings() {
       ${info.devices ? `<div style="display:flex;gap:8px;margin-top:8px"><button class="btn tonal" id="test" style="flex:1">送一則測試</button><button class="btn outline" id="off" style="flex:1">全部關閉</button></div>` : ""}
     </section>`;
   bindCommon();
-  document.getElementById("save").onclick = (e) => busy(e.currentTarget, async () => {
+  document.getElementById("save").onclick = (e) => act(e.currentTarget, async () => {
     await api("/api/prefs", { method: "PUT", body: { brief_enabled: document.getElementById("en").checked,
       brief_morning: document.getElementById("mt").value, brief_evening: document.getElementById("et").value,
       weekly_review: document.getElementById("wk").checked, brief_weekly: document.getElementById("wt").value,
@@ -181,7 +181,7 @@ async function viewBriefSettings() {
     toast("已儲存");
   });
   const sub = document.getElementById("sub");
-  if (sub) sub.onclick = () => busy(sub, async () => {
+  if (sub) sub.onclick = () => act(sub, async () => {
     const ok = await Notification.requestPermission();
     if (ok !== "granted") { toast("沒有允許通知"); return viewBriefSettings(); }
     const reg = await navigator.serviceWorker.ready;
@@ -190,9 +190,9 @@ async function viewBriefSettings() {
     toast("通知已開啟"); viewBriefSettings();
   });
   const test = document.getElementById("test");
-  if (test) test.onclick = () => busy(test, async () => { const r = await api("/api/push/test", { method: "POST" }); toast(`已送出到 ${r.sent} 台`); });
+  if (test) test.onclick = () => act(test, async () => { const r = await api("/api/push/test", { method: "POST" }); toast(`已送出到 ${r.sent} 台`); });
   const off = document.getElementById("off");
-  if (off) off.onclick = () => busy(off, async () => {
+  if (off) off.onclick = () => act(off, async () => {
     const reg = await navigator.serviceWorker.ready;
     const s = await reg.pushManager.getSubscription();
     if (s) await s.unsubscribe().catch(() => {});

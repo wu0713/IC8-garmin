@@ -76,11 +76,11 @@ function viewLink() {
     try { await busy(e.submitter, () => api("/api/garmin/mfa", { method: "POST", body: Object.fromEntries(new FormData(e.target)) })); await after(); }
     catch (x) { err.textContent = x.message; err.hidden = false; }
   };
-  document.getElementById("apple").onclick = (e) => busy(e.currentTarget, async () => {
+  document.getElementById("apple").onclick = (e) => act(e.currentTarget, async () => {
     await api("/api/apple/link", { method: "POST" }); S.me.provider = "apple"; go("#/me/apple");
   });
   const demo = document.getElementById("demo");
-  if (demo) demo.onclick = () => busy(demo, async () => { await api("/api/garmin/demo", { method: "POST" }); await after(); });
+  if (demo) demo.onclick = () => act(demo, async () => { await api("/api/garmin/demo", { method: "POST" }); await after(); });
 }
 
 async function syncNow(btn) {
@@ -192,14 +192,16 @@ function editDashboard(d) {
   sheet(`<h2>編輯指標</h2><p class="muted">勾選要顯示的卡片，用箭頭調整順序。</p><ul class="edit-list" style="margin-top:8px"></ul>
     <div class="btn-row"><button class="btn" id="save">儲存</button><button class="btn outline" id="reset">恢復預設</button></div>`, (box, close) => {
     draw(box);
-    box.querySelector("#save").onclick = async () => {
+    const save = box.querySelector("#save");
+    save.onclick = () => act(save, async () => {
       await api("/api/prefs", { method: "PUT", body: { dashboard: order.filter((k) => on.has(k)) } });
       close(); toast("已更新指標"); viewMetrics();
-    };
-    box.querySelector("#reset").onclick = async () => {
+    });
+    const rs = box.querySelector("#reset");
+    rs.onclick = () => act(rs, async () => {
       await api("/api/prefs", { method: "PUT", body: { dashboard: S.meta.default_cards } });
       close(); viewMetrics();
-    };
+    });
   });
 }
 

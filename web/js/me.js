@@ -439,8 +439,8 @@ async function viewDevice() {
   bindCommon();
   const q = (id) => document.getElementById(id);
   if (q("sync")) q("sync").onclick = (e) => syncNow(e.currentTarget);
-  if (q("full")) q("full").onclick = (e) => busy(e.currentTarget, async () => { await api("/api/sync?full=true", { method: "POST" }); toast("已重新抓取"); render(); });
-  if (q("diag")) q("diag").onclick = (e) => busy(e.currentTarget, async () => {
+  if (q("full")) q("full").onclick = (e) => act(e.currentTarget, async () => { await api("/api/sync?full=true", { method: "POST" }); toast("已重新抓取"); render(); });
+  if (q("diag")) q("diag").onclick = (e) => act(e.currentTarget, async () => {
     try {
       const r = await api("/api/garmin/diagnose");
       q("diag-out").innerHTML = `<ul class="list" style="margin-top:8px">${r.checks.map((c) => `<li class="row" style="cursor:default;grid-template-columns:1fr auto;min-height:48px">
@@ -452,12 +452,12 @@ async function viewDevice() {
   const drawTest = () => {
     const id = localStorage.getItem("ic8_test_workout");
     if (id && q("ptest-out") && !q("ptest-out").innerHTML) q("ptest-out").innerHTML = `<button class="btn outline block" id="pdel">刪除測試課</button>`;
-    if (q("pdel")) q("pdel").onclick = (e) => busy(e.currentTarget, async () => {
+    if (q("pdel")) q("pdel").onclick = (e) => act(e.currentTarget, async () => {
       try { await api(`/api/garmin/push-test/${id}`, { method: "DELETE" }); localStorage.removeItem("ic8_test_workout"); q("ptest-out").innerHTML = `<p class="muted" style="margin-top:8px">已從 Garmin Connect 刪除測試課。</p>`; }
       catch (x) { toast(x.message); }
     });
   };
-  if (q("ptest")) { drawTest(); q("ptest").onclick = (e) => busy(e.currentTarget, async () => {
+  if (q("ptest")) { drawTest(); q("ptest").onclick = (e) => act(e.currentTarget, async () => {
     try {
       const r = await api("/api/garmin/push-test", { method: "POST" });
       localStorage.setItem("ic8_test_workout", r.workout_id);

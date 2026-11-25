@@ -348,7 +348,12 @@ input[type=range] { width: 100%; accent-color: var(--primary); min-height: 44px;
 .gate .brand { display: flex; gap: 14px; align-items: center; }
 .gate .brand img { width: 64px; height: 64px; border-radius: 8px; border: var(--edge); }
 #toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 40;
-  background: var(--ink); color: #fff; padding: 10px 16px; border: 2px solid var(--pill); border-radius: 6px; font-size: .9375rem; font-weight: 600; max-width: calc(100% - 28px); }
+  background: var(--ink); color: #fff; padding: 10px 16px; border: 2px solid var(--pill); border-radius: 6px; font-size: .9375rem; font-weight: 600; max-width: calc(100% - 28px);
+  display: flex; align-items: center; justify-content: space-between; gap: 14px; min-width: min(340px, calc(100% - 28px)); }
+#toast[hidden] { display: none; }
+.toast-undo { flex: none; border: 0; background: none; color: var(--pill); font: inherit; font-weight: 800; padding: 6px 4px; margin: -6px -4px -6px 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+body.sheet-open { overflow: hidden; }
+.sheet { transition: transform .15s ease-out; }
 .boot { text-align: center; color: var(--ink-3); padding: 34vh 0; }
 .levelup { position: fixed; inset: 0; z-index: 50; background: rgba(27,30,60,.75); display: grid; place-items: center; padding: 24px; }
 .levelup .card { text-align: center; max-width: 320px; width: 100%; box-shadow: 6px 6px 0 var(--pill); }

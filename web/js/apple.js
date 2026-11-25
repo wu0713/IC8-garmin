@@ -83,7 +83,7 @@ Content-Type: application/json
     try { await navigator.clipboard.writeText(a.url); toast("已複製"); }
     catch { const r = document.createRange(); r.selectNodeContents(document.getElementById("url")); getSelection().removeAllRanges(); getSelection().addRange(r); toast("請長按選取後複製"); }
   };
-  document.getElementById("rot").onclick = (e) => busy(e.currentTarget, async () => {
+  document.getElementById("rot").onclick = (e) => act(e.currentTarget, async () => {
     if (!confirmInline(e.currentTarget, "換了之後，舊網址會失效，捷徑要改貼新網址。再按一次確認")) return;
     await api("/api/apple/rotate", { method: "POST" }); toast("已換新網址，記得更新捷徑"); viewApple();
   });

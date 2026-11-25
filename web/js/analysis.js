@@ -249,26 +249,29 @@ async function viewAnalysis() {
       adjustSheet(d, d.swappable ? m.days.filter((x) => x.swappable && x.date !== d.date && !x.actual_km) : [], refresh);
     }));
   }
-  document.querySelectorAll("[data-quick]").forEach((b) => (b.onclick = () => busy(b, async () => {
+  document.querySelectorAll("[data-quick]").forEach((b) => (b.onclick = () => act(b, async () => {
+    const day = w.days.find((d) => d.date === b.dataset.quick);
     await api("/api/override", { method: "PUT", body: { date: b.dataset.quick, kind: b.dataset.kind } });
-    toast("課表已更新"); refresh();
+    toast("課表已更新", { undo: () => undoOverride(day), after: refresh }); refresh();
   })));
-  document.querySelectorAll("[data-feel]").forEach((b) => (b.onclick = async () => {
+  document.querySelectorAll("[data-feel]").forEach((b) => (b.onclick = () => act(b, async () => {
     const res = await api("/api/checkin", { method: "POST", body: { feeling: +b.dataset.feel } });
     if (!checkinSheet(res.advice, refresh)) { toast(res.plan.notes.find((n) => n.includes("恢復分數")) || "收到"); refresh(); }
-  }));
-  document.querySelectorAll("[data-pain]").forEach((b) => (b.onclick = async () => {
+  })));
+  document.querySelectorAll("[data-pain]").forEach((b) => (b.onclick = () => act(b, async () => {
     const res = await api("/api/checkin", { method: "POST", body: { pain: b.dataset.pain } });
     if (res.plan.stoploss?.some((x) => x.rule === "pain")) toast("已暫停課表，先休息、建議就醫");
     if (!checkinSheet(res.advice, refresh)) { toast(b.dataset.pain === "none" ? "收到" : "記下了"); refresh(); }
-  }));
-  document.querySelectorAll("[data-resume]").forEach((b) => (b.onclick = () => busy(b, async () => {
+  })));
+  document.querySelectorAll("[data-resume]").forEach((b) => (b.onclick = () => act(b, async () => {
     await api("/api/plan/resume", { method: "POST" }); toast("已恢復課表"); refresh();
   })));
-  document.getElementById("skip").onclick = async () => {
+  const skip = document.getElementById("skip");
+  skip.onclick = () => act(skip, async () => {
     await api("/api/checkin", { method: "POST", body: { skip: true } });
-    toast("今天改成休息；這堂不會補回來"); refresh();
-  };
+    toast("今天改成休息；這堂不會補回來", { undo: () => api("/api/checkin", { method: "POST", body: { skip: false } }), after: refresh });
+    refresh();
+  });
 }
 
 // 填完身體狀況：今天要不要改課、痛的地方怎麼處理
@@ -296,6 +299,13 @@ function checkinSheet(a, refresh) {
   return true;
 }
 
+// 復原單日改課：回到改之前的樣子（原本有手動改過就改回去，沒有就恢復自動排課）
+function undoOverride(day) {
+  const p = day?.plan;
+  if (p?.override) return api("/api/override", { method: "PUT", body: { date: day.date, kind: p.kind, km: p.distance_km || null } });
+  return api(`/api/override?date=${day.date}`, { method: "DELETE" });
+}
+
 function adjustSheet(day, others, done) {
   const p = day.plan || {}, dateStr = day.date;
   sheet(`
@@ -313,16 +323,19 @@ function adjustSheet(day, others, done) {
       ${p.override ? `<button class="btn outline" id="reset">恢復自動排課</button>` : ""}
       <button class="btn tonal" id="cancel">取消</button></div>`, (box, close) => {
     const km = () => { const v = +box.querySelector("#mins").value; return v >= 1 ? v : null; };
-    box.querySelectorAll("[data-kind]").forEach((b) => (b.onclick = async () => {
+    box.querySelectorAll("[data-kind]").forEach((b) => (b.onclick = () => act(b, async () => {
       await api("/api/override", { method: "PUT", body: { date: dateStr, kind: b.dataset.kind, km: km() } });
-      close(); toast("課表已更新，行事曆也會跟著改"); done();
-    }));
-    box.querySelectorAll("[data-swap]").forEach((b) => (b.onclick = async () => {
+      close(); toast("課表已更新，行事曆也會跟著改", { undo: () => undoOverride(day), after: done }); done();
+    })));
+    box.querySelectorAll("[data-swap]").forEach((b) => (b.onclick = () => act(b, async () => {
       await api("/api/swap", { method: "POST", body: { a: dateStr, b: b.dataset.swap } });
-      close(); toast("已交換兩天的課"); done();
-    }));
+      close(); toast("已交換兩天的課", { undo: () => api("/api/swap", { method: "POST", body: { a: dateStr, b: b.dataset.swap } }), after: done }); done();
+    })));
     const reset = box.querySelector("#reset");
-    if (reset) reset.onclick = async () => { await api(`/api/override?date=${dateStr}`, { method: "DELETE" }); close(); toast("已恢復自動排課"); done(); };
+    if (reset) reset.onclick = () => act(reset, async () => {
+      await api(`/api/override?date=${dateStr}`, { method: "DELETE" });
+      close(); toast("已恢復自動排課", { undo: () => undoOverride(day), after: done }); done();
+    });
     box.querySelector("#cancel").onclick = close;
   });
 }

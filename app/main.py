@@ -324,7 +324,7 @@ def do_sync(full: bool = False, user=Depends(auth.current_user)):
     try:
         r = sync.sync_user(user["id"], full=full)
     except Exception as e:
-        raise HTTPException(502, f"同步失敗：{e}")
+        raise HTTPException(502, sync.friendly_error(e))
     return {"ok": True, "synced": r.get("synced"), "garmin_push": r.get("garmin_push")}
 
 

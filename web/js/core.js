@@ -10,27 +10,58 @@ const axisFmt = (v, small) => (v >= 10000 ? `${fmt(v / 1000, v % 1000 ? 1 : 0)}k
 const paceStr = (s) => `${Math.floor(s / 60)}'${String(Math.round(s % 60)).padStart(2, "0")}"`;
 const localISO = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
+// 同步、匯入可能要很久，不設逾時；其他請求 45 秒沒回應就當作失敗
+const LONG_API = /^\/api\/(sync|import|garmin\/(login|mfa|demo))/;
+
 async function api(path, opts = {}) {
   const headers = { "Content-Type": "application/json" };
   if (S.token) headers.Authorization = `Bearer ${S.token}`;
-  const r = await fetch(path, { ...opts, headers, body: opts.body ? JSON.stringify(opts.body) : undefined });
+  const ctl = new AbortController();
+  const timer = LONG_API.test(path) ? null : setTimeout(() => ctl.abort(), 45000);
+  let r;
+  try {
+    r = await fetch(path, { ...opts, headers, signal: ctl.signal, body: opts.body ? JSON.stringify(opts.body) : undefined });
+  } catch (e) {
+    throw new Error(e.name === "AbortError" ? "伺服器太久沒回應，請稍後再試一次。"
+      : navigator.onLine === false ? "目前沒有網路，連上之後再試一次。" : "連不到伺服器，請確認網路後再試一次。");
+  } finally { clearTimeout(timer); }
   if (r.status === 401) { S.token = null; localStorage.removeItem("ic8_token"); go("#/login"); throw new Error("請先登入"); }
   const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data.detail || `錯誤 ${r.status}`);
+  if (!r.ok) {
+    const d = Array.isArray(data.detail) ? "填的內容格式不對，請檢查一下。" : data.detail;
+    throw new Error(d || (r.status >= 500 ? "伺服器出了點問題，請稍後再試一次。" : `沒辦法完成（錯誤 ${r.status}）`));
+  }
   return data;
 }
 
-function toast(msg) {
+// toast(訊息, { undo: async () => {...} })：有 undo 時多一顆「復原」，顯示久一點
+function toast(msg, opt = {}) {
   const t = document.getElementById("toast");
-  t.textContent = msg; t.hidden = false;
-  clearTimeout(toast._t); toast._t = setTimeout(() => (t.hidden = true), 2800);
+  t.innerHTML = `<span>${esc(msg)}</span>${opt.undo ? `<button type="button" class="toast-undo">復原</button>` : ""}`;
+  t.hidden = false;
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => (t.hidden = true), opt.undo ? 6000 : 2800);
+  if (opt.undo) t.querySelector("button").onclick = async () => {
+    clearTimeout(toast._t); t.hidden = true;
+    try { await opt.undo(); toast("已復原"); opt.after && opt.after(); } catch (x) { toast(x.message); }
+  };
 }
 
 async function busy(btn, fn) {
   if (!btn) return fn();
-  const html = btn.innerHTML; btn.disabled = true; btn.textContent = "處理中…";
-  try { return await fn(); } finally { btn.disabled = false; btn.innerHTML = html; }
+  const html = btn.innerHTML; btn.disabled = true; btn.setAttribute("aria-busy", "true");
+  if (!btn.closest(".feel, .pain")) btn.textContent = "處理中…";
+  try { return await fn(); } finally { btn.disabled = false; btn.removeAttribute("aria-busy"); btn.innerHTML = html; }
 }
+
+// 按鈕動作：處理中不能重複按，失敗一定跳出說明
+async function act(btn, fn) {
+  if (btn?.disabled) return;
+  try { return await busy(btn, fn); } catch (x) { toast(x.message); }
+}
+
+// 最後一道防線：任何沒接住的錯誤都跳出來，不會按了沒反應
+window.addEventListener("unhandledrejection", (e) => { e.preventDefault(); toast(e.reason?.message || "發生錯誤，請再試一次。"); });
 
 function agoText(iso) {
   if (!iso) return "尚未同步";
@@ -149,15 +180,39 @@ const charThumb = (id, stage) => {
 
 // ── 底部抽屜 ──
 function sheet(html, onMount) {
+  const opener = document.activeElement;
   const back = document.createElement("div");
   back.className = "sheet-back";
-  back.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div>`;
-  const close = () => back.remove();
+  back.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><div class="grab" aria-hidden="true"></div>${html}</div>`;
+  const panel = back.querySelector(".sheet");
+  const onKey = (e) => { if (e.key === "Escape") close(); };
+  let closed = false;
+  function close() {
+    if (closed) return;
+    closed = true;
+    back.remove();
+    document.removeEventListener("keydown", onKey);
+    document.body.classList.remove("sheet-open");
+    if (opener && document.contains(opener)) opener.focus?.({ preventScroll: true });
+  }
   back.addEventListener("click", (e) => { if (e.target === back) close(); });
-  document.addEventListener("keydown", function k(e) { if (e.key === "Escape") { close(); document.removeEventListener("keydown", k); } });
+  document.addEventListener("keydown", onKey);
+  // 往下滑關閉：只在抽屜捲到最上面時才算
+  let y0 = null, dy = 0;
+  panel.addEventListener("touchstart", (e) => { y0 = panel.scrollTop <= 0 ? e.touches[0].clientY : null; dy = 0; }, { passive: true });
+  panel.addEventListener("touchmove", (e) => {
+    if (y0 == null) return;
+    dy = Math.max(0, e.touches[0].clientY - y0);
+    panel.style.transform = dy ? `translateY(${dy}px)` : "";
+  }, { passive: true });
+  panel.addEventListener("touchend", () => {
+    if (y0 != null && dy > 90) close(); else panel.style.transform = "";
+    y0 = null;
+  });
   document.body.append(back);
-  onMount && onMount(back.querySelector(".sheet"), close);
-  back.querySelector("button, input, select")?.focus();
+  document.body.classList.add("sheet-open");
+  onMount && onMount(panel, close);
+  panel.querySelector("button, input, select")?.focus({ preventScroll: true });
   return close;
 }
 
@@ -339,7 +394,7 @@ async function applyOption(o) {
 function bindOptions(tag, opts, after) {
   const box = document.querySelector(`[data-opts="${tag}"]`);
   if (!box) return;
-  box.querySelectorAll("[data-opt]").forEach((b) => (b.onclick = () => busy(b, async () => {
+  box.querySelectorAll("[data-opt]").forEach((b) => (b.onclick = () => act(b, async () => {
     const o = opts[+b.dataset.opt];
     const changed = await applyOption(o);
     box.innerHTML = `<p class="note-card" style="margin:0">${ico("check")}<span>${changed ? `已改成「${esc(o.label)}」，課表和手錶會跟著更新。` : "好，照原本的課。"}</span></p>`;

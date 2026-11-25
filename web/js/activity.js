@@ -89,7 +89,7 @@ async function viewActivityAll() {
   drawMonths();
   bindCommon();
   const more = document.getElementById("more");
-  more.onclick = () => busy(more, async () => {
+  more.onclick = () => act(more, async () => {
     const r2 = await api(`/api/activities?before=${ACT_MORE}`);
     const seen = new Set(ALL_ACTS.map((x) => x.id));
     ALL_ACTS = ALL_ACTS.concat(r2.activities.filter((x) => !seen.has(x.id)));
@@ -397,13 +397,13 @@ async function viewSeason() {
     </section>
     ${rn ? `<div style="margin-top:16px">${runnerHtml(rn)}</div>` : ""}`;
   bindCommon();
-  document.querySelectorAll("[data-choice]").forEach((b) => (b.onclick = () => busy(b, async () => {
+  document.querySelectorAll("[data-choice]").forEach((b) => (b.onclick = () => act(b, async () => {
     const c = b.dataset.choice;
     if (c === "accept_risk" && !confirm("照原目標練：跑量只疊到時間允許的最高值，強度課仍用目標配速。受傷風險較高，確定嗎？")) return;
     await api("/api/plan/decision", { method: "POST", body: { choice: c } });
     toast({ achievable: "目標已調整，課表已重排", postpone: "賽期已延後，課表已重排", accept_risk: "已照原目標排課" }[c]); viewSeason();
   })));
-  document.querySelectorAll("[data-accept]").forEach((b) => (b.onclick = () => busy(b, async () => {
+  document.querySelectorAll("[data-accept]").forEach((b) => (b.onclick = () => act(b, async () => {
     await api("/api/plan/checkpoint/accept", { method: "POST", body: { date: b.dataset.accept } });
     toast("目標時間已調整"); viewSeason();
   })));
