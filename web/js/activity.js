@@ -2,6 +2,7 @@
 // 活動頁：本週跑量、本月月曆（含課表）、活動列表、單趟詳情、長期規劃
 
 let ACT_MORE = null;
+const RECENT_N = 5;   // 紀錄頁只列最近幾筆，其他到「全部紀錄」看
 
 async function viewActivity() {
   S.ym ||= localISO().slice(0, 7);
@@ -33,8 +34,6 @@ async function viewActivity() {
       <p class="muted" style="margin-top:8px">虛線是前 4 週的平均週跑量。</p>
     </section>
 
-    ${volumeHtml(a)}
-
     <section class="card" aria-labelledby="calh" style="margin-top:16px">
       <div class="section-head" style="margin:0 0 6px">
         <button class="icon-btn" id="prev" aria-label="上個月">${ico("back")}</button>
@@ -52,23 +51,73 @@ async function viewActivity() {
     </section>
 
     <section class="section" aria-labelledby="alh">
-      <h2 id="alh" class="sr-only">活動列表</h2>
-      <div id="acts">${actRows(a.activities)}</div>
-      ${a.activities.length >= 40 ? `<button class="btn outline block" id="more">載入更多</button>` : ""}
-      ${a.activities.length ? "" : `<div class="card"><h2>還沒有跑步紀錄</h2><p class="muted">手錶同步到 Garmin Connect 後，在摘要頁按同步。</p></div>`}
+      <div class="section-head"><h2 id="alh">最近紀錄</h2>
+        ${a.activities.length > RECENT_N ? `<button class="text-btn" data-go="#/activity/all">看全部</button>` : ""}</div>
+      ${a.activities.length ? `<div class="card act-list">${a.activities.slice(0, RECENT_N).map(actRow).join("")}</div>
+        ${a.activities.length > RECENT_N ? `<button class="btn outline block" data-go="#/activity/all" style="margin-top:10px">看全部紀錄（依月份）</button>` : ""}`
+        : `<div class="card"><h2>還沒有跑步紀錄</h2><p class="muted">手錶同步到 Garmin Connect 後，這裡會自己抓進來。</p></div>`}
     </section>`;
   bindCommon();
   const shift = (n) => { const d = new Date(y, mo - 1 + n, 1); S.ym = localISO(d).slice(0, 7); viewActivity(); };
   document.getElementById("prev").onclick = () => shift(-1);
   document.getElementById("next").onclick = () => shift(1);
+}
+
+// 一筆紀錄一列：左邊日期、中間名稱＋一行數字、右邊平均心率
+function actRow(x) {
+  const d = new Date(`${x.date}T00:00:00`);
+  const stats = x.cross
+    ? `${x.sport_label && x.sport_label !== x.name ? `${esc(x.sport_label)} · ` : ""}${x.minutes} 分${x.km ? ` · ${fmt(x.km, 1)} km` : ""}`
+    : `${fmt(x.km, 2)} km · ${x.minutes} 分${x.pace ? ` · ${x.pace.replace(":", "'")}"` : ""}`;
+  const color = x.cross ? SPORT_COLOR[x.group] || SPORT_COLOR.other : "var(--c-run)";
+  return `<button class="arow" data-go="#/workout/${encodeURIComponent(x.id)}">
+    <span class="ad"><b class="num">${d.getDate()}</b><small>週${WD[(d.getDay() + 6) % 7]}</small></span>
+    <span class="am"><b><span class="aic" style="color:${color}">${x.cross ? sportIco(x.group) : ico("run")}</span>${esc(x.name)}</b><small class="num">${stats}</small></span>
+    <span class="av">${x.avg_hr ? `<b class="num">${x.avg_hr}</b><small>bpm</small>` : ""}</span>
+    ${ico("chevron")}</button>`;
+}
+
+// 全部紀錄：依月份收合，最新的月份展開；往下按「載入更早的紀錄」
+let ALL_ACTS = [], ALL_OPEN = null;
+async function viewActivityAll() {
+  const r = await api("/api/activities");
+  ALL_ACTS = r.activities;
+  ALL_OPEN = new Set(ALL_ACTS.length ? [ALL_ACTS[0].date.slice(0, 7)] : []);
+  ACT_MORE = r.activities.length >= 40 ? r.activities[r.activities.length - 1].date : null;
+  $app.innerHTML = `${appbar("全部紀錄", { back: true })}<div id="months"></div>
+    <button class="btn outline block" id="more" style="margin-top:14px" ${ACT_MORE ? "" : "hidden"}>載入更早的紀錄</button>`;
+  drawMonths();
+  bindCommon();
   const more = document.getElementById("more");
-  if (more) more.onclick = () => busy(more, async () => {
-    const r = await api(`/api/activities?before=${ACT_MORE}`);
-    document.getElementById("acts").insertAdjacentHTML("beforeend", actRows(r.activities, ACT_MORE.slice(0, 7)));
-    bindCommon(document.getElementById("acts"));
-    ACT_MORE = r.activities.length ? r.activities[r.activities.length - 1].date : null;
-    if (r.activities.length < 40) more.remove();
+  more.onclick = () => busy(more, async () => {
+    const r2 = await api(`/api/activities?before=${ACT_MORE}`);
+    const seen = new Set(ALL_ACTS.map((x) => x.id));
+    ALL_ACTS = ALL_ACTS.concat(r2.activities.filter((x) => !seen.has(x.id)));
+    ACT_MORE = r2.activities.length >= 40 ? r2.activities[r2.activities.length - 1].date : null;
+    drawMonths();
+    more.hidden = !ACT_MORE;
   });
+}
+
+function drawMonths() {
+  const groups = [];
+  for (const x of ALL_ACTS) {
+    const ym = x.date.slice(0, 7);
+    if (!groups.length || groups[groups.length - 1].ym !== ym) groups.push({ ym, list: [] });
+    groups[groups.length - 1].list.push(x);
+  }
+  const box = document.getElementById("months");
+  box.innerHTML = groups.map((g, gi) => {
+    const partial = ACT_MORE && gi === groups.length - 1;   // 最舊的那個月可能還沒載完
+    const runs = g.list.filter((x) => !x.cross), others = g.list.length - runs.length;
+    const km = runs.reduce((p, x) => p + (x.km || 0), 0);
+    return `<details class="mgroup" data-ym="${g.ym}" ${ALL_OPEN.has(g.ym) ? "open" : ""}>
+      <summary><span><b>${+g.ym.slice(0, 4)} 年 ${+g.ym.slice(5)} 月</b>
+        <small class="num">跑步 ${runs.length} 次 · ${fmt(km, 1)} km${others ? ` · 其他運動 ${others} 次` : ""}${partial ? "（還沒載完）" : ""}</small></span>${ico("down")}</summary>
+      <div class="card act-list">${g.list.map(actRow).join("")}</div></details>`;
+  }).join("") || `<div class="card"><p class="muted">還沒有紀錄。</p></div>`;
+  box.querySelectorAll("details").forEach((d) => (d.ontoggle = () => (d.open ? ALL_OPEN.add(d.dataset.ym) : ALL_OPEN.delete(d.dataset.ym))));
+  bindCommon(box);
 }
 
 // 紀錄月曆：每一天列出每一趟運動（圖示＋公里；沒有距離的運動顯示分鐘）
@@ -98,58 +147,7 @@ function otherIcons(d) {
 }
 const otherAria = (d) => (d.others?.length ? `，${d.others.map((o) => `${o.label} ${o.minutes} 分`).join("、")}` : "");
 
-function volumeHtml(a) {
-  const v = a.volume;
-  if (!v) return "";
-  const V = { ok: ["done", "適中"], low: ["warn", v.verdict?.label], warn: ["warn", "偏多"], bad: ["missed", "過多"] };
-  const pts = a.weeks.map((x) => ({ label: x.week_start.slice(5).replace("-", "/"), value: x.run_load, stack: x.other_load }));
-  const avg = v.baseline ?? null;   // 第 8–35 天的平均週負荷（跟近 7 天不重疊）
-  const hm = (m) => (m >= 60 ? `${Math.floor(m / 60)}<small>時</small>${m % 60 ? `${m % 60}<small>分</small>` : ""}` : `${m}<small>分</small>`);
-  const md = (iso) => `${+iso.slice(5, 7)}/${+iso.slice(8)}`;
-  return `<section class="card" style="margin-top:16px" aria-labelledby="vh">
-    <div class="section-head" style="margin:0"><h2 id="vh" style="display:flex;gap:6px;align-items:center">${ico("bolt")}總活動量</h2>
-      ${v.verdict ? `<span class="badge ${(V[v.verdict.level] || ["", ""])[0]}">${esc((V[v.verdict.level] || ["", v.verdict.label || ""])[1])}</span>` : ""}</div>
-    <p style="margin-top:4px">${v.verdict ? `近 7 天訓練負荷是之前 4 週平均的 <b class="num">${Math.round(v.ratio * 100)}%</b>。${esc(v.verdict.text)}`
-      : "跑步加上其他運動的總負荷。累積滿 5 週紀錄後，會開始判斷活動量是否過多。"}</p>
-    ${barChart(pts, { color: "var(--c-run)", stackColor: SPORT_COLOR.other, avg, h: 160, highlightLast: true })}
-    <div class="legend"><span><i style="background:var(--c-run)"></i>跑步</span><span><i style="background:${SPORT_COLOR.other}"></i>其他運動</span><span>虛線：之前 4 週平均${v.baseline_range ? `（${md(v.baseline_range[0])}–${md(v.baseline_range[1])}）` : ""}</span></div>
-    <div class="tiles" style="margin-top:8px">
-      <div class="tile"><p class="k">本週跑步</p><p class="v num">${hm(v.run_minutes)}</p></div>
-      <div class="tile"><p class="k">本週其他運動</p><p class="v num">${hm(v.other_minutes)}</p></div>
-      <div class="tile"><p class="k">跑步占負荷</p><p class="v num">${v.run_share ?? "–"}<small>%</small></p></div>
-    </div>
-    ${v.sports.length ? `<p class="muted" style="margin-top:8px">本週其他運動：${v.sports.map((s) => `${esc(s.label)} ${s.count} 次 ${s.minutes} 分`).join("、")}</p>` : ""}
-    <p class="muted" style="margin-top:6px">負荷用心率和時間估算；其他運動也會算進恢復分數和課表的疲勞判斷。${v.last7_range && v.baseline_range ? `比較的是近 7 天（${md(v.last7_range[0])}–${md(v.last7_range[1])}）和再往前 4 週（${md(v.baseline_range[0])}–${md(v.baseline_range[1])}）的平均，兩段不重疊。` : ""}</p>
-  </section>`;
-}
 
-function actRows(list, prevMonth = null) {
-  let out = "", open = false, lastM = prevMonth;
-  for (const x of list) {
-    const ym = x.date.slice(0, 7);
-    if (ym !== lastM || !open) {
-      if (open) out += "</div>";
-      if (ym !== lastM) out += `<p class="month-label">${+ym.slice(0, 4)} 年 ${+ym.slice(5)} 月</p>`;
-      out += `<div class="card" style="padding:4px 12px">`;
-      open = true; lastM = ym;
-    }
-    const st = x.start ? x.start.slice(11, 16) : "";
-    if (x.cross) {
-      out += `<button class="row" data-go="#/workout/${encodeURIComponent(x.id)}">
-      <span class="ri" style="color:${SPORT_COLOR[x.group] || SPORT_COLOR.other}">${sportIco(x.group)}</span>
-      <span><small>${+x.date.slice(5, 7)}/${+x.date.slice(8)} ${st}${x.sport_label && x.sport_label !== x.name ? ` · ${esc(x.sport_label)}` : ""}</small><b>${esc(x.name)}</b>
-        <small class="num">${x.minutes} 分${x.km ? ` · ${fmt(x.km, 1)} km` : ""}${x.kcal ? ` · ${x.kcal} kcal` : ""}</small></span>
-      <span class="rv">${x.avg_hr ? `<b class="num">${x.avg_hr}</b> bpm` : ""} ${ico("chevron")}</span></button>`;
-      continue;
-    }
-    out += `<button class="row" data-go="#/workout/${encodeURIComponent(x.id)}">
-      <span class="ri" style="color:var(--c-run)">${ico("run")}</span>
-      <span><small>${+x.date.slice(5, 7)}/${+x.date.slice(8)} ${st}</small><b>${esc(x.name)}</b>
-        <small class="num">${x.minutes} 分 · ${fmt(x.km, 2)} km${x.pace ? ` · ${x.pace.replace(":", "'")}"/km` : ""}${x.kcal ? ` · ${x.kcal} kcal` : ""}</small></span>
-      <span class="rv">${x.avg_hr ? `<b class="num">${x.avg_hr}</b> bpm` : ""} ${ico("chevron")}</span></button>`;
-  }
-  return out + (open ? "</div>" : "");
-}
 
 async function viewWorkout(id) {
   const w = await api(`/api/activities/${encodeURIComponent(id)}`);

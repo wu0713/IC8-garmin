@@ -6,6 +6,7 @@ route(/^#\/summary$/, viewSummary, "summary");
 route(/^#\/metrics$/, viewMetrics, "metrics");
 route(/^#\/metric\/(\w+)$/, viewMetric, "metrics");
 route(/^#\/activity$/, viewActivity, "activity");
+route(/^#\/activity\/all$/, viewActivityAll, "activity");
 route(/^#\/workout\/(.+)$/, (id) => viewWorkout(decodeURIComponent(id)), "activity");
 route(/^#\/season$/, viewSeason, "activity");
 route(/^#\/analysis$/, viewAnalysis, "analysis");

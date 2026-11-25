@@ -676,3 +676,31 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
 .switch:checked { background: var(--primary); }
 .switch:checked::after { transform: translateX(18px); }
 .switch:focus-visible { outline: 3px solid var(--pill); outline-offset: 2px; }
+
+/* ── 紀錄列表：一筆一列，依月份收合 ── */
+.card.act-list { padding: 0 12px; }
+.arow { display: grid; grid-template-columns: 36px 1fr auto 16px; gap: 10px; align-items: center; width: 100%; min-height: 54px; padding: 7px 0;
+  border: 0; background: none; text-align: left; font: inherit; color: var(--ink); cursor: pointer; }
+.arow + .arow { border-top: 1px dashed var(--line); }
+.arow:active { background: var(--surface-hi); }
+.arow .ad { text-align: center; line-height: 1.1; }
+.arow .ad b { display: block; font-size: 1.125rem; font-weight: 800; }
+.arow .ad small { font-size: .6875rem; color: var(--ink-3); }
+.arow .am { min-width: 0; }
+.arow .am b { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: .9375rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.arow .aic svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.2; display: block; }
+.arow .am small { display: block; font-size: .8125rem; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.arow .av { text-align: right; line-height: 1.1; }
+.arow .av b { display: block; font-size: 1rem; }
+.arow .av small { font-size: .6875rem; color: var(--ink-3); }
+.arow > svg { width: 16px; height: 16px; stroke: var(--ink-3); fill: none; stroke-width: 2; }
+.mgroup { margin-top: 10px; }
+.mgroup > summary { list-style: none; display: grid; grid-template-columns: 1fr 20px; gap: 10px; align-items: center; cursor: pointer;
+  padding: 12px 14px; background: var(--surface); border: var(--edge); border-radius: 6px; box-shadow: 2px 2px 0 var(--ink); }
+.mgroup > summary::-webkit-details-marker { display: none; }
+.mgroup > summary b { display: block; font-size: 1rem; font-weight: 800; }
+.mgroup > summary small { display: block; font-size: .8125rem; color: var(--ink-3); margin-top: 2px; }
+.mgroup > summary svg { width: 20px; height: 20px; stroke: var(--ink-2); fill: none; stroke-width: 2; transition: transform .15s; }
+.mgroup[open] > summary svg { transform: rotate(180deg); }
+.mgroup[open] > summary { border-radius: 6px 6px 0 0; box-shadow: none; }
+.mgroup[open] > .card { margin-top: -2px; border-radius: 0 0 6px 6px; }
