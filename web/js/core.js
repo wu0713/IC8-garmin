@@ -253,20 +253,23 @@ function barChart(pts, { color = "var(--c-run)", avg = null, goal = null, trend 
 }
 
 // 折線圖（含 min–max 範圍帶）
-function lineChart(pts, { color = "var(--c-hr)", avg = null, trend = false, h = 220 } = {}) {
+// invert：數字越小畫越上面（例如成績時間，越快越好）；yfmt：Y 軸標籤格式；goal：目標虛線
+function lineChart(pts, { color = "var(--c-hr)", avg = null, trend = false, h = 220, invert = false, yfmt = null, goal = null, goalLabel = "" } = {}) {
   const W = 360, H = h, L = 8, R = 40, T = 12, B = 24;
-  const vals = pts.flatMap((p) => [p.value, p.min, p.max]).filter((v) => v != null);
+  const vals = pts.flatMap((p) => [p.value, p.min, p.max]).filter((v) => v != null).concat(goal != null ? [goal] : []);
   if (!vals.length) return `<p class="muted" style="padding:40px 0;text-align:center">這段期間沒有資料</p>`;
   let lo = Math.min(...vals), hi = Math.max(...vals);
   const pad = (hi - lo) * 0.15 || 2; lo = Math.max(0, lo - pad); hi += pad;
   const n = pts.length, step = (W - L - R) / Math.max(1, n - 1);
-  const x = (i) => L + i * step, y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+  const x = (i) => L + i * step, y = (v) => T + ((invert ? (v - lo) : (hi - v)) / (hi - lo)) * (H - T - B);
   const every = Math.ceil(n / 8);
   let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="折線圖">`;
-  [lo, (lo + hi) / 2, hi].forEach((v) => (s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${W - R + 6}" y="${y(v) + 4}">${axisFmt(v)}</text>`));
+  [lo, (lo + hi) / 2, hi].forEach((v) => (s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${W - R + 6}" y="${y(v) + 4}">${yfmt ? yfmt(v) : axisFmt(v)}</text>`));
+  if (goal != null) s += `<line x1="${L}" x2="${W - R}" y1="${y(goal)}" y2="${y(goal)}" stroke="var(--ok)" stroke-width="1.6" stroke-dasharray="6 4"/>` +
+    (goalLabel ? `<text x="${L + 4}" y="${y(goal) - 5}" fill="var(--ok)" style="font-weight:700">${esc(goalLabel)}</text>` : "");
   pts.forEach((p, i) => {
     if (p.min != null && p.max != null) s += `<line x1="${x(i)}" x2="${x(i)}" y1="${y(p.min)}" y2="${y(p.max)}" stroke="${color}" stroke-width="6" stroke-linecap="round" opacity=".22"/>`;
-    if (i % every === 0 || i === n - 1) s += `<text x="${x(i)}" y="${H - 6}" text-anchor="middle">${esc(p.label)}</text>`;
+    if (i % every === 0 || (i === n - 1 && (n - 1) % every > every / 2)) s += `<text x="${x(i)}" y="${H - 6}" text-anchor="middle">${esc(p.label)}</text>`;
   });
   let d = "", started = false;
   pts.forEach((p, i) => { if (p.value == null) { started = false; return; } d += `${started ? "L" : "M"}${x(i).toFixed(1)},${y(p.value).toFixed(1)}`; started = true; });

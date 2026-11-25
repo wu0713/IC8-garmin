@@ -17,7 +17,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import analysis, apple_ingest, auth, coach, briefs, file_import, db, game, pet_voice, plan_import, planner, push, runner, season, strength, sync, views
+from . import analysis, apple_ingest, auth, coach, briefs, file_import, db, game, pet_voice, plan_import, planner, push, runner, season, strength, sync, views, progress
 from .config import ALLOW_DEMO, INVITE_CODE, POLL_HOURS, POLL_MINUTES, PUBLIC_BASE_URL, SYNC_HOURS, TZ, WEB_DIR
 from .garmin_client import MfaRequired, RealGarmin, today_local
 from .ics import build_ics
@@ -589,6 +589,13 @@ def put_character(body: CharacterIn, user=Depends(auth.current_user)):
 def get_summary(user=Depends(auth.current_user)):
     _need_link(user)
     return views.summary(user["id"])
+
+
+@app.get("/api/progress")
+def get_progress(user=Depends(auth.current_user)):
+    if user["provider"] == "none":
+        return {"points": []}
+    return progress.prediction(user["id"])
 
 
 @app.get("/api/metric/{key}")

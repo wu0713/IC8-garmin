@@ -5,7 +5,7 @@ import json
 from datetime import date, datetime, timedelta
 from statistics import mean
 
-from . import analysis, auth, coach, db, game, metrics, strength, sync
+from . import analysis, auth, coach, db, game, metrics, strength, sync, progress
 from .config import TZ
 from .garmin_client import DemoGarmin, RealGarmin, today_local
 from .metrics import fmt_pace
@@ -228,6 +228,7 @@ def summary(user_id: int) -> dict:
         "device": device, "provider": user["provider"], "last_sync": user["last_sync"],
         "last_sync_error": user["last_sync_error"], "rings": rings, "today": dash["plan"]["days"][0],
         "strength_today": _strength_today(user_id, today, dash["plan"]["days"][0]),
+        "new_pbs": progress.recent_pbs(user_id, days=3),
         "ask_intro": _ask_intro(user_id, today),
         "plan_hold": bool(dash["plan"].get("hold")), "plan_provisional": dash["plan"].get("provisional") and {
             "time": dash["plan"].get("provisional_time")},

@@ -146,17 +146,69 @@ async function viewSummary() {
 `;
   bindCommon();
   document.getElementById("sync").onclick = (e) => syncNow(e.currentTarget);
+  celebratePB(d.new_pbs);
 }
 
 // ───────────────────── 指標 ─────────────────────
+const secFmt = (s) => { s = Math.round(s); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
+  return h ? `${h}:${String(m).padStart(2, "0")}:${String(x).padStart(2, "0")}` : `${m}:${String(x).padStart(2, "0")}`; };
+
+// 圖表軸上用短一點的格式：超過一小時只寫到分（1:44），不到一小時寫分秒（49:13）
+const axisTime = (s) => (s >= 3600 ? `${Math.floor(s / 3600)}:${String(Math.round((s % 3600) / 60)).padStart(2, "0")}` : secFmt(s));
+
+// 預估比賽成績：每週一個點，越上面越快；有目標時間就畫一條綠色虛線
+function progressCard(pg) {
+  const pts = (pg?.points || []).map((p) => ({ label: `${+p.date.slice(5, 7)}/${+p.date.slice(8)}`, value: p.seconds }));
+  if (!pts.some((p) => p.value)) return "";
+  const ch = pg.change_s;
+  const delta = ch == null || Math.abs(ch) < 5 ? `跟 ${pg.weeks} 週前差不多`
+    : ch < 0 ? `比 ${pg.weeks} 週前<b style="color:var(--ok)">快了 ${secFmt(-ch)}</b>` : `比 ${pg.weeks} 週前慢了 ${secFmt(ch)}`;
+  const now = pts.filter((p) => p.value).pop().value;
+  const gap = pg.target_s ? now - pg.target_s : null;
+  return `<section class="card progress-card" aria-labelledby="pgh">
+    <div class="section-head" style="margin:0"><h2 id="pgh" style="display:flex;gap:6px;align-items:center">${ico("trophy")}預估${esc(pg.race_label)}成績</h2>
+      ${pg.target ? `<span class="muted">目標 ${esc(pg.target)}</span>` : ""}</div>
+    <p class="pg-now num">${esc(pg.now)}</p>
+    <p class="muted">${delta}${gap != null ? (gap <= 0 ? "，已經跑得出目標成績 🎉" : `，離目標還差 ${secFmt(gap)}`) : ""}</p>
+    ${lineChart(pts, { color: "var(--c-run)", h: 170, invert: true, yfmt: axisTime, goal: pg.target_s, goalLabel: pg.target_s ? "目標" : "" })}
+    <p class="muted" style="margin-top:4px">用近 120 天裡最快的一趟（3–10 公里）推算，越上面越快。</p>
+  </section>`;
+}
+
+// 破個人紀錄：每一筆只慶祝一次
+function celebratePB(pbs) {
+  if (!pbs?.length) return;
+  const key = `ic8_pb_seen_${S.me?.username || ""}`;
+  let seen = [];
+  try { seen = JSON.parse(localStorage.getItem(key)) || []; } catch {}
+  const pb = pbs.find((p) => !seen.includes(p.id));
+  if (!pb) return;
+  try { localStorage.setItem(key, JSON.stringify([...seen, pb.id].slice(-50))); } catch {}
+  const ov = document.createElement("div");
+  ov.className = "levelup pb-pop"; ov.setAttribute("role", "dialog"); ov.setAttribute("aria-label", "破個人紀錄");
+  ov.innerHTML = `<div class="confetti" aria-hidden="true">${Array.from({ length: 28 }, (_, i) => `<i style="--i:${i};left:${Math.round(Math.random() * 98)}%;animation-delay:${Math.round(Math.random() * 900)}ms"></i>`).join("")}</div>
+    <div class="card"><p class="pb-tag">${ico("trophy")}新的個人紀錄</p>
+    <h2>${esc(pb.label)}</h2>
+    <p class="pb-val num">${esc(pb.value)}</p>
+    <p class="muted">${pb.prev ? `之前是 ${esc(pb.prev)}，${esc(pb.gain)}！` : "第一次跑完這個距離！"}</p>
+    <div class="btn-row" style="justify-content:center;margin-top:14px">
+      <button class="btn" type="button" data-pbgo>看這一趟</button><button class="btn outline" type="button" data-pbok>太棒了</button></div></div>`;
+  document.body.append(ov);
+  const close = () => ov.remove();
+  ov.querySelector("[data-pbok]").onclick = close;
+  ov.querySelector("[data-pbgo]").onclick = () => { close(); go(`#/workout/${encodeURIComponent(pb.activity_id)}`); };
+  ov.querySelector("[data-pbok]").focus();
+}
+
 async function viewMetrics() {
-  const d = await api("/api/summary");
+  const [d, pg] = await Promise.all([api("/api/summary"), api("/api/progress").catch(() => null)]);
   const listMode = localStorage.getItem("ic8_cards") === "list";
   $app.innerHTML = `
     ${appbar("指標", { actions: `
       <button class="icon-btn" id="mode" aria-label="${listMode ? "格狀顯示" : "清單顯示"}">${ico(listMode ? "grid" : "list")}</button>
       <button class="text-btn" id="edit">編輯</button>` })}
-    <p class="muted" style="margin-bottom:10px">點任一張卡片看週、月、6 個月、年的趨勢。按「編輯」選要顯示哪些、調整順序。</p>
+    ${progressCard(pg)}
+    <p class="muted" style="margin:14px 0 10px">點任一張卡片看週、月、6 個月、年的趨勢。按「編輯」選要顯示哪些、調整順序。</p>
       <div class="metrics ${listMode ? "list" : ""}">
         ${d.cards.map((c) => c.key === "partner" ? `
           <button class="mcard partner" style="--mc:var(--pill)" data-go="${c.species ? "#/me" : "#/me/pick"}">
