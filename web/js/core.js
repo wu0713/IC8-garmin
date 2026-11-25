@@ -203,6 +203,64 @@ function petCls(speciesId, stage) {
   return [fx.float != null && stage >= fx.float ? "floaty" : "", fx.sway != null && stage >= fx.sway ? "sway" : ""].join(" ").trim();
 }
 
+// ── 夥伴專屬背景：用 160×80 的像素格畫成 SVG（放大也銳利），再疊一點會動的小東西 ──
+const PX = (x, y, w, h, c) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`;
+const bands = (y0, colors, h = 4) => colors.map((c, i) => PX(0, y0 + i * h, 160, h, c)).join("");
+function pxCircle(cx, cy, r, c) {
+  let s = "";
+  for (let y = -r; y <= r; y++) { const w = Math.round(Math.sqrt(r * r - y * y)); s += PX(cx - w, cy + y, w * 2 + 1, 1, c); }
+  return s;
+}
+const PET_SCENE = {
+  // 九尾狐：黃昏的神社，粉紫晚霞、月亮、鳥居、櫻花，花瓣慢慢飄下來
+  fox_spirit: () => {
+    let s = bands(0, ["#3A2C6E", "#4A2F7A", "#5E3486", "#7A3C92", "#9A479C", "#B9549F", "#D8669F", "#EE7FA1", "#F99BA4", "#FFB8A8", "#FFD0B0", "#FFE0BC"]);
+    s += pxCircle(30, 15, 8, "#FFF3DA") + pxCircle(28, 13, 2, "#F4E1C2") + pxCircle(33, 18, 1, "#F4E1C2");
+    // 遠山
+    for (let x = 0; x < 160; x += 2) { const h = 6 + Math.round(5 * Math.sin(x / 13) + 3 * Math.sin(x / 5.3)); s += PX(x, 48 - h, 2, h, "#6A3E86"); }
+    for (let x = 0; x < 160; x += 2) { const h = 3 + Math.round(3 * Math.sin(x / 9 + 2)); s += PX(x, 50 - h, 2, h, "#53306F"); }
+    // 地面、石板參道
+    s += PX(0, 50, 160, 30, "#3C5A48") + PX(0, 50, 160, 2, "#4F7058") + PX(0, 60, 160, 20, "#335043");
+    for (let i = 0; i < 6; i++) s += PX(66 + i * 2 - 6, 52 + i * 5, 28 - i * 4 + 12 + i * 8, 3, i % 2 ? "#8E8499" : "#A79DB0");
+    // 鳥居（右邊）
+    s += PX(116, 16, 34, 3, "#2A0F18") + PX(114, 15, 38, 2, "#2A0F18") + PX(118, 18, 30, 2, "#D3343F") + PX(118, 24, 30, 2, "#D3343F");
+    s += PX(122, 20, 3, 34, "#C22E39") + PX(141, 20, 3, 34, "#C22E39") + PX(125, 20, 1, 34, "#8E1E2A") + PX(144, 20, 1, 34, "#8E1E2A");
+    s += PX(131, 20, 4, 4, "#2A0F18") + PX(121, 53, 5, 2, "#2A0F18") + PX(140, 53, 5, 2, "#2A0F18");
+    // 石燈籠（左邊）
+    s += PX(16, 40, 9, 2, "#6E6676") + PX(18, 42, 5, 4, "#9B93A3") + PX(19, 43, 3, 2, "#FFD27A") + PX(16, 46, 9, 2, "#6E6676") + PX(19, 48, 3, 6, "#8A8292") + PX(16, 54, 9, 2, "#6E6676");
+    // 櫻花樹枝（右上）
+    s += PX(88, 0, 2, 8, "#4A2A2E") + PX(90, 6, 10, 2, "#4A2A2E") + PX(100, 8, 8, 2, "#4A2A2E") + PX(106, 10, 4, 2, "#4A2A2E");
+    [[86, 2, 7], [94, 3, 8], [102, 5, 7], [110, 8, 6], [92, 9, 5]].forEach(([x, y, r]) => {
+      s += pxCircle(x, y, Math.round(r / 2), "#FF9EC8") + pxCircle(x + 1, y - 1, Math.round(r / 3), "#FFC7E0");
+    });
+    const petals = Array.from({ length: 7 }, (_, i) => `<i class="petal" style="--i:${i}"></i>`).join("");
+    return `<svg class="scene-art" viewBox="0 0 160 80" preserveAspectRatio="xMidYMax slice" shape-rendering="crispEdges">${s}</svg>${petals}`;
+  },
+  // 魅魔：夜晚的城堡，深紫夜空、緋紅月亮、星星一閃一閃、地上飄著紫霧
+  succubus: () => {
+    let s = bands(0, ["#0D0618", "#120821", "#170A2A", "#1E0C35", "#260F40", "#30124B", "#3B1556", "#461960", "#521C68", "#5C1F6E", "#64236F", "#6A286E"]);
+    s += pxCircle(122, 17, 11, "#7A1530") + pxCircle(122, 17, 10, "#C8304F") + pxCircle(119, 14, 3, "#A9243F") + pxCircle(126, 21, 2, "#A9243F") + pxCircle(125, 12, 1, "#E0566F");
+    // 遠方的山和城堡剪影
+    for (let x = 0; x < 160; x += 2) { const h = 4 + Math.round(4 * Math.sin(x / 11) + 2 * Math.sin(x / 4.1)); s += PX(x, 46 - h, 2, h, "#24102F"); }
+    const tower = (x, w, top) => PX(x, top, w, 46 - top, "#0E0716") + PX(x + Math.floor(w / 2) - 1, top - 6, 2, 6, "#0E0716") + PX(x + Math.floor(w / 2) - 2, top - 3, 4, 3, "#0E0716");
+    s += tower(18, 8, 22) + tower(28, 12, 16) + tower(42, 8, 26) + PX(18, 32, 34, 14, "#0E0716");
+    s += PX(30, 22, 2, 3, "#FF4F7A") + PX(36, 22, 2, 3, "#FF4F7A") + PX(32, 30, 2, 3, "#FFB04F") + PX(21, 30, 2, 2, "#FF4F7A") + PX(45, 32, 2, 2, "#FF4F7A");
+    // 地面：暗紫岩地
+    s += PX(0, 46, 160, 34, "#22122E") + PX(0, 46, 160, 2, "#3A1E4A") + PX(0, 58, 160, 22, "#1A0D24");
+    [[10, 50, 6], [60, 53, 4], [104, 51, 7], [140, 55, 5], [80, 62, 6]].forEach(([x, y, w]) => (s += PX(x, y, w, 2, "#3A1E4A")));
+    // 枯樹（右下）
+    s += PX(146, 30, 2, 18, "#0E0716") + PX(140, 34, 6, 2, "#0E0716") + PX(148, 32, 6, 2, "#0E0716") + PX(138, 32, 2, 2, "#0E0716") + PX(154, 30, 2, 2, "#0E0716");
+    const stars = [[8, 6], [44, 4], [70, 10], [92, 3], [150, 8], [60, 20], [100, 26], [14, 18]]
+      .map(([x, y], i) => `<i class="star" style="left:${(x / 160) * 100}%;top:${(y / 80) * 100}%;--i:${i}"></i>`).join("");
+    return `<svg class="scene-art" viewBox="0 0 160 80" preserveAspectRatio="xMidYMax slice" shape-rendering="crispEdges">${s}</svg>${stars}<i class="mist"></i><i class="mist m2"></i>`;
+  },
+};
+function petScene(id) {
+  const f = PET_SCENE[id];
+  return f ? `<span class="scene scene-${id}" aria-hidden="true">${f()}</span>` : "";
+}
+const sceneCls = (id) => (PET_SCENE[id] ? "has-scene" : "");
+
 // scale：同一系列所有階段用同一個倍率，所以越後面的階段畫面上越大
 function charImg(id, stage, boxH = 200, cls = "") {
   const sp = species(id);
