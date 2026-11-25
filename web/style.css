@@ -796,6 +796,8 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
   .pet-orbit.fast i { animation-duration: 6.5s; animation-delay: calc(-6.5s * var(--k) / var(--n)); }
   .pet-orbit i b { animation: flicker .5s steps(2) infinite; }
   .pet-orbit svg.orb-bat { animation: flap .32s steps(2) infinite; }
+  .pet-orbit svg.orb-leaf { animation: leaf-flip 1.6s steps(4) infinite; }
+  @keyframes leaf-flip { 25% { scale: .5 1; } 50% { scale: -1 1; } 75% { scale: -.5 1; } }
   @keyframes flap { 50% { transform: scaleY(.55); } }
   @keyframes orbit-xy { 0.0% { translate: 112px 0px; z-index: 3; scale: 1.00; opacity: 1.00; } 8.33% { translate: 97px 20px; z-index: 3; scale: 1.11; opacity: 1.00; } 16.67% { translate: 56px 35px; z-index: 3; scale: 1.19; opacity: 1.00; } 25.0% { translate: 0px 40px; z-index: 3; scale: 1.22; opacity: 1.00; } 33.33% { translate: -56px 35px; z-index: 3; scale: 1.19; opacity: 1.00; } 41.67% { translate: -97px 20px; z-index: 3; scale: 1.11; opacity: 1.00; } 50.0% { translate: -112px 0px; z-index: 3; scale: 1.00; opacity: 1.00; } 58.33% { translate: -97px -20px; z-index: 0; scale: 0.89; opacity: 0.81; } 66.67% { translate: -56px -35px; z-index: 0; scale: 0.81; opacity: 0.67; } 75.0% { translate: -0px -40px; z-index: 0; scale: 0.78; opacity: 0.62; } 83.33% { translate: 56px -35px; z-index: 0; scale: 0.81; opacity: 0.67; } 91.67% { translate: 97px -20px; z-index: 0; scale: 0.89; opacity: 0.81; } 100.0% { translate: 112px -0px; z-index: 0; scale: 1.00; opacity: 1.00; } }
   .evo-burst::before { animation: aura-breathe 1.6s ease-in-out 3; }
@@ -851,6 +853,11 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
 .scene-art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .stage.has-scene .pet-shadow { background: rgba(0, 0, 0, .45); }
 .scene .petal { position: absolute; top: -8px; left: calc(8% + var(--i) * 13%); width: 6px; height: 4px; background: #FFB3D6; box-shadow: 2px 2px 0 #FF86BC; opacity: 0; }
+.scene .petal.leaf, .scene-front .petal.leaf { background: #8CC152; box-shadow: 2px 2px 0 #5E922E; }
+.scene .petal.leaf:nth-child(odd) { background: #E0A64A; box-shadow: 2px 2px 0 #B07428; }
+.scene .bird { position: absolute; top: calc(12% + var(--i) * 9%); left: -10%; width: 7px; height: 3px;
+  background: linear-gradient(#2E3B36, #2E3B36) 0 0 / 3px 1px no-repeat, linear-gradient(#2E3B36, #2E3B36) 4px 0 / 3px 1px no-repeat,
+  linear-gradient(#2E3B36, #2E3B36) 2px 1px / 3px 1px no-repeat; }
 .scene .star { position: absolute; width: 3px; height: 3px; background: #FFF4D6; box-shadow: 0 0 4px #FFF4D6; }
 .scene .mist { position: absolute; left: -40%; bottom: 14%; width: 180%; height: 22px; opacity: .55;
   background: repeating-linear-gradient(90deg, rgba(190, 130, 230, .0) 0 18px, rgba(190, 130, 230, .35) 18px 60px, rgba(190, 130, 230, 0) 60px 90px); }
@@ -864,6 +871,9 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
     50% { transform: translate(-22px, 120px) rotate(180deg); } 90% { opacity: 1; } 100% { opacity: 0; transform: translate(10px, 250px) rotate(360deg); } }
   @keyframes star-blink { 50% { opacity: .25; } }
   @keyframes mist-drift { to { transform: translateX(90px); } }
+  .scene .bird { animation: bird-fly calc(11s + var(--i) * 4s) linear calc(var(--i) * -6s) infinite, bird-flap .5s steps(2) infinite; }
+  @keyframes bird-fly { 0% { left: -10%; } 100% { left: 110%; transform: translateY(-14px); } }
+  @keyframes bird-flap { 50% { background-position: 0 1px, 4px 1px, 2px 0; } }
 }
 
 /* ── 角色融入場景：會流動的切片、場景光、前景 ── */
@@ -879,6 +889,9 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
   filter: drop-shadow(-2px 0 0 rgba(255, 240, 214, .55)) drop-shadow(0 0 9px rgba(255, 150, 180, .35)) sepia(.06) saturate(1.04); }
 .stage[data-scene="succubus"] .pet img, .stage[data-scene="succubus"] .pet .wavy {
   filter: brightness(.9) drop-shadow(2px 0 0 rgba(225, 60, 95, .7)) drop-shadow(0 0 10px rgba(130, 60, 210, .4)); }
+.stage[data-scene="beast_tamer"] .pet img, .stage[data-scene="beast_tamer"] .pet .wavy {
+  filter: drop-shadow(-2px 0 0 rgba(255, 238, 186, .6)) drop-shadow(0 0 8px rgba(150, 215, 110, .3)) saturate(1.05); }
+.stage[data-scene="beast_tamer"] .pet-shadow { background: rgba(25, 45, 20, .55); }
 .stage[data-scene="fox_spirit"] .pet-shadow { background: rgba(30, 40, 30, .55); }
 .stage[data-scene="succubus"] .pet-shadow { background: rgba(5, 0, 10, .6); box-shadow: 0 0 14px 4px rgba(150, 70, 230, .25); }
 @media (prefers-reduced-motion: no-preference) {
@@ -897,6 +910,19 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
   .rig .rp-tilt { animation: idle-tilt 8s ease-in-out infinite, head-ride 4s ease-in-out infinite; }
   /* 上半身呼吸：以腰為軸，吸氣時肩膀、胸口一起微微上抬、身體稍微變寬；頭跟著起伏。腳在身體層，不動 */
   .rig .rp-breath { animation: torso-breath 4s ease-in-out infinite; }
+  /* 動物：頭慢慢點一下、點擊時低吼抖一下；水晶漂浮；火焰跳動 */
+  .rig .rp-nod { animation: idle-nod 4s ease-in-out infinite; }
+  .rig .rp-bob { animation: idle-bob 3s steps(6, jump-none) infinite alternate; }
+  .rig .rp-flicker { animation: idle-flicker .9s steps(2) infinite; }
+  .pet.react .rig .rp-nod { animation: growl .9s ease-in-out 1; }
+  .pet.react .rig .rp-bob { animation: bob-pop .8s ease-out 1; }
+  .pet.react .rig .rp-flicker { animation: flare .8s steps(4) 1; }
+  @keyframes idle-nod { 0%, 100% { rotate: 0deg; } 50% { rotate: 3deg; } }
+  @keyframes growl { 0%, 100% { rotate: 0deg; translate: 0 0; } 20% { rotate: -6deg; } 35% { translate: 1px 0; } 45% { translate: -1px 0; } 55% { translate: 1px 0; } 70% { rotate: -2deg; translate: 0 0; } }
+  @keyframes idle-bob { from { translate: 0 0; } to { translate: 0 -3px; } }
+  @keyframes bob-pop { 0% { translate: 0 0; scale: 1; } 40% { translate: 0 -9px; scale: 1.12; } 100% { translate: 0 0; scale: 1; } }
+  @keyframes idle-flicker { 50% { scale: 1.02 1.06; } }
+  @keyframes flare { 0%, 100% { scale: 1; } 40% { scale: 1.08 1.2; } }
   .pet.react .rig .rp-breath { animation: shrug .9s ease-in-out 1; }
   .pet.react .rig .rp-flapL { animation: flapL .95s ease-in-out 1; }
   .pet.react .rig .rp-flapR { animation: flapR .95s ease-in-out 1; }

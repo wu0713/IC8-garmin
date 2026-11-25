@@ -37,6 +37,39 @@ def drop_grey_holes(a, mask, min_size=10):
     return mask
 
 
+def drop_debris(a, mask, passes=3):
+    """原圖棋盤格留下的 1–2px 灰色細線：只挖「又細又灰」的像素，粗的灰色部位（盔甲、狼毛）不動。"""
+    rgb = a[..., :3].astype(int)
+    spread = rgb.max(-1) - rgb.min(-1)
+    val = rgb.max(-1)
+    grey = (spread < 30) & (val > 55) & (val < 235)
+    for _ in range(passes):
+        thick = ndimage.binary_opening(mask, np.ones((3, 3)))
+        kill = mask & ~thick & grey
+        if not kill.any():
+            break
+        mask = mask & ~kill
+    return mask
+
+
+def drop_aura(a, mask, hue=(190, 300), min_sat=12, grow=3, boxes=None):
+    """挖掉整片帶棋盤格的光芒（例如紫色星空）：先找這段色相，再把夾在裡面、旁邊的灰格一起挖掉。光芒改用程式畫。"""
+    hsv = np.array(Image.fromarray(a[..., :3]).convert("HSV")).astype(int)
+    h = hsv[..., 0] * 360 // 256
+    rgb = a[..., :3].astype(int)
+    spread = rgb.max(-1) - rgb.min(-1)
+    val = rgb.max(-1)
+    aura = mask & (h >= hue[0]) & (h < hue[1]) & (hsv[..., 1] >= min_sat) & (val > 60)
+    zone = ndimage.binary_dilation(aura, np.ones((3, 3)), iterations=grow)
+    grey = mask & zone & (spread < 34) & (val > 90)
+    if boxes:                                   # 只在光芒所在的範圍內挖，角色本身（狼臉、法杖）不碰
+        keep = np.zeros_like(mask)
+        for x0, y0, x1, y1 in boxes:
+            keep[y0:y1, x0:x1] = True
+        aura &= keep; grey &= keep
+    return mask & ~aura & ~grey
+
+
 def shift_hue(img, lo, hi, by, darken=1.0, min_sat=40):
     """把某段色相（0–360 度）整段轉到別的顏色，例如粉紅轉成紫紅；金髮、膚色不在範圍內就不動。"""
     hsv = np.array(img.convert("HSV")).astype(int)
@@ -48,18 +81,22 @@ def shift_hue(img, lo, hi, by, darken=1.0, min_sat=40):
     return Image.fromarray(hsv.astype(np.uint8), "HSV").convert("RGB")
 
 
-def polish(path, colors=96, sat=1.12, contrast=1.06, holes=False, hue=None):
+def polish(path, colors=96, sat=1.12, contrast=1.06, holes=False, hue=None, debris=False, aura=None, min_bit=8):
     im = Image.open(path).convert("RGBA")
     a = np.array(im)
     mask = a[..., 3] > 0
+    if aura:
+        mask = drop_aura(a, mask, **aura)
     mask = peel_grey(a, mask)
     if holes:
         mask = drop_grey_holes(a, mask)
+    if debris:
+        mask = drop_debris(a, mask)
     lab, n = ndimage.label(mask)
     if n:
         sizes = ndimage.sum(mask, lab, range(1, n + 1))
         for i, s in enumerate(sizes, 1):
-            if s < 8:
+            if s < min_bit:
                 mask[lab == i] = False
         lab, n = ndimage.label(mask)
     sizes = ndimage.sum(mask, lab, range(1, n + 1)) if n else []
@@ -92,6 +129,9 @@ TUNE = {
     "fox_spirit": {"sat": 1.25, "contrast": 1.08},   # 和服的紅、紫、金更華麗
     # 魅魔：跟九尾狐的粉紅分開 → 粉紅轉成深紫紅、整體暗一點；翅膀和魔力圈裡夾著背景棋盤格
     "succubus": {"sat": 1.2, "contrast": 1.12, "holes": True, "hue": [(296, 8, -30, 0.84)]},
+    # 馴獸師：原圖滿是棋盤格細線殘渣；第 5 階段背後的紫色星空混了棋盤格，整片挖掉改用程式畫光暈
+    "beast_tamer": {"sat": 1.15, "contrast": 1.08, "debris": True, "min_bit": 24,
+                    "stages": {5: {"aura": {"hue": (150, 300), "boxes": [(0, 45, 51, 122), (51, 34, 57, 94), (118, 12, 200, 62), (122, 62, 192, 74), (88, 14, 118, 30)]}}}},
 }
 
 
@@ -111,7 +151,9 @@ if __name__ == "__main__":
             src_png = orig / sp / f"{i}.png"
             if not src_png.exists():                       # 第一次：先把原圖收好，之後都從原圖重做
                 shutil.copy2(chars / sp / f"{i}.png", src_png)
-            out = polish(src_png, **TUNE.get(sp, {}))
+            tune = dict(TUNE.get(sp, {}))
+            tune.update(tune.pop("stages", {}).get(i, {}))   # 個別階段的設定
+            out = polish(src_png, **tune)
             out.save(chars / sp / f"{i}.png", optimize=True)
             st["w"], st["h"] = out.width, out.height
         print(f"{sp}: 完成 {len(entry['stages'])} 張")

@@ -16,36 +16,36 @@
      "name": "小小馴獸者",
      "en": "Beast Fledgling",
      "file": "/characters/beast_tamer/1.png",
-     "w": 118,
-     "h": 101
+     "w": 120,
+     "h": 103
     },
     {
      "name": "見習馴獸師",
      "en": "Novice Tamer",
      "file": "/characters/beast_tamer/2.png",
-     "w": 153,
-     "h": 115
+     "w": 155,
+     "h": 117
     },
     {
      "name": "野獸大師",
      "en": "Beast Master",
      "file": "/characters/beast_tamer/3.png",
-     "w": 174,
-     "h": 163
+     "w": 176,
+     "h": 165
     },
     {
      "name": "大馴獸師",
      "en": "Grand Tamer",
      "file": "/characters/beast_tamer/4.png",
-     "w": 223,
-     "h": 155
+     "w": 225,
+     "h": 157
     },
     {
      "name": "萬獸霸主",
      "en": "Beast Overlord",
      "file": "/characters/beast_tamer/5.png",
-     "w": 212,
-     "h": 163
+     "w": 214,
+     "h": 165
     }
    ]
   },

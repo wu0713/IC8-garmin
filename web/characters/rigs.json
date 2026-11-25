@@ -457,5 +457,240 @@
     }
    ]
   }
+ },
+ "beast_tamer": {
+  "1": {
+   "w": 120,
+   "h": 103,
+   "base": "/characters/beast_tamer/rig/1_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/beast_tamer/rig/1_head.png",
+     "x": 36,
+     "y": 16,
+     "w": 35,
+     "h": 32,
+     "px": 53,
+     "py": 48,
+     "motion": "tilt"
+    },
+    {
+     "name": "crystal",
+     "file": "/characters/beast_tamer/rig/1_crystal.png",
+     "x": 79,
+     "y": 24,
+     "w": 20,
+     "h": 32,
+     "px": 89,
+     "py": 40,
+     "motion": "bob"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/beast_tamer/rig/1_tail.png",
+     "x": 3,
+     "y": 61,
+     "w": 17,
+     "h": 31,
+     "px": 20,
+     "py": 86,
+     "motion": "wag"
+    },
+    {
+     "name": "beast",
+     "file": "/characters/beast_tamer/rig/1_beast.png",
+     "x": 80,
+     "y": 61,
+     "w": 20,
+     "h": 19,
+     "px": 86,
+     "py": 80,
+     "motion": "nod"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/beast_tamer/rig/1_torso.png",
+     "x": 33,
+     "y": 48,
+     "w": 39,
+     "h": 36,
+     "px": 53,
+     "py": 84,
+     "motion": "breath"
+    }
+   ]
+  },
+  "2": {
+   "w": 155,
+   "h": 117,
+   "base": "/characters/beast_tamer/rig/2_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/beast_tamer/rig/2_head.png",
+     "x": 54,
+     "y": 16,
+     "w": 30,
+     "h": 28,
+     "px": 68,
+     "py": 44,
+     "motion": "tilt"
+    },
+    {
+     "name": "beast",
+     "file": "/characters/beast_tamer/rig/2_beast.png",
+     "x": 118,
+     "y": 52,
+     "w": 31,
+     "h": 44,
+     "px": 118,
+     "py": 78,
+     "motion": "nod"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/beast_tamer/rig/2_torso.png",
+     "x": 46,
+     "y": 44,
+     "w": 40,
+     "h": 30,
+     "px": 66,
+     "py": 74,
+     "motion": "breath"
+    }
+   ]
+  },
+  "3": {
+   "w": 176,
+   "h": 165,
+   "base": "/characters/beast_tamer/rig/3_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/beast_tamer/rig/3_head.png",
+     "x": 58,
+     "y": 37,
+     "w": 32,
+     "h": 31,
+     "px": 74,
+     "py": 68,
+     "motion": "tilt"
+    },
+    {
+     "name": "mane",
+     "file": "/characters/beast_tamer/rig/3_mane.png",
+     "x": 98,
+     "y": 54,
+     "w": 59,
+     "h": 38,
+     "px": 125,
+     "py": 92,
+     "motion": "flicker"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/beast_tamer/rig/3_torso.png",
+     "x": 40,
+     "y": 68,
+     "w": 55,
+     "h": 40,
+     "px": 68,
+     "py": 108,
+     "motion": "breath"
+    }
+   ]
+  },
+  "4": {
+   "w": 225,
+   "h": 157,
+   "base": "/characters/beast_tamer/rig/4_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/beast_tamer/rig/4_head.png",
+     "x": 84,
+     "y": 20,
+     "w": 36,
+     "h": 37,
+     "px": 102,
+     "py": 56,
+     "motion": "tilt"
+    },
+    {
+     "name": "beast",
+     "file": "/characters/beast_tamer/rig/4_beast.png",
+     "x": 150,
+     "y": 75,
+     "w": 47,
+     "h": 57,
+     "px": 152,
+     "py": 100,
+     "motion": "nod"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/beast_tamer/rig/4_torso.png",
+     "x": 56,
+     "y": 57,
+     "w": 69,
+     "h": 53,
+     "px": 92,
+     "py": 110,
+     "motion": "breath"
+    }
+   ]
+  },
+  "5": {
+   "w": 214,
+   "h": 165,
+   "base": "/characters/beast_tamer/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/beast_tamer/rig/5_head.png",
+     "x": 82,
+     "y": 26,
+     "w": 40,
+     "h": 36,
+     "px": 102,
+     "py": 62,
+     "motion": "tilt"
+    },
+    {
+     "name": "beast",
+     "file": "/characters/beast_tamer/rig/5_beast.png",
+     "x": 165,
+     "y": 85,
+     "w": 38,
+     "h": 47,
+     "px": 170,
+     "py": 108,
+     "motion": "nod"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/beast_tamer/rig/5_tail.png",
+     "x": 20,
+     "y": 103,
+     "w": 22,
+     "h": 29,
+     "px": 42,
+     "py": 126,
+     "motion": "wag"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/beast_tamer/rig/5_torso.png",
+     "x": 85,
+     "y": 62,
+     "w": 47,
+     "h": 43,
+     "px": 106,
+     "py": 105,
+     "motion": "breath"
+    }
+   ]
+  }
  }
 }

@@ -174,10 +174,13 @@ const PET_FX = {
   // float：從第幾階段開始浮在空中（不再原地跳）；sway：尾巴、披風微微擺動
   fox_spirit: { from: 2, aura: "255,105,190", orb: "flame", colors: ["#C2369E", "#FF7AD0", "#FFE6F7"], spark: "#FFB8E6", float: 3, sway: 1 },
   succubus: { from: 2, aura: "150,70,230", orb: "bat", colors: ["#1E0B2E", "#6B35B8", "#FF4D7E"], spark: "#C79BFF", float: 2, sway: 2 },
+  // 馴獸師：森林的綠光，周圍繞著飄葉；人和野獸站在地上（不浮空）
+  beast_tamer: { from: 2, aura: "140,215,100", orb: "leaf", colors: ["#28501C", "#68AE36", "#D2F59A"], spark: "#CFF59A", sway: 2 },
 };
 const ORB_GRID = {
   flame: ["...1...", "..121..", "..121..", ".12221.", ".12321.", "1223321", "1233321", ".12321.", "..111.."],
   bat: ["1.......1", "11.....11", "111.1.111", "111222111", ".1232321.", "..12221..", "...1.1..."],
+  leaf: ["....111", "...1221", "..12321", ".123221", "1232211", "122211.", "1111...", "1......"],
 };
 
 // 像素火焰（7×9 格），用 SVG 的小方塊畫，放大也是銳利的像素
@@ -256,6 +259,33 @@ const PET_SCENE = {
       .map(([x, y], i) => `<i class="star" style="left:${(x / 160) * 100}%;top:${(y / 80) * 100}%;--i:${i}"></i>`).join("");
     return `<svg class="scene-art" viewBox="0 0 160 80" preserveAspectRatio="xMidYMax slice" shape-rendering="crispEdges">${s}</svg>${stars}<i class="mist"></i><i class="mist m2"></i>`;
   },
+  // 馴獸師：清晨的森林空地，晨光從左邊照進來，松樹林、遠山、樹樁，葉子飄落、鳥飛過
+  beast_tamer: () => {
+    let s = bands(0, ["#8FC6D6", "#9CCDD6", "#AAD3D3", "#B8D8CE", "#C8DCC4", "#D8DFB8", "#E6E0AC", "#F0DF9E", "#F6DA92", "#F8D486"], 5);
+    s += pxCircle(24, 22, 9, "#FFF1C4") + pxCircle(24, 22, 7, "#FFF8DE");
+    // 晨光光束（左上斜下來）
+    for (let i = 0; i < 5; i++) s += `<polygon points="${10 + i * 14},0 ${18 + i * 14},0 ${52 + i * 16},60 ${44 + i * 16},60" fill="#FFF6D8" opacity=".14"/>`;
+    // 遠山
+    for (let x = 0; x < 160; x += 2) { const h = 8 + Math.round(5 * Math.sin(x / 15 + 1) + 3 * Math.sin(x / 6.1)); s += PX(x, 44 - h, 2, h, "#7FA8A0"); }
+    // 松樹：一層一層疊成三角形
+    const pine = (x, base, h, c, c2) => {
+      let t = PX(x - 1, base - 3, 2, 3, "#4A3524");
+      for (let y = 0; y < h; y++) { const w = 1 + Math.floor((y % Math.ceil(h / 3)) * 0.9 + y / 4); t += PX(x - w, base - 3 - h + y, w * 2, 1, y % 3 ? c : c2); }
+      return t;
+    };
+    [[6, 48, 22], [16, 46, 16], [138, 48, 24], [150, 47, 18], [128, 46, 14], [36, 45, 12], [112, 45, 11]].forEach(([x, b, h]) => (s += pine(x, b, h, "#3E6B48", "#4E8055")));
+    [[0, 52, 28], [156, 52, 30]].forEach(([x, b, h]) => (s += pine(x, b, h, "#2C4F36", "#355D3F")));
+    // 地面：草地、泥土小路
+    s += PX(0, 46, 160, 34, "#5C8F3E") + PX(0, 46, 160, 2, "#76AA4C") + PX(0, 60, 160, 20, "#4F7E35");
+    for (let i = 0; i < 7; i++) s += PX(70 - i * 3, 50 + i * 4, 20 + i * 6, 3, i % 2 ? "#9C7B52" : "#B08D60");
+    [[12, 52, 5], [40, 56, 4], [118, 54, 6], [146, 60, 4], [100, 66, 5]].forEach(([x, y, w]) => (s += PX(x, y, w, 2, "#86BB58")));
+    // 樹樁和石頭
+    s += PX(126, 50, 12, 6, "#6E4A2C") + PX(126, 49, 12, 2, "#C9A06A") + PX(129, 49, 6, 1, "#A57E4E") + PX(124, 55, 16, 2, "#4E331F");
+    s += PX(22, 54, 8, 4, "#8E9290") + PX(23, 53, 6, 1, "#ADB1AE") + PX(20, 57, 12, 1, "#5E6260");
+    const leaves = Array.from({ length: 6 }, (_, i) => `<i class="petal leaf" style="--i:${i}"></i>`).join("");
+    const birds = [0, 1].map((i) => `<i class="bird" style="--i:${i}"></i>`).join("");
+    return `<svg class="scene-art" viewBox="0 0 160 80" preserveAspectRatio="xMidYMax slice" shape-rendering="crispEdges">${s}</svg>${leaves}${birds}`;
+  },
 };
 function petScene(id) {
   const f = PET_SCENE[id];
@@ -273,12 +303,21 @@ const PET_FRONT = {
       `<i class="petal front" style="--i:2"></i><i class="petal front" style="--i:5"></i>`;
   },
   succubus: () => `<i class="mist front"></i><i class="mist front m2"></i>`,
+  beast_tamer: () => {
+    let s = "";
+    for (let x = 0; x < 160; x += 2) {
+      const h = 3 + ((x * 11) % 6);
+      s += PX(x, 10 - h, 1, h, x % 4 ? "#3F6E2C" : "#4F8A35") + PX(x + 1, 10 - h + 2, 1, h - 2, "#67A644");
+    }
+    return `<svg class="front-art" viewBox="0 0 160 10" preserveAspectRatio="none" shape-rendering="crispEdges">${s}</svg>` +
+      `<i class="petal leaf front" style="--i:1"></i><i class="petal leaf front" style="--i:4"></i>`;
+  },
 };
 const petFront = (id) => (PET_FRONT[id] ? `<span class="scene-front" aria-hidden="true">${PET_FRONT[id]()}</span>` : "");
 
 // 夥伴圖：有拆部位的（rigs.json）用分層組回角色，點擊時頭、翅膀、尾巴、下襬各自動；沒有的用整張圖
 // 圖層順序：翅膀、尾巴、魔力圈在身體後面；上半身、頭在前面。腳留在身體層，不另外動
-const RIG_Z = { wingL: 0, wingR: 0, tail: 0, tailL: 0, tailR: 0, ringL: 0, ringR: 0, torso: 2, head: 3 };
+const RIG_Z = { wingL: 0, wingR: 0, tail: 0, tailL: 0, tailR: 0, ringL: 0, ringR: 0, torso: 2, head: 3, beast: 2, mane: 2, crystal: 3 };
 function petSprite(id, stage, boxH) {
   const rig = S.rigs?.[id]?.[stage + 1], sp = species(id);
   if (!rig || !sp) return charImg(id, stage, boxH);
