@@ -138,7 +138,7 @@ RIGS: dict[str, dict[int, list]] = {
             ("tailR", [102, 15, 165, 150], [102, 90], "fanR"), ("torso", [64, 58, 102, 118], [83, 118], "breath")],
     },
 }
-OVERLAP = 3
+OVERLAP = 7
 
 
 def split(species: str, stage: int, parts: list) -> dict:
