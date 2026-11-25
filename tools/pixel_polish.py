@@ -174,7 +174,7 @@ def shift_hue(img, lo, hi, by, darken=1.0, min_sat=40):
     return Image.fromarray(hsv.astype(np.uint8), "HSV").convert("RGB")
 
 
-def polish(path, colors=96, sat=1.12, contrast=1.06, holes=False, hue=None, debris=False, aura=None, min_bit=8, tint=None, smooth=None, outside=None, recolor=None, peel=8, blobs=False):
+def polish(path, colors=96, sat=1.12, contrast=1.06, holes=False, hue=None, debris=False, aura=None, min_bit=8, tint=None, smooth=None, outside=None, recolor=None, peel=8, blobs=False, patch=None):
     im = Image.open(path).convert("RGBA")
     a = np.array(im)
     mask = a[..., 3] > 0
@@ -198,6 +198,19 @@ def polish(path, colors=96, sat=1.12, contrast=1.06, holes=False, hue=None, debr
         mask = drop_debris(a, mask)
     if blobs:
         mask = drop_grey_blobs(a, mask)
+    for pt in patch or []:                         # 補畫被去背吃掉的部位，例如白色帽沿
+        cx, cy, rx, ry = pt["ellipse"]
+        yy, xx = np.mgrid[0:mask.shape[0], 0:mask.shape[1]]
+        inside = ((xx - cx) / rx) ** 2 + ((yy - cy) / ry) ** 2 <= 1
+        fill = inside & ~mask
+        if pt.get("overwrite"):                    # 範圍內原本的雜點也蓋掉，只保留 keep 框
+            fill = inside.copy()
+            for x0, y0, x1, y1 in pt.get("keep", ()):
+                fill[y0:y1, x0:x1] = False
+        col = np.where((yy >= cy)[..., None], np.array(pt.get("shade", pt["color"])), np.array(pt["color"]))
+        a[fill, :3] = col[fill]
+        a[fill, 3] = 255
+        mask = mask | fill
     lab, n = ndimage.label(mask)
     if n:
         sizes = ndimage.sum(mask, lab, range(1, n + 1))
@@ -222,9 +235,11 @@ def polish(path, colors=96, sat=1.12, contrast=1.06, holes=False, hue=None, debr
     arr[~mask] = np.median(fill, axis=0).astype(np.uint8) if len(fill) else 0
     q = np.array(Image.fromarray(arr).quantize(colors=colors, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE).convert("RGB"))
     alpha = np.where(mask, 255, 0).astype(np.uint8)
+    glow = np.zeros_like(mask)
     for sel, al in soft:
         alpha[sel & mask] = al
         body &= ~sel                               # 半透明的光不加墨線
+        glow |= sel & mask
     out = np.dstack([q, alpha])
     H, W = mask.shape
     pad = np.zeros((H + 2, W + 2, 4), np.uint8)
@@ -233,6 +248,9 @@ def polish(path, colors=96, sat=1.12, contrast=1.06, holes=False, hue=None, debr
     m2 = np.zeros((H + 2, W + 2), bool); m2[1:-1, 1:-1] = mask
     edge = ndimage.binary_dilation(b2, CROSS) & ~m2
     pad[edge] = (*INK, 255)
+    if glow.any():                                 # 人和柔光的交界也描一圈，人才不會融進光裡
+        g2 = np.zeros((H + 2, W + 2), bool); g2[1:-1, 1:-1] = glow
+        pad[ndimage.binary_dilation(b2, CROSS) & g2] = (*INK, 255)
     return Image.fromarray(pad)
 
 
@@ -244,9 +262,12 @@ TUNE = {
         3: {"tint": {"max_sat": 80, "vmin": 40, "vmax": 215, "protect": [(38, 35, 86, 162), (0, 28, 22, 105), (98, 28, 128, 74)]}},
         4: {"tint": {"hue": (0, 70), "max_sat": 95, "vmin": 40, "vmax": 205, "protect": [(52, 28, 122, 155), (30, 18, 62, 150)]}},
         5: {"holes": False, "smooth": {"protect": [(86, 44, 104, 70), (66, 72, 120, 160)], "max_sat": 95, "vmax": 224, "sigma": 3,
-                                       "glow": (255, 236, 190), "mix": 0.55, "alpha": 120}}}},
+                                       "glow": (255, 236, 190), "mix": 0.55, "alpha": 85}}}},
     # 死靈法師：第 3 階段紫水晶裡的棋盤格、第 5 階段紫色煙霧裡的棋盤格 → 抹平成半透明紫色靈氣（白色幽靈保留）
     "necromancer": {"sat": 1.1, "contrast": 1.1, "debris": True, "min_bit": 24, "holes": True, "stages": {
+        # 第 1、2 階段兜帽的灰紫色部分當初被當成背景去掉了，依輪廓補回來
+        1: {"patch": [{"ellipse": (40, 15, 10, 8), "color": (62, 56, 70), "shade": (46, 41, 54)}]},
+        2: {"patch": [{"ellipse": (57, 14, 12, 13), "color": (56, 52, 62), "shade": (42, 38, 46)}]},
         3: {"smooth": [{"hue": (225, 320), "max_sat": 200, "vmin": 50, "vmax": 225, "boxes": [(98, 2, 131, 48)], "sigma": 2,
                         "glow": (150, 90, 230), "mix": 0.3, "alpha": 190},
                        {"max_sat": 45, "vmin": 80, "vmax": 220, "boxes": [(98, 2, 131, 48)], "sigma": 2,
@@ -272,8 +293,11 @@ TUNE = {
     # 魅魔：跟九尾狐的粉紅分開 → 粉紅轉成深紫紅、整體暗一點；翅膀和魔力圈裡夾著背景棋盤格
     "succubus": {"sat": 1.2, "contrast": 1.12, "holes": True, "hue": [(296, 8, -30, 0.84)]},
     # 馴獸師：原圖滿是棋盤格細線殘渣；第 5 階段背後的紫色星空混了棋盤格，整片挖掉改用程式畫光暈
+    # 第 2 階段：白色帽沿當初被當成背景去掉了，依輪廓補畫回來
     "beast_tamer": {"sat": 1.15, "contrast": 1.08, "debris": True, "min_bit": 24,
-                    "stages": {5: {"aura": {"hue": (150, 300), "boxes": [(0, 45, 51, 122), (51, 34, 57, 94), (118, 12, 200, 62), (122, 62, 192, 74), (88, 14, 118, 30)]}}}},
+                    "stages": {2: {"patch": [{"ellipse": (70, 21, 18, 6.5), "color": (226, 220, 204), "shade": (176, 166, 148),
+                                              "overwrite": True, "keep": [(64, 13, 77, 27)]}]},
+                               5: {"aura": {"hue": (150, 300), "boxes": [(0, 45, 51, 122), (51, 34, 57, 94), (118, 12, 200, 62), (122, 62, 192, 74), (88, 14, 118, 30)]}}}},
 }
 
 
