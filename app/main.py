@@ -902,6 +902,29 @@ def delete_override(date: str, user=Depends(auth.current_user)):
     return views.this_week(user["id"])
 
 
+class BusyIn(BaseModel):
+    on: bool = True
+
+
+@app.post("/api/week/busy")
+def busy_week(body: BusyIn, user=Depends(auth.current_user)):
+    """一鍵「這週很忙」：從今天到週日加一個出差／旅行行程（跑量打六折、這週不算進基線），再按一次就取消。"""
+    _need_link(user)
+    today = today_local()
+    sunday = today + timedelta(days=6 - today.weekday())
+    w0 = today - timedelta(days=today.weekday())
+    prefs = db.get_prefs(user["id"])
+    events = [e for e in (prefs.get("events") or [])
+              if not (e.get("name") == views.BUSY_NAME and e.get("type") == "travel" and w0.isoformat() <= e["date"] <= sunday.isoformat())]
+    if body.on:
+        events.append({"type": "travel", "name": views.BUSY_NAME, "date": today.isoformat(), "end_date": sunday.isoformat(),
+                       "distance_km": None, "target_time": ""})
+    prefs["events"] = sorted(events, key=lambda e: e["date"])
+    db.save_prefs(user["id"], prefs)
+    sync.replan(user["id"])
+    return views.this_week(user["id"])
+
+
 class SwapIn(BaseModel):
     a: str
     b: str

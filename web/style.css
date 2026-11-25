@@ -746,3 +746,22 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
 .share-prev { margin: 12px 0; text-align: center; min-height: 200px; display: grid; place-items: center; }
 .share-prev img { width: 100%; max-width: 280px; border: 2px solid var(--ink); border-radius: 8px; box-shadow: 4px 4px 0 var(--ink); }
 .toggle-row small { display: block; color: var(--ink-3); font-size: .75rem; font-weight: 400; }
+
+/* ── 這週很忙、拖曳換天 ── */
+.busy-bar { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: .875rem; }
+.busy-bar svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; flex: none; }
+.busy-bar .text-btn { display: inline-flex; align-items: center; gap: 6px; }
+.busy-bar.on { background: var(--surface-hi); border: 2px dashed var(--ink-3); border-radius: 6px; padding: 6px 10px; }
+.busy-bar.on span { flex: 1; }
+.wk li { grid-template-columns: 44px 1fr 28px; }
+.wk .grip { display: grid; place-items: center; width: 28px; height: 40px; cursor: grab; touch-action: none; color: var(--ink-3); }
+.wk .grip svg { width: 18px; height: 18px; fill: currentColor; stroke: none; }
+.wk li.drag-from { opacity: .35; }
+.wk li.drag-over { outline: 3px dashed var(--primary); outline-offset: -3px; background: #E6E4FA; }
+.drag-ghost { position: fixed; z-index: 60; list-style: none; display: grid; grid-template-columns: 44px 1fr 28px; gap: 10px; align-items: center;
+  background: var(--surface); border: 2px solid var(--ink); border-radius: 6px; box-shadow: 4px 4px 0 var(--ink); padding: 9px 6px; pointer-events: none; }
+.drag-ghost .wd { text-align: center; } .drag-ghost .wd b { display: block; font-weight: 800; } .drag-ghost .wd small { font-size: .75rem; }
+.drag-ghost .wt { display: flex; gap: 6px; align-items: center; font-weight: 700; } .drag-ghost .ws { display: block; font-size: .8125rem; color: var(--ink-2); }
+.drag-ghost .grip svg { width: 18px; height: 18px; fill: var(--ink-3); }
+.wk-hint { margin-top: 8px; font-size: .75rem; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.wk-hint svg { width: 14px; height: 14px; fill: var(--ink-3); }

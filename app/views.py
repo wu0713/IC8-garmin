@@ -654,7 +654,17 @@ def this_week(user_id: int) -> dict:
             "imported": pl.get("imported"),
             "stoploss": pl.get("stoploss") or [], "next_checkpoint": pl.get("next_checkpoint"), "check": pl.get("check"),
             "readiness": dash["readiness"], "notes": pl["notes"], "tips": tips,
-            "checkin": dash.get("checkin")}
+            "checkin": dash.get("checkin"), "busy": busy_week_on(user_id, today)}
+
+
+BUSY_NAME = "這週很忙"
+
+
+def busy_week_on(user_id: int, today: date) -> bool:
+    """這週是不是按過「這週很忙」（存成本週的出差／旅行行程，跑量打六折）。"""
+    w0 = today - timedelta(days=today.weekday())
+    return any(e.get("name") == BUSY_NAME and e.get("type") == "travel" and e["date"] >= w0.isoformat()
+               and e["date"] <= (w0 + timedelta(days=6)).isoformat() for e in db.get_prefs(user_id).get("events") or [])
 
 
 def week_tips(days, done, planned_n, missed, too_hard, planned_km, actual_km, dash, today):

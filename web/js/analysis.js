@@ -100,20 +100,85 @@ function weekHtml(w) {
     else if (run && !past && p.minutes) sub = planText(p);
     else if (d.strength) sub = `${d.strength.done ? "✓ " : ""}${d.strength.title} ${d.strength.minutes} 分`;
     const action = today ? "" : dayAction(d, past);
+    const drag = !past && d.editable && !act && d.status !== "done";
     let sep = "";
     if (!past && !today && !sepDone) { sepDone = true; sep = `<li class="wk-sep" aria-hidden="true">接下來</li>`; }
-    return `${sep}<li class="${cls} ${run || act ? "" : "rest-day"}" ${action ? `data-act="${action}" tabindex="0" role="button"` : ""}
+    return `${sep}<li class="${cls} ${run || act ? "" : "rest-day"}" data-date="${d.date}" ${drag ? "data-drop" : ""} ${action ? `data-act="${action}" tabindex="0" role="button"` : ""}
         aria-label="${esc(`${d.weekday} ${+d.date.slice(8)} 日，${title}${badge ? `，${badge.replace(/<[^>]+>/g, "")}` : ""}`)}">
       <span class="wd"><b class="num">${+d.date.slice(8)}</b><small>${today ? "今天" : d.weekday}</small></span>
       <span class="wbody"><span class="wt"><span class="int ${run ? p.intensity : "rest"}"></span><span class="wtitle">${esc(title)}</span>${badge}${p?.override ? `<span class="badge edit">已調整</span>` : ""}</span>
         ${sub ? `<span class="ws">${esc(sub)}</span>` : ""}</span>
-      <span class="wgo">${action ? ico("chevron") : ""}</span></li>`;
+      ${drag ? `<span class="grip" data-grip="${d.date}" title="按住拖到另一天就交換" aria-hidden="true">${ico("grip")}</span>`
+        : `<span class="wgo">${action ? ico("chevron") : ""}</span>`}</li>`;
   }).join("");
   return `
     ${todayHero(w.days.find((d) => d.is_today))}
+    ${busyBar(w)}
     <div class="wk-sum"><p><b class="num">${w.done}</b> / ${w.planned} 堂完成<span class="muted">　已跑 ${fmt(w.actual_km, 1)} / ${fmt(w.planned_km, 1)} km${w.target_km ? `（目標 ${fmt(w.target_km, 1)}）` : ""}</span></p>
       <div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="本週完成度"><span style="width:${pct}%"></span></div></div>
-    <ul class="wk">${rows}</ul>`;
+    <ul class="wk">${rows}</ul>
+    ${rows.includes("data-grip") ? `<p class="muted wk-hint">按住右邊的 ${ico("grip")} 拖到另一天，就能交換兩天的課。</p>` : ""}`;
+}
+
+function busyBar(w) {
+  return w.busy
+    ? `<div class="busy-bar on">${ico("clock")}<span><b>這週很忙</b>：剩下的日子跑量打六折</span><button class="text-btn" data-busy="0">取消</button></div>`
+    : `<div class="busy-bar"><button class="text-btn" data-busy="1">${ico("clock")}這週很忙？一鍵減量</button></div>`;
+}
+
+// 拖曳換天：按住右邊的把手，拖到另一天放開就交換（手機和滑鼠都可以）
+function bindDragSwap(onDone) {
+  document.querySelectorAll(".wk [data-grip]").forEach((g) => {
+    g.addEventListener("pointerdown", (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const from = g.closest("li"), ul = from.parentElement;
+      const r0 = from.getBoundingClientRect();
+      const ghost = from.cloneNode(true);
+      ghost.className = `${from.className} drag-ghost`;
+      Object.assign(ghost.style, { width: `${r0.width}px`, left: `${r0.left}px`, top: `${r0.top}px` });
+      document.body.append(ghost);
+      from.classList.add("drag-from");
+      const dy0 = e.clientY - r0.top;
+      let target = null, lastY = e.clientY, scroller = null;
+      // 拖到畫面上下邊緣（底部導覽列上方）時自動捲動
+      const navH = document.getElementById("nav")?.offsetHeight || 0;
+      const edge = () => {
+        const bottom = innerHeight - navH - 70, top = 70;
+        const v = lastY > bottom ? Math.min(18, (lastY - bottom) / 3) : lastY < top ? -Math.min(18, (top - lastY) / 3) : 0;
+        if (v) { scrollBy(0, v); pick(); }
+        scroller = requestAnimationFrame(edge);
+      };
+      const pick = () => {
+        ghost.style.display = "none";
+        const li = document.elementFromPoint(r0.left + 20, lastY)?.closest(".wk li[data-drop]");
+        ghost.style.display = "";
+        if (target && target !== li) target.classList.remove("drag-over");
+        target = li && li !== from && ul.contains(li) ? li : null;
+        target?.classList.add("drag-over");
+      };
+      scroller = requestAnimationFrame(edge);
+      const move = (ev) => {
+        lastY = ev.clientY;
+        ghost.style.top = `${ev.clientY - dy0}px`;
+        pick();
+      };
+      const up = async () => {
+        cancelAnimationFrame(scroller);
+        document.removeEventListener("pointermove", move); document.removeEventListener("pointerup", up); document.removeEventListener("pointercancel", up);
+        ghost.remove(); from.classList.remove("drag-from"); target?.classList.remove("drag-over");
+        if (!target) return;
+        const a = from.dataset.date, b = target.dataset.date;
+        try {
+          await api("/api/swap", { method: "POST", body: { a, b } });
+          toast(`已交換 ${+a.slice(5, 7)}/${+a.slice(8)} 和 ${+b.slice(5, 7)}/${+b.slice(8)} 的課`,
+            { undo: () => api("/api/swap", { method: "POST", body: { a, b } }), after: onDone });
+          onDone();
+        } catch (x) { toast(x.message); }
+      };
+      document.addEventListener("pointermove", move); document.addEventListener("pointerup", up); document.addEventListener("pointercancel", up);
+    });
+    g.addEventListener("click", (e) => e.stopPropagation());
+  });
 }
 
 function monthHtml(m) {
@@ -225,6 +290,14 @@ async function viewAnalysis() {
   };
   document.querySelectorAll("[data-detail]").forEach((b) => (b.onclick = () => openDetail(b.dataset.detail)));
   document.querySelectorAll("[data-adjust]").forEach((b) => (b.onclick = () => openAdjust(b.dataset.adjust)));
+  bindDragSwap(refresh);
+  document.querySelectorAll("[data-busy]").forEach((b) => (b.onclick = () => act(b, async () => {
+    const on = b.dataset.busy === "1";
+    await api("/api/week/busy", { method: "POST", body: { on } });
+    toast(on ? "這週剩下的日子已經減量" : "已取消，恢復原本的跑量",
+      { undo: () => api("/api/week/busy", { method: "POST", body: { on: !on } }), after: refresh });
+    refresh();
+  })));
   document.querySelectorAll(".wk [data-act]").forEach((li) => {
     const run = () => {
       const i = li.dataset.act.indexOf(":"), k = li.dataset.act.slice(0, i), v = li.dataset.act.slice(i + 1);
