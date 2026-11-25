@@ -274,21 +274,8 @@ const PET_FRONT = {
 };
 const petFront = (id) => (PET_FRONT[id] ? `<span class="scene-front" aria-hidden="true">${PET_FRONT[id]()}</span>` : "");
 
-// 會流動的角色：把圖切成橫向細條，越下面擺得越大，頭髮、尾巴、披風、裙襬像被風吹
-function petSprite(id, stage, boxH) {
-  const fx = PET_FX[id], sp = species(id);
-  if (!sp || !fx || fx.sway == null || stage < fx.sway) return charImg(id, stage, boxH);
-  const st = sp.stages[stage] || sp.stages[0];
-  const scale = boxH / Math.max(...sp.stages.map((x) => x.h));
-  const w = Math.round(st.w * scale), h = Math.round(st.h * scale), N = 18;
-  let slices = "";
-  for (let k = 0; k < N; k++) {
-    const top = Math.round((k * h) / N), bot = Math.round(((k + 1) * h) / N);
-    const a = Math.pow(k / (N - 1), 1.7) * 4.5;
-    slices += `<i style="top:${top}px;height:${bot - top + 1}px;background-position:0 -${top}px;--a:${a.toFixed(2)}px;--d:${(-k * 0.11).toFixed(2)}s"></i>`;
-  }
-  return `<span class="wavy" role="img" aria-label="${esc(st.name)}" style="width:${w}px;height:${h}px;--src:url('${st.file}');--bw:${w}px;--bh:${h}px">${slices}</span>`;
-}
+// 夥伴圖：整張圖（動作交給 CSS：一格一格的漂浮、同步呼吸、從頭頂往下的彎曲擺動）
+function petSprite(id, stage, boxH) { return charImg(id, stage, boxH); }
 const sceneCls = (id) => (PET_SCENE[id] ? "has-scene" : "");
 
 // scale：同一系列所有階段用同一個倍率，所以越後面的階段畫面上越大

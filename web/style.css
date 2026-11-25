@@ -809,13 +809,20 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
 /* ── 夥伴動態：浮空、擺動、點擊反應 ── */
 .pet-wave { position: absolute; left: 50%; top: 48%; width: 60%; aspect-ratio: 1; border-radius: 50%; translate: -50% -50%; z-index: 0;
   border: 4px solid rgba(var(--aura), .85); opacity: 0; pointer-events: none; }
-.pet.sway img, .pet.sway .wavy { transform-origin: 50% 12%; }
+.pet.sway img, .pet.sway .wavy { transform-origin: 50% 8%; }
 @media (prefers-reduced-motion: no-preference) {
-  .pet.floaty img, .pet.floaty .wavy { animation: breathe 2.4s ease-in-out infinite, float 3.6s ease-in-out infinite; }
-  .pet.sway img, .pet.sway .wavy { animation: breathe 2.4s ease-in-out infinite, idle-hop 7s ease-in-out infinite, sway 4.6s ease-in-out infinite; }
-  .pet.floaty.sway img, .pet.floaty.sway .wavy { animation: breathe 2.4s ease-in-out infinite, float 3.6s ease-in-out infinite, sway 4.6s ease-in-out infinite; }
-  .pet.floaty .pet-shadow { animation: float-shadow 3.6s ease-in-out infinite; }
-  .pet.floaty .pet-orbit { animation: float-orbit 3.6s ease-in-out infinite; }
+  /* 有專屬動作的夥伴：全部對齊 4 秒一拍。漂浮一格一格（steps，位置剛好落在整數像素），
+     上浮時吸氣（身體微微拉長）、下沉時吐氣；彎曲擺動是 8 秒（一半速度），以頭頂為軸，下半身擺得比較多 */
+  .pet.sway img, .pet.sway .wavy { animation: idle-hop 8s ease-in-out infinite, breath 4s ease-in-out infinite, bend 8s ease-in-out infinite; }
+  .pet.floaty img, .pet.floaty .wavy { animation: hover 4s steps(15, jump-none) infinite alternate, breath 4s ease-in-out infinite; }
+  .pet.floaty.sway img, .pet.floaty.sway .wavy { animation: hover 4s steps(15, jump-none) infinite alternate, breath 4s ease-in-out infinite, bend 8s ease-in-out infinite; }
+  .pet.floaty .pet-shadow { animation: hover-shadow 4s steps(15, jump-none) infinite alternate; }
+  .pet.floaty .pet-orbit { animation: hover 4s steps(15, jump-none) infinite alternate; }
+  .pet.floaty .pet-aura { animation: aura-breathe 4s ease-in-out infinite; }
+  @keyframes hover { from { translate: 0 -8px; } to { translate: 0 -22px; } }
+  @keyframes hover-shadow { from { transform: scaleX(.78); opacity: .7; } to { transform: scaleX(.6); opacity: .42; } }
+  @keyframes breath { 0%, 100% { scale: 1 1; } 50% { scale: .992 1.014; } }
+  @keyframes bend { 0%, 100% { transform: skewX(-1.1deg); } 50% { transform: skewX(1.1deg); } }
   .pet.hop img, .pet.hop .wavy { animation: hop .6s cubic-bezier(.3, 1.6, .5, 1) 1; }
   .pet.floaty.hop img, .pet.floaty.hop .wavy { animation: lift .7s cubic-bezier(.3, 1.4, .5, 1) 1; }
   .pet.react .pet-orbit { animation: scatter 1.2s cubic-bezier(.2, .9, .3, 1) 1; }
@@ -874,7 +881,5 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
 .stage[data-scene="fox_spirit"] .pet-shadow { background: rgba(30, 40, 30, .55); }
 .stage[data-scene="succubus"] .pet-shadow { background: rgba(5, 0, 10, .6); box-shadow: 0 0 14px 4px rgba(150, 70, 230, .25); }
 @media (prefers-reduced-motion: no-preference) {
-  .wavy i { animation: wave-x 2.8s ease-in-out var(--d) infinite; }
-  @keyframes wave-x { 0%, 100% { translate: calc(var(--a) * -1) 0; } 50% { translate: var(--a) 0; } }
   .scene-front .petal.front { animation: petal-fall calc(5s + var(--i) * .6s) linear calc(var(--i) * -.9s) infinite; }
 }
