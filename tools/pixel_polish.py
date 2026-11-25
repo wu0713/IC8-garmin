@@ -265,6 +265,9 @@ TUNE = {
     "orc": {"sat": 1.12, "contrast": 1.08, "min_bit": 30, "peel": 1, "blobs": True},
     "goblin": {"sat": 1.12, "contrast": 1.08, "min_bit": 30, "peel": 1, "blobs": True},
     "paladin": {"sat": 1.12, "contrast": 1.08, "min_bit": 30, "peel": 1, "blobs": True},
+    # 天海神龍：雲是灰白色，只剝 2 層灰邊；火龍：沒有灰色部位，照一般方式剝
+    "sea_dragon": {"sat": 1.15, "contrast": 1.08, "min_bit": 30, "peel": 2, "blobs": True},
+    "flame_dragon": {"sat": 1.15, "contrast": 1.08, "min_bit": 30, "blobs": True},
     "fox_spirit": {"sat": 1.25, "contrast": 1.08},   # 和服的紅、紫、金更華麗
     # 魅魔：跟九尾狐的粉紅分開 → 粉紅轉成深紫紅、整體暗一點；翅膀和魔力圈裡夾著背景棋盤格
     "succubus": {"sat": 1.2, "contrast": 1.12, "holes": True, "hue": [(296, 8, -30, 0.84)]},

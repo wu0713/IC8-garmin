@@ -2106,5 +2106,174 @@
     }
    ]
   }
+ },
+ "sea_dragon": {
+  "1": {
+   "w": 92,
+   "h": 94,
+   "base": "/characters/sea_dragon/rig/1_base.png",
+   "parts": [
+    {
+     "name": "tail",
+     "file": "/characters/sea_dragon/rig/1_tail.png",
+     "x": 25,
+     "y": 60,
+     "w": 27,
+     "h": 33,
+     "px": 40,
+     "py": 64,
+     "motion": "wag"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/sea_dragon/rig/1_torso.png",
+     "x": 15,
+     "y": 9,
+     "w": 70,
+     "h": 51,
+     "px": 50,
+     "py": 60,
+     "motion": "breath"
+    }
+   ]
+  },
+  "2": {
+   "w": 123,
+   "h": 79,
+   "base": "/characters/sea_dragon/rig/2_base.png",
+   "parts": [
+    {
+     "name": "tail",
+     "file": "/characters/sea_dragon/rig/2_tail.png",
+     "x": 1,
+     "y": 17,
+     "w": 43,
+     "h": 53,
+     "px": 42,
+     "py": 40,
+     "motion": "wag"
+    },
+    {
+     "name": "beast",
+     "file": "/characters/sea_dragon/rig/2_beast.png",
+     "x": 86,
+     "y": 13,
+     "w": 34,
+     "h": 57,
+     "px": 88,
+     "py": 40,
+     "motion": "nod"
+    }
+   ]
+  },
+  "3": {
+   "w": 134,
+   "h": 132,
+   "base": "/characters/sea_dragon/rig/3_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/sea_dragon/rig/3_head.png",
+     "x": 90,
+     "y": 1,
+     "w": 38,
+     "h": 69,
+     "px": 95,
+     "py": 55,
+     "motion": "tilt"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/sea_dragon/rig/3_tail.png",
+     "x": 96,
+     "y": 80,
+     "w": 34,
+     "h": 47,
+     "px": 100,
+     "py": 95,
+     "motion": "wag"
+    }
+   ]
+  },
+  "4": {
+   "w": 150,
+   "h": 140,
+   "base": "/characters/sea_dragon/rig/4_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/sea_dragon/rig/4_head.png",
+     "x": 85,
+     "y": 2,
+     "w": 48,
+     "h": 53,
+     "px": 95,
+     "py": 50,
+     "motion": "tilt"
+    },
+    {
+     "name": "cloudL",
+     "file": "/characters/sea_dragon/rig/4_cloudL.png",
+     "x": 9,
+     "y": 12,
+     "w": 37,
+     "h": 30,
+     "px": 25,
+     "py": 25,
+     "motion": "drift"
+    },
+    {
+     "name": "cloudR",
+     "file": "/characters/sea_dragon/rig/4_cloudR.png",
+     "x": 94,
+     "y": 104,
+     "w": 52,
+     "h": 34,
+     "px": 120,
+     "py": 120,
+     "motion": "drift"
+    }
+   ]
+  },
+  "5": {
+   "w": 162,
+   "h": 152,
+   "base": "/characters/sea_dragon/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/sea_dragon/rig/5_head.png",
+     "x": 70,
+     "y": 8,
+     "w": 60,
+     "h": 66,
+     "px": 100,
+     "py": 72,
+     "motion": "tilt"
+    },
+    {
+     "name": "cloudL",
+     "file": "/characters/sea_dragon/rig/5_cloudL.png",
+     "x": 2,
+     "y": 4,
+     "w": 60,
+     "h": 44,
+     "px": 30,
+     "py": 25,
+     "motion": "drift"
+    },
+    {
+     "name": "cloudR",
+     "file": "/characters/sea_dragon/rig/5_cloudR.png",
+     "x": 130,
+     "y": 13,
+     "w": 27,
+     "h": 37,
+     "px": 136,
+     "py": 30,
+     "motion": "drift"
+    }
+   ]
+  }
  }
 }

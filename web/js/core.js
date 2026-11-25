@@ -189,6 +189,8 @@ const PET_FX = {
   goblin: { from: 2, aura: "190,230,70", orb: "coin", colors: ["#5A3A0A", "#E8B830", "#FFF2A0"], spark: "#FFE27A" },
   // 聖騎士：聖光的金色光暈，環繞發光的十字星；披風擺動，熾天使型態浮空
   paladin: { from: 2, aura: "255,215,120", orb: "holy", colors: ["#8A6A1A", "#FFD24A", "#FFFFFF"], spark: "#FFF2B0", float: 5, sway: 4 },
+  // 天海神龍：水藍色光暈，環繞龍珠；整隻浮空
+  sea_dragon: { from: 2, aura: "90,200,255", orb: "pearl", colors: ["#1A4A7A", "#7FD4FF", "#FFFFFF"], spark: "#CFF2FF", float: 1, sway: 3 },
   beast_tamer: { from: 2, aura: "140,215,100", orb: "leaf", colors: ["#28501C", "#68AE36", "#D2F59A"], spark: "#CFF59A", sway: 2 },
 };
 const ORB_GRID = {
@@ -199,6 +201,7 @@ const ORB_GRID = {
   rune: [".11111.", "1222221", "1232321", "1223221", "1232321", "1222221", ".11111."],
   coin: ["..111..", ".12221.", "1223221", "1232321", "1223221", ".12221.", "..111.."],
   holy: ["...1...", "..121..", "1123211", "1233321", "1123211", "..121..", "...1..."],
+  pearl: ["..111..", ".12221.", "1233221", "1232221", "1222221", ".12221.", "..111.."],
   wisp: ["..111..", ".12221.", "1233321", "1233321", ".12321.", "..121..", "...1..."],
   leaf: ["....111", "...1221", "..12321", ".123221", "1232211", "122211.", "1111...", "1......"],
 };
@@ -402,6 +405,22 @@ const PET_SCENE = {
     const motes = Array.from({ length: 7 }, (_, i) => `<i class="petal mote" style="--i:${i}"></i>`).join("");
     return `<svg class="scene-art" viewBox="0 0 160 80" preserveAspectRatio="xMidYMax slice" shape-rendering="crispEdges">${s}</svg>${motes}<i class="godray"></i>`;
   },
+  // 天海神龍：日出的雲海與大海，仙山和樓閣、浪花，雲慢慢飄、海浪起伏
+  sea_dragon: () => {
+    let s = bands(0, ["#4A7FB8", "#5B8DC0", "#6C9BC6", "#7FA9CB", "#93B6CD", "#A8C2CC", "#BCCBC6", "#D0D2BE", "#E2D6B2", "#F0D6A4"], 5);
+    s += pxCircle(120, 40, 8, "#FFE9B0") + pxCircle(120, 40, 6, "#FFF6D8");
+    // 仙山（山峰尖尖、有樓閣）
+    const peak = (x, b, h, w, c) => { let t = ""; for (let i = 0; i < h; i++) { const ww = Math.max(1, Math.round(w * (i / h))); t += PX(x - ww, b - h + i, ww * 2, 1, c); } return t; };
+    s += peak(26, 44, 30, 10, "#5E7A8A") + peak(44, 44, 20, 9, "#728C98") + peak(140, 44, 26, 9, "#5E7A8A") + peak(150, 44, 16, 7, "#728C98");
+    s += PX(22, 12, 9, 2, "#8A2A2A") + PX(23, 14, 7, 3, "#C8B080") + PX(21, 11, 11, 1, "#5A1A1A") + PX(136, 16, 8, 2, "#8A2A2A") + PX(137, 18, 6, 2, "#C8B080");
+    // 雲海帶
+    for (let x = 0; x < 160; x += 3) { const y = 40 + Math.round(2 * Math.sin(x / 7)); s += PX(x, y, 4, 6, "#F2F4F2") + PX(x, y + 5, 4, 2, "#D2DCE2"); }
+    // 大海
+    s += PX(0, 48, 160, 32, "#2E6E9E") + PX(0, 48, 160, 2, "#5FA6CE") + PX(0, 62, 160, 18, "#245A84");
+    for (let y = 52; y < 80; y += 5) for (let x = (y * 3) % 12; x < 160; x += 14) s += PX(x, y, 6, 1, "#7FC2E2");
+    s += PX(104, 50, 32, 2, "#FFE9B0") + PX(110, 54, 20, 1, "#FFE9B0");
+    return `<svg class="scene-art" viewBox="0 0 160 80" preserveAspectRatio="xMidYMax slice" shape-rendering="crispEdges">${s}</svg><i class="cloud" style="--i:0"></i><i class="cloud" style="--i:1"></i><i class="cloud" style="--i:2"></i>`;
+  },
   // 精靈使：月夜的精靈泉，極光、古樹、發光的蘑菇，螢火慢慢往上飄
   spirit: () => {
     let s = bands(0, ["#0B1430", "#0E1B3B", "#112346", "#142C50", "#17365A", "#1A4062", "#1D4A69", "#20536E", "#235B72", "#266274"], 5);
@@ -499,6 +518,11 @@ const PET_FRONT = {
     s += PX(62, 6, 36, 4, "#A82A30") + PX(62, 6, 36, 1, "#E8C040");
     return `<svg class="front-art" viewBox="0 0 160 10" preserveAspectRatio="none" shape-rendering="crispEdges">${s}</svg>`;
   },
+  sea_dragon: () => {
+    let s = "";
+    for (let x = 0; x < 160; x += 4) { const h = 2 + ((x * 5) % 3); s += PX(x, 10 - h, 4, h, "#3E86B6") + PX(x, 10 - h, 3, 1, "#E8F6FF"); }
+    return `<svg class="front-art waves" viewBox="0 0 160 10" preserveAspectRatio="none" shape-rendering="crispEdges">${s}</svg>`;
+  },
   necromancer: () => `<i class="mist green front"></i><i class="mist green front m2"></i>`,
   spirit: () => {
     let s = "";
@@ -523,7 +547,7 @@ const petFront = (id) => (PET_FRONT[id] ? `<span class="scene-front" aria-hidden
 
 // 夥伴圖：有拆部位的（rigs.json）用分層組回角色，點擊時頭、翅膀、尾巴、下襬各自動；沒有的用整張圖
 // 圖層順序：翅膀、尾巴、魔力圈在身體後面；上半身、頭在前面。腳留在身體層，不另外動
-const RIG_Z = { wingL: 0, wingR: 0, tail: 0, tailL: 0, tailR: 0, ringL: 0, ringR: 0, torso: 2, head: 3, beast: 2, mane: 2, crystal: 3, wisp: 3, fairy: 3, ghost: 3, flame: 3, minion: 2, armL: 2, armR: 2, cape: 0, weapon: 3 };
+const RIG_Z = { wingL: 0, wingR: 0, tail: 0, tailL: 0, tailR: 0, ringL: 0, ringR: 0, torso: 2, head: 3, beast: 2, mane: 2, crystal: 3, wisp: 3, fairy: 3, ghost: 3, flame: 3, minion: 2, armL: 2, armR: 2, cape: 0, weapon: 3, cloudL: 3, cloudR: 3 };
 function petSprite(id, stage, boxH) {
   const rig = S.rigs?.[id]?.[stage + 1], sp = species(id);
   if (!rig || !sp) return charImg(id, stage, boxH);

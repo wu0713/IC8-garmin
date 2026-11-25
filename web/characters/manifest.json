@@ -310,36 +310,36 @@
      "name": "靈錦鯉",
      "en": "Spirit Koi",
      "file": "/characters/sea_dragon/1.png",
-     "w": 90,
-     "h": 92
+     "w": 92,
+     "h": 94
     },
     {
      "name": "角河魚",
      "en": "Horned River Fish",
      "file": "/characters/sea_dragon/2.png",
-     "w": 121,
-     "h": 77
+     "w": 123,
+     "h": 79
     },
     {
      "name": "水蛟龍",
      "en": "Water Jiaolong",
      "file": "/characters/sea_dragon/3.png",
-     "w": 132,
-     "h": 130
+     "w": 134,
+     "h": 132
     },
     {
      "name": "騰雲龍",
      "en": "Cloud Ascendant Dragon",
      "file": "/characters/sea_dragon/4.png",
-     "w": 148,
-     "h": 138
+     "w": 150,
+     "h": 140
     },
     {
      "name": "天海神龍",
      "en": "Celestial Sea Dragon",
      "file": "/characters/sea_dragon/5.png",
-     "w": 160,
-     "h": 150
+     "w": 162,
+     "h": 152
     }
    ]
   },
@@ -478,36 +478,36 @@
      "name": "龍蛋",
      "en": "Hatchling",
      "file": "/characters/flame_dragon/1.png",
-     "w": 48,
-     "h": 63
+     "w": 50,
+     "h": 65
     },
     {
      "name": "幼龍",
      "en": "Fledgling Drake",
      "file": "/characters/flame_dragon/2.png",
-     "w": 174,
-     "h": 81
+     "w": 176,
+     "h": 83
     },
     {
      "name": "成年火龍",
      "en": "Adult Flame Dragon",
      "file": "/characters/flame_dragon/3.png",
-     "w": 194,
-     "h": 131
+     "w": 196,
+     "h": 133
     },
     {
      "name": "熔岩霸龍",
      "en": "Magma Overlord Dragon",
      "file": "/characters/flame_dragon/4.png",
-     "w": 193,
-     "h": 143
+     "w": 195,
+     "h": 145
     },
     {
      "name": "末日古龍",
      "en": "Apocalypse Ancient Dragon",
      "file": "/characters/flame_dragon/5.png",
-     "w": 229,
-     "h": 132
+     "w": 231,
+     "h": 134
     }
    ]
   }

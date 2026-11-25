@@ -877,6 +877,8 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
 .scene .petal.mote { width: 3px; height: 3px; background: #FFF2B0; box-shadow: 0 0 4px rgba(255, 230, 150, .9); }
 .scene .godray { position: absolute; left: 30%; top: 30%; width: 40%; height: 70%; background: linear-gradient(rgba(255, 242, 192, .25), rgba(255, 242, 192, 0));
   clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%); }
+.scene .cloud { position: absolute; top: calc(8% + var(--i) * 13%); left: -30%; width: 46px; height: 12px; background: #F6F8F8;
+  box-shadow: 8px -6px 0 -1px #F6F8F8, 22px -4px 0 0 #F6F8F8, 0 3px 0 #D6E0E6; opacity: .9; }
 .scene .star { position: absolute; width: 3px; height: 3px; background: #FFF4D6; box-shadow: 0 0 4px #FFF4D6; }
 .scene .mist { position: absolute; left: -40%; bottom: 14%; width: 180%; height: 22px; opacity: .55;
   background: repeating-linear-gradient(90deg, rgba(190, 130, 230, .0) 0 18px, rgba(190, 130, 230, .35) 18px 60px, rgba(190, 130, 230, 0) 60px 90px); }
@@ -903,6 +905,10 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
   @keyframes drip-fall { 0%, 40% { opacity: 0; transform: translateY(0); } 45% { opacity: 1; } 100% { opacity: .8; transform: translateY(150px); } }
   .scene .godray { animation: ray-pulse 4s ease-in-out infinite; }
   @keyframes ray-pulse { 50% { opacity: .45; } }
+  .scene .cloud { animation: cloud-drift calc(26s + var(--i) * 9s) linear calc(var(--i) * -11s) infinite; }
+  @keyframes cloud-drift { to { left: 120%; } }
+  .scene-front .waves { animation: wave-bob 2s steps(2) infinite; }
+  @keyframes wave-bob { 50% { transform: translateX(-3px) translateY(1px); } }
   .scene .bird { animation: bird-fly calc(11s + var(--i) * 4s) linear calc(var(--i) * -6s) infinite, bird-flap .5s steps(2) infinite; }
   @keyframes bird-fly { 0% { left: -10%; } 100% { left: 110%; transform: translateY(-14px); } }
   @keyframes bird-flap { 50% { background-position: 0 1px, 4px 1px, 2px 0; } }
@@ -939,6 +945,9 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
 .stage[data-scene="paladin"] .pet img, .stage[data-scene="paladin"] .pet .wavy {
   filter: drop-shadow(0 -2px 0 rgba(255, 242, 200, .6)) drop-shadow(0 0 10px rgba(255, 215, 120, .35)); }
 .stage[data-scene="paladin"] .pet-shadow { background: rgba(60, 40, 40, .45); }
+.stage[data-scene="sea_dragon"] .pet img, .stage[data-scene="sea_dragon"] .pet .wavy {
+  filter: drop-shadow(2px 0 0 rgba(255, 236, 190, .6)) drop-shadow(0 0 10px rgba(90, 200, 255, .35)); }
+.stage[data-scene="sea_dragon"] .pet-shadow { background: rgba(10, 40, 70, .45); }
 .stage[data-scene="spirit"] .pet img, .stage[data-scene="spirit"] .pet .wavy {
   filter: brightness(.95) drop-shadow(-2px 0 0 rgba(220, 255, 245, .55)) drop-shadow(0 0 10px rgba(110, 230, 205, .35)); }
 .stage[data-scene="spirit"] .pet-shadow { background: rgba(5, 20, 25, .55); box-shadow: 0 0 14px 4px rgba(110, 230, 205, .2); }
@@ -976,6 +985,10 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
   .pet.react .rig .rp-swing { animation: smash .9s cubic-bezier(.3, 1.4, .5, 1) 1; }
   @keyframes idle-swing { 50% { rotate: -3deg; } }
   @keyframes smash { 0% { rotate: 0deg; } 30% { rotate: -28deg; } 55% { rotate: 8deg; } 100% { rotate: 0deg; } }
+  .rig .rp-drift { animation: idle-drift 6s ease-in-out infinite; }
+  .pet.react .rig .rp-drift { animation: puff .8s ease-out 1; }
+  @keyframes idle-drift { 50% { translate: 3px 0; } }
+  @keyframes puff { 40% { scale: 1.12; } }
   .rig .rp-nod { animation: idle-nod 4s ease-in-out infinite; }
   .rig .rp-bob { animation: idle-bob 3s steps(6, jump-none) infinite alternate; }
   .rig .rp-flicker { animation: idle-flicker .9s steps(2) infinite; }
