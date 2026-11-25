@@ -32,8 +32,8 @@ async function viewMe() {
     const sp = species(g.character.species);
     const nextLv = g.next_stage_level;
     hero = `<section class="hero" aria-labelledby="pet">
-      <div class="stage ${sceneCls(sp.id)}">${petScene(sp.id)}<button class="pet s${g.stage} ${petCls(sp.id, g.stage)}" id="pet-btn" data-sp="${sp.id}" style="${petSpark(sp.id) ? `--spark:${petSpark(sp.id)}` : ""}" aria-label="跟${esc(g.character.nickname)}互動">
-        ${petFx(sp.id, g.stage)}<span class="pet-fx" aria-hidden="true"><i></i><i></i><i></i><i></i></span>${charImg(sp.id, g.stage, 200)}<span class="pet-shadow"></span></button></div>
+      <div class="stage ${sceneCls(sp.id)}" data-scene="${sp.id}">${petScene(sp.id)}<button class="pet s${g.stage} ${petCls(sp.id, g.stage)}" id="pet-btn" data-sp="${sp.id}" style="${petSpark(sp.id) ? `--spark:${petSpark(sp.id)}` : ""}" aria-label="跟${esc(g.character.nickname)}互動">
+        ${petFx(sp.id, g.stage)}<span class="pet-fx" aria-hidden="true"><i></i><i></i><i></i><i></i></span>${petSprite(sp.id, g.stage, 200)}<span class="pet-shadow"></span></button>${petFront(sp.id)}</div>
       <div class="hero-info">
         <p class="sp">${esc(sp.name)}，第 ${g.stage + 1} 階段「${esc(g.character.stage_name)}」</p>
         <h2 id="pet">${esc(g.character.nickname)}</h2>
@@ -186,8 +186,8 @@ function previewPet(id, stage) {
   const draw = (box, i) => {
     box.querySelector(".prev-body").innerHTML = `
       <p class="muted">第 ${i + 1} 階段「${esc(sp.stages[i].name)}」${lv[i] ? `，Lv ${lv[i]} 進化` : ""}</p>
-      <div class="stage ${sceneCls(id)}" style="margin-top:8px">${petScene(id)}<button class="pet s${i} ${petCls(id, i)}" type="button" id="prev-pet" style="${petSpark(id) ? `--spark:${petSpark(id)}` : ""}" aria-label="跟牠互動">
-        ${petFx(id, i)}<span class="pet-fx" aria-hidden="true"><i></i><i></i><i></i><i></i></span>${charImg(id, i, 200)}<span class="pet-shadow"></span></button></div>
+      <div class="stage ${sceneCls(id)}" data-scene="${id}" style="margin-top:8px">${petScene(id)}<button class="pet s${i} ${petCls(id, i)}" type="button" id="prev-pet" style="${petSpark(id) ? `--spark:${petSpark(id)}` : ""}" aria-label="跟牠互動">
+        ${petFx(id, i)}<span class="pet-fx" aria-hidden="true"><i></i><i></i><i></i><i></i></span>${petSprite(id, i, 200)}<span class="pet-shadow"></span></button>${petFront(id)}</div>
       <div class="seg prev-stages" role="group" aria-label="階段">${sp.stages.map((_, k) => `<button type="button" data-st="${k}" aria-pressed="${k === i}">${k + 1}</button>`).join("")}</div>
       <p class="muted" style="margin-top:6px;text-align:center">點牠看看反應</p>`;
     const pet = box.querySelector("#prev-pet");

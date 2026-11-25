@@ -259,6 +259,36 @@ function petScene(id) {
   const f = PET_SCENE[id];
   return f ? `<span class="scene scene-${id}" aria-hidden="true">${f()}</span>` : "";
 }
+// 前景：疊在角色前面的草叢、霧，讓角色像站在場景裡
+const PET_FRONT = {
+  fox_spirit: () => {
+    let s = "";
+    for (let x = 0; x < 160; x += 3) {
+      const h = 2 + ((x * 7) % 5);
+      s += PX(x, 10 - h, 2, h, x % 2 ? "#2E4A3A" : "#3E6249") + PX(x + 1, 10 - h + 1, 1, h - 1, "#4F7A58");
+    }
+    return `<svg class="front-art" viewBox="0 0 160 10" preserveAspectRatio="none" shape-rendering="crispEdges">${s}</svg>` +
+      `<i class="petal front" style="--i:2"></i><i class="petal front" style="--i:5"></i>`;
+  },
+  succubus: () => `<i class="mist front"></i><i class="mist front m2"></i>`,
+};
+const petFront = (id) => (PET_FRONT[id] ? `<span class="scene-front" aria-hidden="true">${PET_FRONT[id]()}</span>` : "");
+
+// 會流動的角色：把圖切成橫向細條，越下面擺得越大，頭髮、尾巴、披風、裙襬像被風吹
+function petSprite(id, stage, boxH) {
+  const fx = PET_FX[id], sp = species(id);
+  if (!sp || !fx || fx.sway == null || stage < fx.sway) return charImg(id, stage, boxH);
+  const st = sp.stages[stage] || sp.stages[0];
+  const scale = boxH / Math.max(...sp.stages.map((x) => x.h));
+  const w = Math.round(st.w * scale), h = Math.round(st.h * scale), N = 18;
+  let slices = "";
+  for (let k = 0; k < N; k++) {
+    const top = Math.round((k * h) / N), bot = Math.round(((k + 1) * h) / N);
+    const a = Math.pow(k / (N - 1), 1.7) * 4.5;
+    slices += `<i style="top:${top}px;height:${bot - top + 1}px;background-position:0 -${top}px;--a:${a.toFixed(2)}px;--d:${(-k * 0.11).toFixed(2)}s"></i>`;
+  }
+  return `<span class="wavy" role="img" aria-label="${esc(st.name)}" style="width:${w}px;height:${h}px;--src:url('${st.file}');--bw:${w}px;--bh:${h}px">${slices}</span>`;
+}
 const sceneCls = (id) => (PET_SCENE[id] ? "has-scene" : "");
 
 // scale：同一系列所有階段用同一個倍率，所以越後面的階段畫面上越大
