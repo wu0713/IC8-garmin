@@ -185,6 +185,8 @@ const PET_FX = {
   demon: { from: 2, aura: "255,80,40", orb: "flame", colors: ["#5A0A08", "#FF5A1F", "#FFE07A"], spark: "#FF9A5A", sway: 1 },
   // 獸人：戰意的橘紅光暈，環繞發光的符文石
   orc: { from: 2, aura: "240,110,50", orb: "rune", colors: ["#2A1A10", "#6B4A2E", "#FF8A2A"], spark: "#FFB070", sway: 3 },
+  // 哥布林：黃綠色的光暈，環繞搶來的金幣
+  goblin: { from: 2, aura: "190,230,70", orb: "coin", colors: ["#5A3A0A", "#E8B830", "#FFF2A0"], spark: "#FFE27A" },
   beast_tamer: { from: 2, aura: "140,215,100", orb: "leaf", colors: ["#28501C", "#68AE36", "#D2F59A"], spark: "#CFF59A", sway: 2 },
 };
 const ORB_GRID = {
@@ -193,6 +195,7 @@ const ORB_GRID = {
   skull: [".11111.", "1222221", "1322231", "1222221", ".12221.", ".12121.", "..111.."],
   rock: ["..111..", ".12221.", "1222231", "1223321", ".12221.", "..111.."],
   rune: [".11111.", "1222221", "1232321", "1223221", "1232321", "1222221", ".11111."],
+  coin: ["..111..", ".12221.", "1223221", "1232321", "1223221", ".12221.", "..111.."],
   wisp: ["..111..", ".12221.", "1233321", "1233321", ".12321.", "..121..", "...1..."],
   leaf: ["....111", "...1221", "..12321", ".123221", "1232211", "122211.", "1111...", "1......"],
 };
@@ -353,6 +356,27 @@ const PET_SCENE = {
     const smoke = Array.from({ length: 4 }, (_, i) => `<i class="smoke" style="--i:${i}"></i>`).join("");
     return `<svg class="scene-art" viewBox="0 0 160 80" preserveAspectRatio="xMidYMax slice" shape-rendering="crispEdges">${s}</svg>${smoke}<i class="banner" style="left:36.9%;top:28%"></i><i class="banner b2" style="left:63.1%;top:33%"></i>`;
   },
+  // 哥布林：藏寶的洞窟，鐘乳石、火把、發光蘑菇、金幣堆，火把閃爍、水滴落下
+  goblin: () => {
+    let s = bands(0, ["#120E0C", "#16110E", "#1A1410", "#1E1712", "#221A14", "#261D16", "#2A2018", "#2E231A", "#32261C", "#36291E"], 5);
+    // 洞口透進來的光（後面）
+    s += pxCircle(80, 30, 16, "#2C3A3A") + pxCircle(80, 30, 12, "#3A4E4A") + pxCircle(80, 30, 8, "#4E6A62");
+    // 鐘乳石
+    for (let x = 0; x < 160; x += 7) { const h = 4 + ((x * 11) % 9); for (let i = 0; i < h; i++) s += PX(x + Math.floor(i / 3), i, Math.max(1, 5 - Math.floor(i / 2)), 1, i % 3 ? "#2E2620" : "#3E342A"); }
+    // 洞壁
+    s += PX(0, 0, 10, 50, "#1E1814") + PX(150, 0, 10, 50, "#1E1814") + PX(10, 10, 4, 36, "#28201A") + PX(146, 14, 4, 32, "#28201A");
+    // 地面
+    s += PX(0, 46, 160, 34, "#3A3026") + PX(0, 46, 160, 2, "#4A3E30") + PX(0, 62, 160, 18, "#2E261E");
+    // 金幣堆（右邊）
+    for (let i = 0; i < 6; i++) s += PX(120 + i * 2, 52 - i, 22 - i * 4, 1, i % 2 ? "#E8B830" : "#C8961E");
+    s += PX(124, 52, 18, 3, "#C8961E") + PX(128, 47, 2, 2, "#FFF2A0") + PX(136, 49, 2, 2, "#FFF2A0") + PX(118, 50, 4, 4, "#7A4A1A") + PX(119, 51, 2, 1, "#E8B830");
+    // 發光蘑菇（左邊）
+    [[24, 54], [30, 57], [36, 55]].forEach(([x, y]) => (s += PX(x, y, 1, 3, "#CBD6B0") + PX(x - 2, y - 2, 5, 2, "#B8E06A") + PX(x - 1, y - 3, 3, 1, "#E4FF9A")));
+    // 火把
+    s += PX(20, 24, 2, 10, "#5A3A1A") + PX(140, 26, 2, 10, "#5A3A1A");
+    const drips = [0, 1, 2].map((i) => `<i class="drip" style="--i:${i}"></i>`).join("");
+    return `<svg class="scene-art" viewBox="0 0 160 80" preserveAspectRatio="xMidYMax slice" shape-rendering="crispEdges">${s}</svg>${drips}<i class="torch" style="left:13.1%;top:24%"></i><i class="torch" style="left:87.6%;top:26.5%"></i>`;
+  },
   // 精靈使：月夜的精靈泉，極光、古樹、發光的蘑菇，螢火慢慢往上飄
   spirit: () => {
     let s = bands(0, ["#0B1430", "#0E1B3B", "#112346", "#142C50", "#17365A", "#1A4062", "#1D4A69", "#20536E", "#235B72", "#266274"], 5);
@@ -436,6 +460,12 @@ const PET_FRONT = {
     let s = "";
     for (let x = 0; x < 160; x += 3) { const h = 1 + ((x * 5) % 4); s += PX(x, 10 - h, 3, h, x % 2 ? "#4E3420" : "#5E4028"); }
     s += PX(10, 3, 2, 7, "#3A2416") + PX(9, 2, 4, 1, "#3A2416") + PX(148, 4, 2, 6, "#3A2416") + PX(147, 3, 4, 1, "#3A2416");
+    return `<svg class="front-art" viewBox="0 0 160 10" preserveAspectRatio="none" shape-rendering="crispEdges">${s}</svg>`;
+  },
+  goblin: () => {
+    let s = "";
+    for (let x = 0; x < 160; x += 4) { const h = 2 + ((x * 7) % 4); s += PX(x, 10 - h, 4, h, x % 8 ? "#2A221A" : "#3A3026"); }
+    s += PX(30, 7, 3, 2, "#E8B830") + PX(112, 8, 3, 2, "#E8B830") + PX(70, 8, 2, 1, "#FFF2A0");
     return `<svg class="front-art" viewBox="0 0 160 10" preserveAspectRatio="none" shape-rendering="crispEdges">${s}</svg>`;
   },
   necromancer: () => `<i class="mist green front"></i><i class="mist green front m2"></i>`,

@@ -1658,5 +1658,229 @@
     }
    ]
   }
+ },
+ "goblin": {
+  "1": {
+   "w": 82,
+   "h": 83,
+   "base": "/characters/goblin/rig/1_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/goblin/rig/1_head.png",
+     "x": 2,
+     "y": 3,
+     "w": 52,
+     "h": 35,
+     "px": 28,
+     "py": 38,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/goblin/rig/1_weapon.png",
+     "x": 50,
+     "y": 22,
+     "w": 24,
+     "h": 34,
+     "px": 50,
+     "py": 50,
+     "motion": "swing"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/goblin/rig/1_torso.png",
+     "x": 8,
+     "y": 38,
+     "w": 42,
+     "h": 24,
+     "px": 28,
+     "py": 62,
+     "motion": "breath"
+    }
+   ]
+  },
+  "2": {
+   "w": 89,
+   "h": 98,
+   "base": "/characters/goblin/rig/2_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/goblin/rig/2_head.png",
+     "x": 8,
+     "y": 2,
+     "w": 54,
+     "h": 38,
+     "px": 34,
+     "py": 40,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/goblin/rig/2_weapon.png",
+     "x": 64,
+     "y": 31,
+     "w": 25,
+     "h": 29,
+     "px": 64,
+     "py": 58,
+     "motion": "swing"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/goblin/rig/2_torso.png",
+     "x": 12,
+     "y": 40,
+     "w": 52,
+     "h": 32,
+     "px": 36,
+     "py": 72,
+     "motion": "breath"
+    }
+   ]
+  },
+  "3": {
+   "w": 95,
+   "h": 117,
+   "base": "/characters/goblin/rig/3_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/goblin/rig/3_head.png",
+     "x": 11,
+     "y": 2,
+     "w": 53,
+     "h": 40,
+     "px": 36,
+     "py": 42,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/goblin/rig/3_weapon.png",
+     "x": 66,
+     "y": 48,
+     "w": 25,
+     "h": 30,
+     "px": 66,
+     "py": 64,
+     "motion": "swing"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/goblin/rig/3_torso.png",
+     "x": 8,
+     "y": 42,
+     "w": 58,
+     "h": 40,
+     "px": 36,
+     "py": 82,
+     "motion": "breath"
+    }
+   ]
+  },
+  "4": {
+   "w": 101,
+   "h": 126,
+   "base": "/characters/goblin/rig/4_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/goblin/rig/4_head.png",
+     "x": 14,
+     "y": 2,
+     "w": 50,
+     "h": 40,
+     "px": 38,
+     "py": 42,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/goblin/rig/4_weapon.png",
+     "x": 70,
+     "y": 49,
+     "w": 30,
+     "h": 33,
+     "px": 70,
+     "py": 66,
+     "motion": "swing"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/goblin/rig/4_torso.png",
+     "x": 8,
+     "y": 42,
+     "w": 62,
+     "h": 44,
+     "px": 36,
+     "py": 86,
+     "motion": "breath"
+    }
+   ]
+  },
+  "5": {
+   "w": 163,
+   "h": 165,
+   "base": "/characters/goblin/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/goblin/rig/5_head.png",
+     "x": 52,
+     "y": 14,
+     "w": 60,
+     "h": 38,
+     "px": 80,
+     "py": 52,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/goblin/rig/5_weapon.png",
+     "x": 118,
+     "y": 12,
+     "w": 32,
+     "h": 68,
+     "px": 124,
+     "py": 72,
+     "motion": "swing"
+    },
+    {
+     "name": "beast",
+     "file": "/characters/goblin/rig/5_beast.png",
+     "x": 132,
+     "y": 70,
+     "w": 28,
+     "h": 48,
+     "px": 134,
+     "py": 95,
+     "motion": "nod"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/goblin/rig/5_tail.png",
+     "x": 1,
+     "y": 106,
+     "w": 45,
+     "h": 24,
+     "px": 42,
+     "py": 115,
+     "motion": "wag"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/goblin/rig/5_torso.png",
+     "x": 48,
+     "y": 52,
+     "w": 72,
+     "h": 38,
+     "px": 84,
+     "py": 90,
+     "motion": "breath"
+    }
+   ]
+  }
  }
 }
