@@ -268,36 +268,36 @@
      "name": "獸人步兵",
      "en": "Orc Grunt",
      "file": "/characters/orc/1.png",
-     "w": 80,
-     "h": 81
+     "w": 82,
+     "h": 83
     },
     {
      "name": "獸人掠奪者",
      "en": "Orc Raider",
      "file": "/characters/orc/2.png",
-     "w": 116,
-     "h": 105
+     "w": 118,
+     "h": 107
     },
     {
      "name": "獸人狂戰士",
      "en": "Orc Berserker",
      "file": "/characters/orc/3.png",
-     "w": 148,
-     "h": 122
+     "w": 150,
+     "h": 124
     },
     {
      "name": "獸人督軍",
      "en": "Orc Warlord",
      "file": "/characters/orc/4.png",
-     "w": 167,
-     "h": 143
+     "w": 169,
+     "h": 145
     },
     {
      "name": "獸人酋長",
      "en": "Orc Warchief",
      "file": "/characters/orc/5.png",
-     "w": 180,
-     "h": 154
+     "w": 182,
+     "h": 156
     }
    ]
   },
@@ -394,36 +394,36 @@
      "name": "哥布林幼崽",
      "en": "Goblin Whelp",
      "file": "/characters/goblin/1.png",
-     "w": 80,
-     "h": 81
+     "w": 82,
+     "h": 83
     },
     {
      "name": "哥布林盜賊",
      "en": "Goblin Rogue",
      "file": "/characters/goblin/2.png",
-     "w": 87,
-     "h": 96
+     "w": 89,
+     "h": 98
     },
     {
      "name": "哥布林戰士",
      "en": "Goblin Warrior",
      "file": "/characters/goblin/3.png",
-     "w": 93,
-     "h": 115
+     "w": 95,
+     "h": 117
     },
     {
      "name": "哥布林首領",
      "en": "Goblin Chieftain",
      "file": "/characters/goblin/4.png",
-     "w": 99,
-     "h": 124
+     "w": 101,
+     "h": 126
     },
     {
      "name": "哥布林王",
      "en": "Goblin King",
      "file": "/characters/goblin/5.png",
-     "w": 161,
-     "h": 163
+     "w": 163,
+     "h": 165
     }
    ]
   },
@@ -436,36 +436,36 @@
      "name": "見習侍從",
      "en": "Young Squire",
      "file": "/characters/paladin/1.png",
-     "w": 64,
-     "h": 96
+     "w": 66,
+     "h": 98
     },
     {
      "name": "王國騎士",
      "en": "Kingdom Knight",
      "file": "/characters/paladin/2.png",
-     "w": 88,
-     "h": 103
+     "w": 90,
+     "h": 105
     },
     {
      "name": "聖殿騎士",
      "en": "Templar Knight",
      "file": "/characters/paladin/3.png",
-     "w": 107,
-     "h": 111
+     "w": 109,
+     "h": 113
     },
     {
      "name": "光輝聖騎士",
      "en": "Radiant Paladin",
      "file": "/characters/paladin/4.png",
-     "w": 133,
-     "h": 122
+     "w": 135,
+     "h": 124
     },
     {
      "name": "熾天使聖騎士",
      "en": "Divine Seraph Paladin",
      "file": "/characters/paladin/5.png",
-     "w": 191,
-     "h": 144
+     "w": 193,
+     "h": 146
     }
    ]
   },

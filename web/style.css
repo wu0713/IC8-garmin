@@ -867,6 +867,10 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
   background: repeating-linear-gradient(90deg, rgba(120, 230, 160, 0) 0 18px, rgba(120, 230, 160, .3) 18px 60px, rgba(120, 230, 160, 0) 60px 90px); }
 .scene .firefly.spore { width: 2px; height: 2px; background: #EAF7C8; box-shadow: 0 0 3px rgba(220, 255, 190, .8); }
 .scene .firefly.ember, .scene-front .firefly.ember { width: 3px; height: 3px; background: #FFB04A; box-shadow: 0 0 5px 1px rgba(255, 110, 40, .9); }
+.scene .smoke { position: absolute; left: calc(52% + var(--i) * 1%); bottom: 26%; width: 6px; height: 6px; background: rgba(90, 70, 60, .55); opacity: 0; }
+.scene .banner { position: absolute; width: 14px; height: 9px; background: #8E1E1A; box-shadow: inset 0 -2px 0 #5E1210, inset 3px 0 0 #2A1A10;
+  clip-path: polygon(0 0, 100% 0, 80% 50%, 100% 100%, 0 100%); transform-origin: left center; }
+.scene .banner.b2 { background: #2A1A10; box-shadow: inset 0 -2px 0 #8E1E1A; }
 .scene .star { position: absolute; width: 3px; height: 3px; background: #FFF4D6; box-shadow: 0 0 4px #FFF4D6; }
 .scene .mist { position: absolute; left: -40%; bottom: 14%; width: 180%; height: 22px; opacity: .55;
   background: repeating-linear-gradient(90deg, rgba(190, 130, 230, .0) 0 18px, rgba(190, 130, 230, .35) 18px 60px, rgba(190, 130, 230, 0) 60px 90px); }
@@ -883,6 +887,10 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
   .scene .firefly, .scene-front .firefly { animation: firefly-rise calc(5s + var(--i) * .8s) linear calc(var(--i) * -1.1s) infinite; }
   @keyframes firefly-rise { 0% { opacity: 0; transform: translate(0, 0); } 15% { opacity: 1; } 50% { transform: translate(8px, -60px); }
     85% { opacity: .9; } 100% { opacity: 0; transform: translate(-6px, -130px); } }
+  .scene .smoke { animation: smoke-rise calc(4s + var(--i) * .7s) steps(10) calc(var(--i) * -1.2s) infinite; }
+  @keyframes smoke-rise { 0% { opacity: 0; transform: translate(0, 0) scale(.6); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(-14px, -90px) scale(2.2); } }
+  .scene .banner { animation: banner-wave 1.6s steps(4) infinite; }
+  @keyframes banner-wave { 50% { transform: scaleX(.85) skewY(6deg); } }
   .scene .bird { animation: bird-fly calc(11s + var(--i) * 4s) linear calc(var(--i) * -6s) infinite, bird-flap .5s steps(2) infinite; }
   @keyframes bird-fly { 0% { left: -10%; } 100% { left: 110%; transform: translateY(-14px); } }
   @keyframes bird-flap { 50% { background-position: 0 1px, 4px 1px, 2px 0; } }
@@ -910,6 +918,9 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
 .stage[data-scene="demon"] .pet img, .stage[data-scene="demon"] .pet .wavy {
   filter: drop-shadow(2px 0 0 rgba(255, 120, 50, .6)) drop-shadow(0 2px 0 rgba(255, 90, 30, .5)) drop-shadow(0 0 10px rgba(255, 80, 30, .35)); }
 .stage[data-scene="demon"] .pet-shadow { background: rgba(10, 0, 0, .6); box-shadow: 0 0 14px 4px rgba(255, 90, 30, .2); }
+.stage[data-scene="orc"] .pet img, .stage[data-scene="orc"] .pet .wavy {
+  filter: drop-shadow(-2px 0 0 rgba(255, 200, 120, .55)) drop-shadow(0 0 9px rgba(255, 130, 50, .3)); }
+.stage[data-scene="orc"] .pet-shadow { background: rgba(40, 20, 8, .6); }
 .stage[data-scene="spirit"] .pet img, .stage[data-scene="spirit"] .pet .wavy {
   filter: brightness(.95) drop-shadow(-2px 0 0 rgba(220, 255, 245, .55)) drop-shadow(0 0 10px rgba(110, 230, 205, .35)); }
 .stage[data-scene="spirit"] .pet-shadow { background: rgba(5, 20, 25, .55); box-shadow: 0 0 14px 4px rgba(110, 230, 205, .2); }
@@ -943,6 +954,10 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
   @keyframes idle-swayR { 50% { rotate: -3deg; } }
   @keyframes punchL { 30% { rotate: 14deg; } 100% { rotate: 0deg; } }
   @keyframes punchR { 30% { rotate: -14deg; } 100% { rotate: 0deg; } }
+  .rig .rp-swing { animation: idle-swing 4s ease-in-out infinite; }
+  .pet.react .rig .rp-swing { animation: smash .9s cubic-bezier(.3, 1.4, .5, 1) 1; }
+  @keyframes idle-swing { 50% { rotate: -3deg; } }
+  @keyframes smash { 0% { rotate: 0deg; } 30% { rotate: -28deg; } 55% { rotate: 8deg; } 100% { rotate: 0deg; } }
   .rig .rp-nod { animation: idle-nod 4s ease-in-out infinite; }
   .rig .rp-bob { animation: idle-bob 3s steps(6, jump-none) infinite alternate; }
   .rig .rp-flicker { animation: idle-flicker .9s steps(2) infinite; }

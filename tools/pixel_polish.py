@@ -142,6 +142,27 @@ def colorize(img, hue, sat=90, max_sat=70, darken=1.0):
     return Image.fromarray(hsv.astype(np.uint8), "HSV").convert("RGB")
 
 
+def drop_grey_blobs(a, mask, grey_ratio=0.7, fill=0.6):
+    """飄在角色旁邊的灰色方塊（棋盤格碎片）：不是最大塊、幾乎都是灰色、形狀方方正正的，就挖掉。"""
+    rgb = a[..., :3].astype(int)
+    grey = (rgb.max(-1) - rgb.min(-1)) < 24
+    lab, n = ndimage.label(mask, structure=np.ones((3, 3)))
+    if n < 2:
+        return mask
+    sizes = ndimage.sum(mask, lab, range(1, n + 1))
+    big = int(np.argmax(sizes)) + 1
+    for i, box in enumerate(ndimage.find_objects(lab), 1):
+        if i == big or box is None:
+            continue
+        comp = lab[box] == i
+        area = comp.sum()
+        if area > sizes[big - 1] * 0.12:
+            continue
+        if grey[box][comp].mean() >= grey_ratio and area / comp.size >= fill:
+            mask[box] &= ~comp
+    return mask
+
+
 def shift_hue(img, lo, hi, by, darken=1.0, min_sat=40):
     """把某段色相（0–360 度）整段轉到別的顏色，例如粉紅轉成紫紅；金髮、膚色不在範圍內就不動。"""
     hsv = np.array(img.convert("HSV")).astype(int)
@@ -153,7 +174,7 @@ def shift_hue(img, lo, hi, by, darken=1.0, min_sat=40):
     return Image.fromarray(hsv.astype(np.uint8), "HSV").convert("RGB")
 
 
-def polish(path, colors=96, sat=1.12, contrast=1.06, holes=False, hue=None, debris=False, aura=None, min_bit=8, tint=None, smooth=None, outside=None, recolor=None):
+def polish(path, colors=96, sat=1.12, contrast=1.06, holes=False, hue=None, debris=False, aura=None, min_bit=8, tint=None, smooth=None, outside=None, recolor=None, peel=8, blobs=False):
     im = Image.open(path).convert("RGBA")
     a = np.array(im)
     mask = a[..., 3] > 0
@@ -169,11 +190,14 @@ def polish(path, colors=96, sat=1.12, contrast=1.06, holes=False, hue=None, debr
         mask = drop_tint(a, mask, **tint)
     if outside:
         mask = drop_outside(a, mask, **outside)
-    mask = peel_grey(a, mask)
+    if peel:                                       # 劍刃、鎧甲是淺灰色的角色要少剝或不剝
+        mask = peel_grey(a, mask, passes=peel)
     if holes:
         mask = drop_grey_holes(a, mask)
     if debris:
         mask = drop_debris(a, mask)
+    if blobs:
+        mask = drop_grey_blobs(a, mask)
     lab, n = ndimage.label(mask)
     if n:
         sizes = ndimage.sum(mask, lab, range(1, n + 1))
@@ -237,6 +261,10 @@ TUNE = {
     # 惡魔：第 3 階段整片紅色棋盤格蓋在身上、修不回來 → 換新外觀：用第 4 階段的騎士，黑甲染成暗紅甲（地獄領主）
     "demon": {"sat": 1.12, "contrast": 1.1, "debris": True, "min_bit": 24, "holes": True, "stages": {
         3: {"source": 4, "contrast": 1.12, "recolor": {"hue": 354, "sat": 165, "max_sat": 70, "darken": 0.82}}}},
+    # 獸人、哥布林、聖騎士：劍、斧、鎧甲是淺灰色，不能挖灰色破洞也不能多剝 → 只剝 1 層，飄在旁邊的灰色方塊另外清
+    "orc": {"sat": 1.12, "contrast": 1.08, "min_bit": 30, "peel": 1, "blobs": True},
+    "goblin": {"sat": 1.12, "contrast": 1.08, "min_bit": 30, "peel": 1, "blobs": True},
+    "paladin": {"sat": 1.12, "contrast": 1.08, "min_bit": 30, "peel": 1, "blobs": True},
     "fox_spirit": {"sat": 1.25, "contrast": 1.08},   # 和服的紅、紫、金更華麗
     # 魅魔：跟九尾狐的粉紅分開 → 粉紅轉成深紫紅、整體暗一點；翅膀和魔力圈裡夾著背景棋盤格
     "succubus": {"sat": 1.2, "contrast": 1.12, "holes": True, "hue": [(296, 8, -30, 0.84)]},

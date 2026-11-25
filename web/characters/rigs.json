@@ -1445,5 +1445,218 @@
     }
    ]
   }
+ },
+ "orc": {
+  "1": {
+   "w": 82,
+   "h": 83,
+   "base": "/characters/orc/rig/1_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/orc/rig/1_head.png",
+     "x": 10,
+     "y": 4,
+     "w": 36,
+     "h": 34,
+     "px": 28,
+     "py": 38,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/orc/rig/1_weapon.png",
+     "x": 46,
+     "y": 18,
+     "w": 26,
+     "h": 34,
+     "px": 47,
+     "py": 50,
+     "motion": "swing"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/orc/rig/1_torso.png",
+     "x": 8,
+     "y": 38,
+     "w": 42,
+     "h": 24,
+     "px": 28,
+     "py": 62,
+     "motion": "breath"
+    }
+   ]
+  },
+  "2": {
+   "w": 118,
+   "h": 107,
+   "base": "/characters/orc/rig/2_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/orc/rig/2_head.png",
+     "x": 22,
+     "y": 8,
+     "w": 40,
+     "h": 34,
+     "px": 42,
+     "py": 42,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/orc/rig/2_weapon.png",
+     "x": 72,
+     "y": 37,
+     "w": 40,
+     "h": 35,
+     "px": 73,
+     "py": 62,
+     "motion": "swing"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/orc/rig/2_torso.png",
+     "x": 12,
+     "y": 42,
+     "w": 60,
+     "h": 38,
+     "px": 40,
+     "py": 80,
+     "motion": "breath"
+    }
+   ]
+  },
+  "3": {
+   "w": 150,
+   "h": 124,
+   "base": "/characters/orc/rig/3_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/orc/rig/3_head.png",
+     "x": 48,
+     "y": 4,
+     "w": 40,
+     "h": 38,
+     "px": 68,
+     "py": 42,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/orc/rig/3_weapon.png",
+     "x": 100,
+     "y": 43,
+     "w": 47,
+     "h": 46,
+     "px": 100,
+     "py": 72,
+     "motion": "swing"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/orc/rig/3_torso.png",
+     "x": 14,
+     "y": 42,
+     "w": 86,
+     "h": 48,
+     "px": 60,
+     "py": 90,
+     "motion": "breath"
+    }
+   ]
+  },
+  "4": {
+   "w": 169,
+   "h": 145,
+   "base": "/characters/orc/rig/4_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/orc/rig/4_head.png",
+     "x": 58,
+     "y": 2,
+     "w": 60,
+     "h": 50,
+     "px": 86,
+     "py": 52,
+     "motion": "tilt"
+    },
+    {
+     "name": "armL",
+     "file": "/characters/orc/rig/4_armL.png",
+     "x": 4,
+     "y": 27,
+     "w": 36,
+     "h": 71,
+     "px": 36,
+     "py": 86,
+     "motion": "swayL"
+    },
+    {
+     "name": "armR",
+     "file": "/characters/orc/rig/4_armR.png",
+     "x": 124,
+     "y": 27,
+     "w": 39,
+     "h": 71,
+     "px": 128,
+     "py": 86,
+     "motion": "swayR"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/orc/rig/4_torso.png",
+     "x": 40,
+     "y": 52,
+     "w": 84,
+     "h": 48,
+     "px": 86,
+     "py": 100,
+     "motion": "breath"
+    }
+   ]
+  },
+  "5": {
+   "w": 182,
+   "h": 156,
+   "base": "/characters/orc/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/orc/rig/5_head.png",
+     "x": 60,
+     "y": 18,
+     "w": 48,
+     "h": 40,
+     "px": 84,
+     "py": 58,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/orc/rig/5_weapon.png",
+     "x": 118,
+     "y": 1,
+     "w": 60,
+     "h": 91,
+     "px": 124,
+     "py": 90,
+     "motion": "swing"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/orc/rig/5_torso.png",
+     "x": 20,
+     "y": 58,
+     "w": 98,
+     "h": 52,
+     "px": 80,
+     "py": 110,
+     "motion": "breath"
+    }
+   ]
+  }
  }
 }

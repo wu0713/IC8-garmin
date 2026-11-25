@@ -183,6 +183,8 @@ const PET_FX = {
   golem: { from: 2, aura: "120,225,140", orb: "rock", colors: ["#2B2A26", "#7C7466", "#7FE0A0"], spark: "#A7F0B8" },
   // 惡魔：地獄火的光暈，環繞火焰
   demon: { from: 2, aura: "255,80,40", orb: "flame", colors: ["#5A0A08", "#FF5A1F", "#FFE07A"], spark: "#FF9A5A", sway: 1 },
+  // 獸人：戰意的橘紅光暈，環繞發光的符文石
+  orc: { from: 2, aura: "240,110,50", orb: "rune", colors: ["#2A1A10", "#6B4A2E", "#FF8A2A"], spark: "#FFB070", sway: 3 },
   beast_tamer: { from: 2, aura: "140,215,100", orb: "leaf", colors: ["#28501C", "#68AE36", "#D2F59A"], spark: "#CFF59A", sway: 2 },
 };
 const ORB_GRID = {
@@ -190,6 +192,7 @@ const ORB_GRID = {
   bat: ["1.......1", "11.....11", "111.1.111", "111222111", ".1232321.", "..12221..", "...1.1..."],
   skull: [".11111.", "1222221", "1322231", "1222221", ".12221.", ".12121.", "..111.."],
   rock: ["..111..", ".12221.", "1222231", "1223321", ".12221.", "..111.."],
+  rune: [".11111.", "1222221", "1232321", "1223221", "1232321", "1222221", ".11111."],
   wisp: ["..111..", ".12221.", "1233321", "1233321", ".12321.", "..121..", "...1..."],
   leaf: ["....111", "...1221", "..12321", ".123221", "1232211", "122211.", "1111...", "1......"],
 };
@@ -329,6 +332,27 @@ const PET_SCENE = {
     const embers = Array.from({ length: 8 }, (_, i) => `<i class="firefly ember" style="--i:${i}"></i>`).join("");
     return `<svg class="scene-art" viewBox="0 0 160 80" preserveAspectRatio="xMidYMax slice" shape-rendering="crispEdges">${s}</svg>${embers}`;
   },
+  // 獸人：黃昏的戰營，木樁圍牆、帳篷、戰旗、營火，煙往上飄、旗子飄動
+  orc: () => {
+    let s = bands(0, ["#3A2030", "#4E2530", "#652B2E", "#7C332B", "#933D27", "#A84A24", "#BA5A23", "#C86C26", "#D27E2C", "#D98F35"], 5);
+    s += pxCircle(40, 30, 9, "#F2B04A") + pxCircle(40, 30, 7, "#FFD27A");
+    // 遠山
+    for (let x = 0; x < 160; x += 2) { const h = 6 + Math.round(4 * Math.sin(x / 13 + 2) + 2 * Math.sin(x / 4.4)); s += PX(x, 46 - h, 2, h, "#5A2A24"); }
+    // 地面：泥土
+    s += PX(0, 46, 160, 34, "#6A4A30") + PX(0, 46, 160, 2, "#80603E") + PX(0, 62, 160, 18, "#583C26");
+    // 木樁圍牆
+    for (let x = 0; x < 160; x += 5) { const h = 12 + (x * 7) % 5; s += PX(x, 46 - h, 4, h, "#4A2E1C") + PX(x + 1, 46 - h, 1, h, "#6A4428") + PX(x + 1, 46 - h - 2, 2, 2, "#4A2E1C"); }
+    s += PX(0, 38, 160, 2, "#3A2416");
+    // 帳篷
+    const tent = (x, b, w, c, c2) => { let t = ""; for (let i = 0; i < w / 2; i++) t += PX(x + i, b - i, w - i * 2, 1, i % 3 ? c : c2); return t + PX(x + w / 2 - 2, b - 5, 4, 5, "#2A1A10"); };
+    s += tent(8, 58, 24, "#8A5A34", "#7A4C2A") + tent(118, 56, 30, "#7A3A2A", "#6A3022");
+    // 戰旗
+    s += PX(58, 22, 1, 30, "#2A1A10") + PX(100, 26, 1, 26, "#2A1A10");
+    // 營火
+    s += PX(76, 60, 10, 2, "#4A2E1C") + PX(78, 56, 6, 4, "#FF7A2A") + PX(79, 54, 4, 2, "#FFC25A") + PX(80, 52, 2, 2, "#FFE08A");
+    const smoke = Array.from({ length: 4 }, (_, i) => `<i class="smoke" style="--i:${i}"></i>`).join("");
+    return `<svg class="scene-art" viewBox="0 0 160 80" preserveAspectRatio="xMidYMax slice" shape-rendering="crispEdges">${s}</svg>${smoke}<i class="banner" style="left:36.9%;top:28%"></i><i class="banner b2" style="left:63.1%;top:33%"></i>`;
+  },
   // 精靈使：月夜的精靈泉，極光、古樹、發光的蘑菇，螢火慢慢往上飄
   spirit: () => {
     let s = bands(0, ["#0B1430", "#0E1B3B", "#112346", "#142C50", "#17365A", "#1A4062", "#1D4A69", "#20536E", "#235B72", "#266274"], 5);
@@ -408,6 +432,12 @@ const PET_FRONT = {
     for (let x = 0; x < 160; x += 4) { const h = 2 + ((x * 7) % 5); s += PX(x, 10 - h, 3, h, "#140706") + PX(x, 10 - h, 3, 1, "#FF6A1F"); }
     return `<svg class="front-art" viewBox="0 0 160 10" preserveAspectRatio="none" shape-rendering="crispEdges">${s}</svg><i class="firefly ember front" style="--i:2"></i>`;
   },
+  orc: () => {
+    let s = "";
+    for (let x = 0; x < 160; x += 3) { const h = 1 + ((x * 5) % 4); s += PX(x, 10 - h, 3, h, x % 2 ? "#4E3420" : "#5E4028"); }
+    s += PX(10, 3, 2, 7, "#3A2416") + PX(9, 2, 4, 1, "#3A2416") + PX(148, 4, 2, 6, "#3A2416") + PX(147, 3, 4, 1, "#3A2416");
+    return `<svg class="front-art" viewBox="0 0 160 10" preserveAspectRatio="none" shape-rendering="crispEdges">${s}</svg>`;
+  },
   necromancer: () => `<i class="mist green front"></i><i class="mist green front m2"></i>`,
   spirit: () => {
     let s = "";
@@ -432,7 +462,7 @@ const petFront = (id) => (PET_FRONT[id] ? `<span class="scene-front" aria-hidden
 
 // 夥伴圖：有拆部位的（rigs.json）用分層組回角色，點擊時頭、翅膀、尾巴、下襬各自動；沒有的用整張圖
 // 圖層順序：翅膀、尾巴、魔力圈在身體後面；上半身、頭在前面。腳留在身體層，不另外動
-const RIG_Z = { wingL: 0, wingR: 0, tail: 0, tailL: 0, tailR: 0, ringL: 0, ringR: 0, torso: 2, head: 3, beast: 2, mane: 2, crystal: 3, wisp: 3, fairy: 3, ghost: 3, flame: 3, minion: 2, armL: 2, armR: 2, cape: 0 };
+const RIG_Z = { wingL: 0, wingR: 0, tail: 0, tailL: 0, tailR: 0, ringL: 0, ringR: 0, torso: 2, head: 3, beast: 2, mane: 2, crystal: 3, wisp: 3, fairy: 3, ghost: 3, flame: 3, minion: 2, armL: 2, armR: 2, cape: 0, weapon: 3 };
 function petSprite(id, stage, boxH) {
   const rig = S.rigs?.[id]?.[stage + 1], sp = species(id);
   if (!rig || !sp) return charImg(id, stage, boxH);
