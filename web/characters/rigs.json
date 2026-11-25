@@ -1085,5 +1085,163 @@
     }
    ]
   }
+ },
+ "golem": {
+  "1": {
+   "w": 60,
+   "h": 61,
+   "base": "/characters/golem/rig/1_base.png",
+   "parts": [
+    {
+     "name": "torso",
+     "file": "/characters/golem/rig/1_torso.png",
+     "x": 8,
+     "y": 7,
+     "w": 44,
+     "h": 33,
+     "px": 30,
+     "py": 48,
+     "motion": "breath"
+    }
+   ]
+  },
+  "2": {
+   "w": 113,
+   "h": 95,
+   "base": "/characters/golem/rig/2_base.png",
+   "parts": [
+    {
+     "name": "tail",
+     "file": "/characters/golem/rig/2_tail.png",
+     "x": 18,
+     "y": 7,
+     "w": 22,
+     "h": 13,
+     "px": 30,
+     "py": 20,
+     "motion": "wag"
+    },
+    {
+     "name": "tailR",
+     "file": "/characters/golem/rig/2_tailR.png",
+     "x": 66,
+     "y": 4,
+     "w": 21,
+     "h": 16,
+     "px": 75,
+     "py": 20,
+     "motion": "wag"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/golem/rig/2_torso.png",
+     "x": 12,
+     "y": 20,
+     "w": 82,
+     "h": 42,
+     "px": 52,
+     "py": 76,
+     "motion": "breath"
+    }
+   ]
+  },
+  "3": {
+   "w": 158,
+   "h": 133,
+   "base": "/characters/golem/rig/3_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/golem/rig/3_head.png",
+     "x": 40,
+     "y": 6,
+     "w": 76,
+     "h": 66,
+     "px": 78,
+     "py": 72,
+     "motion": "tilt"
+    }
+   ]
+  },
+  "4": {
+   "w": 141,
+   "h": 152,
+   "base": "/characters/golem/rig/4_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/golem/rig/4_head.png",
+     "x": 60,
+     "y": 8,
+     "w": 46,
+     "h": 47,
+     "px": 83,
+     "py": 55,
+     "motion": "tilt"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/golem/rig/4_torso.png",
+     "x": 38,
+     "y": 55,
+     "w": 88,
+     "h": 40,
+     "px": 83,
+     "py": 95,
+     "motion": "breath"
+    }
+   ]
+  },
+  "5": {
+   "w": 177,
+   "h": 165,
+   "base": "/characters/golem/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/golem/rig/5_head.png",
+     "x": 36,
+     "y": 13,
+     "w": 97,
+     "h": 57,
+     "px": 88,
+     "py": 70,
+     "motion": "tilt"
+    },
+    {
+     "name": "armL",
+     "file": "/characters/golem/rig/5_armL.png",
+     "x": 23,
+     "y": 82,
+     "w": 33,
+     "h": 70,
+     "px": 50,
+     "py": 86,
+     "motion": "swayL"
+    },
+    {
+     "name": "armR",
+     "file": "/characters/golem/rig/5_armR.png",
+     "x": 118,
+     "y": 82,
+     "w": 27,
+     "h": 68,
+     "px": 124,
+     "py": 86,
+     "motion": "swayR"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/golem/rig/5_torso.png",
+     "x": 55,
+     "y": 70,
+     "w": 65,
+     "h": 50,
+     "px": 88,
+     "py": 120,
+     "motion": "breath"
+    }
+   ]
+  }
  }
 }

@@ -142,36 +142,36 @@
      "name": "小石魔像",
      "en": "Pebble Golem",
      "file": "/characters/golem/1.png",
-     "w": 58,
-     "h": 59
+     "w": 60,
+     "h": 61
     },
     {
      "name": "青苔巨石",
      "en": "Mossy Boulder",
      "file": "/characters/golem/2.png",
-     "w": 111,
-     "h": 93
+     "w": 113,
+     "h": 95
     },
     {
      "name": "樹根魔像",
      "en": "Root Golem",
      "file": "/characters/golem/3.png",
-     "w": 156,
-     "h": 131
+     "w": 158,
+     "h": 133
     },
     {
      "name": "遠古守衛",
      "en": "Ancient Sentinel",
      "file": "/characters/golem/4.png",
-     "w": 139,
-     "h": 150
+     "w": 141,
+     "h": 152
     },
     {
      "name": "森林王魔像",
      "en": "Forest King Golem",
      "file": "/characters/golem/5.png",
-     "w": 175,
-     "h": 163
+     "w": 177,
+     "h": 165
     }
    ]
   },

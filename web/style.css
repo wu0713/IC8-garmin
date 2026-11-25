@@ -865,6 +865,7 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
 .scene .firefly.ghostfire { width: 4px; height: 5px; background: #8DFFB4; box-shadow: 0 0 6px 2px rgba(90, 255, 150, .7); }
 .scene .mist.green, .scene-front .mist.green {
   background: repeating-linear-gradient(90deg, rgba(120, 230, 160, 0) 0 18px, rgba(120, 230, 160, .3) 18px 60px, rgba(120, 230, 160, 0) 60px 90px); }
+.scene .firefly.spore { width: 2px; height: 2px; background: #EAF7C8; box-shadow: 0 0 3px rgba(220, 255, 190, .8); }
 .scene .star { position: absolute; width: 3px; height: 3px; background: #FFF4D6; box-shadow: 0 0 4px #FFF4D6; }
 .scene .mist { position: absolute; left: -40%; bottom: 14%; width: 180%; height: 22px; opacity: .55;
   background: repeating-linear-gradient(90deg, rgba(190, 130, 230, .0) 0 18px, rgba(190, 130, 230, .35) 18px 60px, rgba(190, 130, 230, 0) 60px 90px); }
@@ -902,6 +903,9 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
 .stage[data-scene="necromancer"] .pet img, .stage[data-scene="necromancer"] .pet .wavy {
   filter: brightness(.95) drop-shadow(2px 0 0 rgba(140, 240, 170, .6)) drop-shadow(0 0 10px rgba(80, 210, 130, .35)); }
 .stage[data-scene="necromancer"] .pet-shadow { background: rgba(0, 8, 4, .6); box-shadow: 0 0 14px 4px rgba(80, 210, 130, .2); }
+.stage[data-scene="golem"] .pet img, .stage[data-scene="golem"] .pet .wavy {
+  filter: drop-shadow(-2px 0 0 rgba(235, 242, 215, .55)) drop-shadow(0 0 8px rgba(120, 220, 140, .3)); }
+.stage[data-scene="golem"] .pet-shadow { background: rgba(20, 30, 15, .55); }
 .stage[data-scene="spirit"] .pet img, .stage[data-scene="spirit"] .pet .wavy {
   filter: brightness(.95) drop-shadow(-2px 0 0 rgba(220, 255, 245, .55)) drop-shadow(0 0 10px rgba(110, 230, 205, .35)); }
 .stage[data-scene="spirit"] .pet-shadow { background: rgba(5, 20, 25, .55); box-shadow: 0 0 14px 4px rgba(110, 230, 205, .2); }
@@ -927,6 +931,14 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
   /* 上半身呼吸：以腰為軸，吸氣時肩膀、胸口一起微微上抬、身體稍微變寬；頭跟著起伏。腳在身體層，不動 */
   .rig .rp-breath { animation: torso-breath 4s ease-in-out infinite; }
   /* 動物：頭慢慢點一下、點擊時低吼抖一下；水晶漂浮；火焰跳動 */
+  .rig .rp-swayL { animation: idle-swayL 4s ease-in-out infinite; }
+  .rig .rp-swayR { animation: idle-swayR 4s ease-in-out infinite; }
+  .pet.react .rig .rp-swayL { animation: punchL .8s ease-out 1; }
+  .pet.react .rig .rp-swayR { animation: punchR .8s ease-out 1; }
+  @keyframes idle-swayL { 50% { rotate: 3deg; } }
+  @keyframes idle-swayR { 50% { rotate: -3deg; } }
+  @keyframes punchL { 30% { rotate: 14deg; } 100% { rotate: 0deg; } }
+  @keyframes punchR { 30% { rotate: -14deg; } 100% { rotate: 0deg; } }
   .rig .rp-nod { animation: idle-nod 4s ease-in-out infinite; }
   .rig .rp-bob { animation: idle-bob 3s steps(6, jump-none) infinite alternate; }
   .rig .rp-flicker { animation: idle-flicker .9s steps(2) infinite; }
