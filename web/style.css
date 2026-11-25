@@ -985,10 +985,11 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
   @keyframes idle-swayR { 50% { rotate: -3deg; } }
   @keyframes punchL { 30% { rotate: 7deg; } 100% { rotate: 0deg; } }
   @keyframes punchR { 30% { rotate: -7deg; } 100% { rotate: 0deg; } }
-  .rig .rp-swing { animation: idle-swing 4s ease-in-out infinite; }
-  .pet.react .rig .rp-swing { animation: smash .9s cubic-bezier(.3, 1.4, .5, 1) 1; }
-  @keyframes idle-swing { 50% { rotate: -3deg; } }
-  @keyframes smash { 0% { rotate: 0deg; } 30% { rotate: -13deg; } 55% { rotate: 4deg; } 100% { rotate: 0deg; } }
+  .rig .rp-swing { animation: idle-swing 4s steps(8, jump-none) infinite alternate; }
+  .pet.react .rig .rp-swing { animation: smash .7s steps(7, jump-none) 1; }
+  @keyframes idle-swing { from { rotate: 0deg; } to { rotate: -2deg; } }
+  /* 揮砍：一次舉起、一次砍下、回位，不回彈（硬的武器不會晃） */
+  @keyframes smash { 0% { rotate: 0deg; } 30% { rotate: -12deg; } 60% { rotate: 6deg; } 100% { rotate: 0deg; } }
   .rig .rp-drift { animation: idle-drift 6s ease-in-out infinite; }
   .pet.react .rig .rp-drift { animation: puff .8s ease-out 1; }
   @keyframes idle-drift { 50% { translate: 3px 0; } }

@@ -1890,33 +1890,33 @@
    "base": "/characters/paladin/rig/1_base.png",
    "parts": [
     {
+     "name": "weapon",
+     "file": "/characters/paladin/rig/1_weapon.png",
+     "x": 40,
+     "y": 8,
+     "w": 26,
+     "h": 52,
+     "px": 44,
+     "py": 52,
+     "motion": "swing"
+    },
+    {
      "name": "head",
      "file": "/characters/paladin/rig/1_head.png",
      "x": 6,
      "y": 2,
-     "w": 35,
+     "w": 34,
      "h": 34,
      "px": 24,
      "py": 36,
      "motion": "tilt"
     },
     {
-     "name": "weapon",
-     "file": "/characters/paladin/rig/1_weapon.png",
-     "x": 44,
-     "y": 8,
-     "w": 22,
-     "h": 50,
-     "px": 44,
-     "py": 52,
-     "motion": "swing"
-    },
-    {
      "name": "torso",
      "file": "/characters/paladin/rig/1_torso.png",
      "x": 6,
      "y": 36,
-     "w": 40,
+     "w": 34,
      "h": 30,
      "px": 24,
      "py": 66,
@@ -1930,35 +1930,35 @@
    "base": "/characters/paladin/rig/2_base.png",
    "parts": [
     {
+     "name": "weapon",
+     "file": "/characters/paladin/rig/2_weapon.png",
+     "x": 50,
+     "y": 16,
+     "w": 35,
+     "h": 50,
+     "px": 56,
+     "py": 58,
+     "motion": "swing"
+    },
+    {
      "name": "head",
      "file": "/characters/paladin/rig/2_head.png",
      "x": 24,
      "y": 2,
-     "w": 30,
+     "w": 26,
      "h": 34,
      "px": 38,
      "py": 36,
      "motion": "tilt"
     },
     {
-     "name": "weapon",
-     "file": "/characters/paladin/rig/2_weapon.png",
-     "x": 58,
-     "y": 16,
-     "w": 27,
-     "h": 44,
-     "px": 58,
-     "py": 56,
-     "motion": "swing"
-    },
-    {
      "name": "torso",
      "file": "/characters/paladin/rig/2_torso.png",
      "x": 6,
      "y": 36,
-     "w": 56,
+     "w": 44,
      "h": 34,
-     "px": 36,
+     "px": 30,
      "py": 70,
      "motion": "breath"
     }
@@ -1970,35 +1970,35 @@
    "base": "/characters/paladin/rig/3_base.png",
    "parts": [
     {
+     "name": "weapon",
+     "file": "/characters/paladin/rig/3_weapon.png",
+     "x": 50,
+     "y": 8,
+     "w": 58,
+     "h": 62,
+     "px": 56,
+     "py": 62,
+     "motion": "swing"
+    },
+    {
      "name": "head",
      "file": "/characters/paladin/rig/3_head.png",
      "x": 34,
      "y": 2,
-     "w": 28,
+     "w": 22,
      "h": 32,
      "px": 48,
      "py": 34,
      "motion": "tilt"
     },
     {
-     "name": "weapon",
-     "file": "/characters/paladin/rig/3_weapon.png",
-     "x": 58,
-     "y": 14,
-     "w": 48,
-     "h": 48,
-     "px": 60,
-     "py": 60,
-     "motion": "swing"
-    },
-    {
      "name": "torso",
      "file": "/characters/paladin/rig/3_torso.png",
      "x": 18,
      "y": 34,
-     "w": 54,
+     "w": 32,
      "h": 36,
-     "px": 44,
+     "px": 34,
      "py": 70,
      "motion": "breath"
     }
@@ -2010,6 +2010,17 @@
    "base": "/characters/paladin/rig/4_base.png",
    "parts": [
     {
+     "name": "weapon",
+     "file": "/characters/paladin/rig/4_weapon.png",
+     "x": 84,
+     "y": 62,
+     "w": 47,
+     "h": 46,
+     "px": 88,
+     "py": 72,
+     "motion": "swing"
+    },
+    {
      "name": "head",
      "file": "/characters/paladin/rig/4_head.png",
      "x": 42,
@@ -2019,17 +2030,6 @@
      "px": 64,
      "py": 46,
      "motion": "tilt"
-    },
-    {
-     "name": "weapon",
-     "file": "/characters/paladin/rig/4_weapon.png",
-     "x": 90,
-     "y": 66,
-     "w": 41,
-     "h": 40,
-     "px": 90,
-     "py": 74,
-     "motion": "swing"
     },
     {
      "name": "cape",
@@ -2045,11 +2045,11 @@
     {
      "name": "torso",
      "file": "/characters/paladin/rig/4_torso.png",
-     "x": 38,
+     "x": 40,
      "y": 46,
-     "w": 57,
+     "w": 44,
      "h": 32,
-     "px": 64,
+     "px": 62,
      "py": 78,
      "motion": "breath"
     }
@@ -2074,21 +2074,21 @@
     {
      "name": "torso",
      "file": "/characters/paladin/rig/5_torso.png",
-     "x": 72,
+     "x": 78,
      "y": 52,
-     "w": 46,
+     "w": 40,
      "h": 33,
-     "px": 95,
+     "px": 97,
      "py": 85,
      "motion": "breath"
     },
     {
      "name": "wingL",
      "file": "/characters/paladin/rig/5_wingL.png",
-     "x": 10,
+     "x": 14,
      "y": 1,
-     "w": 70,
-     "h": 99,
+     "w": 66,
+     "h": 69,
      "px": 78,
      "py": 45,
      "motion": "flapL"
