@@ -797,7 +797,7 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
   .pet-orbit i b { animation: flicker .5s steps(2) infinite; }
   .pet-orbit svg.orb-bat { animation: flap .32s steps(2) infinite; }
   @keyframes flap { 50% { transform: scaleY(.55); } }
-  @keyframes orbit-xy { 0.0% { translate: 112px 0px; z-index: 2; scale: 1.00; } 8.33% { translate: 97px 20px; z-index: 2; scale: 1.09; } 16.67% { translate: 56px 35px; z-index: 2; scale: 1.16; } 25.0% { translate: 0px 40px; z-index: 2; scale: 1.18; } 33.33% { translate: -56px 35px; z-index: 2; scale: 1.16; } 41.67% { translate: -97px 20px; z-index: 2; scale: 1.09; } 50.0% { translate: -112px 0px; z-index: 2; scale: 1.00; } 58.33% { translate: -97px -20px; z-index: 0; scale: 0.91; } 66.67% { translate: -56px -35px; z-index: 0; scale: 0.84; } 75.0% { translate: -0px -40px; z-index: 0; scale: 0.82; } 83.33% { translate: 56px -35px; z-index: 0; scale: 0.84; } 91.67% { translate: 97px -20px; z-index: 0; scale: 0.91; } 100.0% { translate: 112px -0px; z-index: 0; scale: 1.00; } }
+  @keyframes orbit-xy { 0.0% { translate: 112px 0px; z-index: 3; scale: 1.00; opacity: 1.00; } 8.33% { translate: 97px 20px; z-index: 3; scale: 1.11; opacity: 1.00; } 16.67% { translate: 56px 35px; z-index: 3; scale: 1.19; opacity: 1.00; } 25.0% { translate: 0px 40px; z-index: 3; scale: 1.22; opacity: 1.00; } 33.33% { translate: -56px 35px; z-index: 3; scale: 1.19; opacity: 1.00; } 41.67% { translate: -97px 20px; z-index: 3; scale: 1.11; opacity: 1.00; } 50.0% { translate: -112px 0px; z-index: 3; scale: 1.00; opacity: 1.00; } 58.33% { translate: -97px -20px; z-index: 0; scale: 0.89; opacity: 0.81; } 66.67% { translate: -56px -35px; z-index: 0; scale: 0.81; opacity: 0.67; } 75.0% { translate: -0px -40px; z-index: 0; scale: 0.78; opacity: 0.62; } 83.33% { translate: 56px -35px; z-index: 0; scale: 0.81; opacity: 0.67; } 91.67% { translate: 97px -20px; z-index: 0; scale: 0.89; opacity: 0.81; } 100.0% { translate: 112px -0px; z-index: 0; scale: 1.00; opacity: 1.00; } }
   .evo-burst::before { animation: aura-breathe 1.6s ease-in-out 3; }
   .evo-burst i { animation: burst 1.4s cubic-bezier(.2, .8, .3, 1) calc(var(--k) * 40ms) 2 both; }
   @keyframes aura-breathe { 0%, 100% { scale: .92; opacity: var(--o, .75); } 50% { scale: 1.06; opacity: 1; } }
@@ -817,7 +817,8 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
   .pet.floaty img, .pet.floaty .wavy { animation: hover 4s steps(15, jump-none) infinite alternate, breath 4s ease-in-out infinite; }
   .pet.floaty.sway img, .pet.floaty.sway .wavy { animation: hover 4s steps(15, jump-none) infinite alternate, breath 4s ease-in-out infinite, bend 8s ease-in-out infinite; }
   .pet.floaty .pet-shadow { animation: hover-shadow 4s steps(15, jump-none) infinite alternate; }
-  .pet.floaty .pet-orbit { animation: hover 4s steps(15, jump-none) infinite alternate; }
+  /* 漂浮加在每一顆上（不要加在整組，不然整組會變成同一層，轉到前面也會被角色擋住） */
+  .pet.floaty .pet-orbit i b { animation: flicker .5s steps(2) infinite, hover 4s steps(15, jump-none) infinite alternate; }
   .pet.floaty .pet-aura { animation: aura-breathe 4s ease-in-out infinite; }
   @keyframes hover { from { translate: 0 -8px; } to { translate: 0 -22px; } }
   @keyframes hover-shadow { from { transform: scaleX(.78); opacity: .7; } to { transform: scaleX(.6); opacity: .42; } }
