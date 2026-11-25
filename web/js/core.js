@@ -162,6 +162,8 @@ if (localStorage.getItem("ic8_big") === "1") document.documentElement.classList.
 // ── 角色圖片（manifest 驅動） ──
 async function loadChars() {
   S.chars ||= await (await fetch("/characters/manifest.json")).json();
+  // 部位拆層（tools/rig_split.py 產生）：沒有這個檔也照常運作
+  S.rigs ||= await fetch("/characters/rigs.json").then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
   return S.chars;
 }
 const species = (id) => S.chars?.species.find((s) => s.id === id);
@@ -274,8 +276,22 @@ const PET_FRONT = {
 };
 const petFront = (id) => (PET_FRONT[id] ? `<span class="scene-front" aria-hidden="true">${PET_FRONT[id]()}</span>` : "");
 
-// 夥伴圖：整張圖（動作交給 CSS：一格一格的漂浮、同步呼吸、從頭頂往下的彎曲擺動）
-function petSprite(id, stage, boxH) { return charImg(id, stage, boxH); }
+// 夥伴圖：有拆部位的（rigs.json）用分層組回角色，點擊時頭、翅膀、尾巴、下襬各自動；沒有的用整張圖
+// 圖層順序：翅膀、尾巴、魔力圈在身體後面；下襬、頭在身體前面
+const RIG_Z = { wingL: 0, wingR: 0, tail: 0, tailL: 0, tailR: 0, ringL: 0, ringR: 0, lower: 2, head: 3 };
+function petSprite(id, stage, boxH) {
+  const rig = S.rigs?.[id]?.[stage + 1], sp = species(id);
+  if (!rig || !sp) return charImg(id, stage, boxH);
+  const s = boxH / Math.max(...sp.stages.map((x) => x.h));
+  const px = (v) => `${Math.round(v * s * 100) / 100}px`;
+  const layer = (cls, file, x, y, w, h, z, origin = "") =>
+    `<i class="rp ${cls}" style="left:${px(x)};top:${px(y)};width:${px(w)};height:${px(h)};z-index:${z};background-image:url('${file}');${origin}"></i>`;
+  const st = sp.stages[stage] || sp.stages[0];
+  return `<span class="wavy rig" role="img" aria-label="${esc(st.name)}" style="width:${px(rig.w)};height:${px(rig.h)}">
+    ${layer("rp-base", rig.base, 0, 0, rig.w, rig.h, 1)}
+    ${rig.parts.map((p) => layer(`rp-${p.motion} rp-${p.name}`, p.file, p.x, p.y, p.w, p.h, RIG_Z[p.name] ?? 2,
+      `transform-origin:${px(p.px - p.x)} ${px(p.py - p.y)};`)).join("")}</span>`;
+}
 const sceneCls = (id) => (PET_SCENE[id] ? "has-scene" : "");
 
 // scale：同一系列所有階段用同一個倍率，所以越後面的階段畫面上越大

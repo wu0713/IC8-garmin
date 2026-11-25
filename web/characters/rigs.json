@@ -1,0 +1,417 @@
+{
+ "succubus": {
+  "1": {
+   "w": 83,
+   "h": 123,
+   "base": "/characters/succubus/rig/1_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/succubus/rig/1_head.png",
+     "x": 30,
+     "y": 2,
+     "w": 52,
+     "h": 45,
+     "px": 52,
+     "py": 47,
+     "motion": "tilt"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/succubus/rig/1_tail.png",
+     "x": 7,
+     "y": 64,
+     "w": 30,
+     "h": 33,
+     "px": 37,
+     "py": 85,
+     "motion": "wag"
+    }
+   ]
+  },
+  "2": {
+   "w": 82,
+   "h": 142,
+   "base": "/characters/succubus/rig/2_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/succubus/rig/2_head.png",
+     "x": 28,
+     "y": 4,
+     "w": 53,
+     "h": 53,
+     "px": 55,
+     "py": 57,
+     "motion": "tilt"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/succubus/rig/2_tail.png",
+     "x": 2,
+     "y": 85,
+     "w": 39,
+     "h": 36,
+     "px": 41,
+     "py": 92,
+     "motion": "wag"
+    }
+   ]
+  },
+  "3": {
+   "w": 112,
+   "h": 175,
+   "base": "/characters/succubus/rig/3_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/succubus/rig/3_head.png",
+     "x": 38,
+     "y": 13,
+     "w": 45,
+     "h": 44,
+     "px": 63,
+     "py": 57,
+     "motion": "tilt"
+    },
+    {
+     "name": "wingL",
+     "file": "/characters/succubus/rig/3_wingL.png",
+     "x": 4,
+     "y": 58,
+     "w": 29,
+     "h": 51,
+     "px": 33,
+     "py": 64,
+     "motion": "flapL"
+    },
+    {
+     "name": "wingR",
+     "file": "/characters/succubus/rig/3_wingR.png",
+     "x": 92,
+     "y": 79,
+     "w": 7,
+     "h": 26,
+     "px": 92,
+     "py": 70,
+     "motion": "flapR"
+    },
+    {
+     "name": "lower",
+     "file": "/characters/succubus/rig/3_lower.png",
+     "x": 26,
+     "y": 118,
+     "w": 55,
+     "h": 56,
+     "px": 60,
+     "py": 118,
+     "motion": "swish"
+    }
+   ]
+  },
+  "4": {
+   "w": 165,
+   "h": 168,
+   "base": "/characters/succubus/rig/4_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/succubus/rig/4_head.png",
+     "x": 66,
+     "y": 7,
+     "w": 44,
+     "h": 40,
+     "px": 88,
+     "py": 47,
+     "motion": "tilt"
+    },
+    {
+     "name": "wingL",
+     "file": "/characters/succubus/rig/4_wingL.png",
+     "x": 14,
+     "y": 18,
+     "w": 46,
+     "h": 90,
+     "px": 60,
+     "py": 42,
+     "motion": "flapL"
+    },
+    {
+     "name": "wingR",
+     "file": "/characters/succubus/rig/4_wingR.png",
+     "x": 116,
+     "y": 18,
+     "w": 45,
+     "h": 102,
+     "px": 116,
+     "py": 42,
+     "motion": "flapR"
+    },
+    {
+     "name": "lower",
+     "file": "/characters/succubus/rig/4_lower.png",
+     "x": 30,
+     "y": 108,
+     "w": 105,
+     "h": 60,
+     "px": 88,
+     "py": 108,
+     "motion": "swish"
+    }
+   ]
+  },
+  "5": {
+   "w": 130,
+   "h": 175,
+   "base": "/characters/succubus/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/succubus/rig/5_head.png",
+     "x": 52,
+     "y": 22,
+     "w": 38,
+     "h": 38,
+     "px": 70,
+     "py": 60,
+     "motion": "tilt"
+    },
+    {
+     "name": "ringL",
+     "file": "/characters/succubus/rig/5_ringL.png",
+     "x": 2,
+     "y": 8,
+     "w": 44,
+     "h": 92,
+     "px": 46,
+     "py": 50,
+     "motion": "fanL"
+    },
+    {
+     "name": "ringR",
+     "file": "/characters/succubus/rig/5_ringR.png",
+     "x": 94,
+     "y": 12,
+     "w": 27,
+     "h": 88,
+     "px": 94,
+     "py": 50,
+     "motion": "fanR"
+    },
+    {
+     "name": "lower",
+     "file": "/characters/succubus/rig/5_lower.png",
+     "x": 10,
+     "y": 105,
+     "w": 110,
+     "h": 70,
+     "px": 65,
+     "py": 105,
+     "motion": "swish"
+    }
+   ]
+  }
+ },
+ "fox_spirit": {
+  "1": {
+   "w": 77,
+   "h": 69,
+   "base": "/characters/fox_spirit/rig/1_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/fox_spirit/rig/1_head.png",
+     "x": 36,
+     "y": 1,
+     "w": 39,
+     "h": 41,
+     "px": 52,
+     "py": 40,
+     "motion": "tilt"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/fox_spirit/rig/1_tail.png",
+     "x": 4,
+     "y": 18,
+     "w": 32,
+     "h": 48,
+     "px": 36,
+     "py": 52,
+     "motion": "wag"
+    }
+   ]
+  },
+  "2": {
+   "w": 87,
+   "h": 133,
+   "base": "/characters/fox_spirit/rig/2_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/fox_spirit/rig/2_head.png",
+     "x": 48,
+     "y": 8,
+     "w": 34,
+     "h": 38,
+     "px": 64,
+     "py": 46,
+     "motion": "tilt"
+    },
+    {
+     "name": "tailL",
+     "file": "/characters/fox_spirit/rig/2_tailL.png",
+     "x": 7,
+     "y": 39,
+     "w": 43,
+     "h": 73,
+     "px": 50,
+     "py": 70,
+     "motion": "fanL"
+    }
+   ]
+  },
+  "3": {
+   "w": 146,
+   "h": 160,
+   "base": "/characters/fox_spirit/rig/3_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/fox_spirit/rig/3_head.png",
+     "x": 70,
+     "y": 15,
+     "w": 30,
+     "h": 45,
+     "px": 86,
+     "py": 60,
+     "motion": "tilt"
+    },
+    {
+     "name": "tailL",
+     "file": "/characters/fox_spirit/rig/3_tailL.png",
+     "x": 8,
+     "y": 42,
+     "w": 54,
+     "h": 83,
+     "px": 62,
+     "py": 80,
+     "motion": "fanL"
+    },
+    {
+     "name": "tailR",
+     "file": "/characters/fox_spirit/rig/3_tailR.png",
+     "x": 110,
+     "y": 60,
+     "w": 17,
+     "h": 60,
+     "px": 110,
+     "py": 80,
+     "motion": "fanR"
+    },
+    {
+     "name": "lower",
+     "file": "/characters/fox_spirit/rig/3_lower.png",
+     "x": 30,
+     "y": 125,
+     "w": 85,
+     "h": 33,
+     "px": 85,
+     "py": 125,
+     "motion": "swish"
+    }
+   ]
+  },
+  "4": {
+   "w": 161,
+   "h": 152,
+   "base": "/characters/fox_spirit/rig/4_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/fox_spirit/rig/4_head.png",
+     "x": 70,
+     "y": 4,
+     "w": 34,
+     "h": 54,
+     "px": 87,
+     "py": 58,
+     "motion": "tilt"
+    },
+    {
+     "name": "tailL",
+     "file": "/characters/fox_spirit/rig/4_tailL.png",
+     "x": 6,
+     "y": 11,
+     "w": 56,
+     "h": 136,
+     "px": 62,
+     "py": 85,
+     "motion": "fanL"
+    },
+    {
+     "name": "tailR",
+     "file": "/characters/fox_spirit/rig/4_tailR.png",
+     "x": 112,
+     "y": 10,
+     "w": 47,
+     "h": 137,
+     "px": 112,
+     "py": 85,
+     "motion": "fanR"
+    }
+   ]
+  },
+  "5": {
+   "w": 165,
+   "h": 164,
+   "base": "/characters/fox_spirit/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/fox_spirit/rig/5_head.png",
+     "x": 66,
+     "y": 2,
+     "w": 34,
+     "h": 56,
+     "px": 83,
+     "py": 58,
+     "motion": "tilt"
+    },
+    {
+     "name": "tailL",
+     "file": "/characters/fox_spirit/rig/5_tailL.png",
+     "x": 2,
+     "y": 18,
+     "w": 62,
+     "h": 132,
+     "px": 64,
+     "py": 90,
+     "motion": "fanL"
+    },
+    {
+     "name": "tailR",
+     "file": "/characters/fox_spirit/rig/5_tailR.png",
+     "x": 102,
+     "y": 15,
+     "w": 62,
+     "h": 135,
+     "px": 102,
+     "py": 90,
+     "motion": "fanR"
+    },
+    {
+     "name": "lower",
+     "file": "/characters/fox_spirit/rig/5_lower.png",
+     "x": 64,
+     "y": 118,
+     "w": 38,
+     "h": 44,
+     "px": 83,
+     "py": 118,
+     "motion": "swish"
+    }
+   ]
+  }
+ }
+}

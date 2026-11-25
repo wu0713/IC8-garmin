@@ -90,7 +90,7 @@ async function viewMe() {
   // 點夥伴：跳一下；有專屬特效的種族，環繞的小東西會散開再飛回來，加一圈光波
   if (pet) pet.onclick = () => {
     pet.classList.remove("hop", "react"); void pet.offsetWidth; pet.classList.add("hop");
-    if (pet.querySelector(".pet-orbit")) { pet.classList.add("react"); clearTimeout(pet._r); pet._r = setTimeout(() => pet.classList.remove("react"), 1300); }
+    if (pet.querySelector(".pet-orbit, .rig")) { pet.classList.add("react"); clearTimeout(pet._r); pet._r = setTimeout(() => pet.classList.remove("react"), 1300); }
   };
   if (g.character) celebrate(g);
 }
@@ -193,7 +193,7 @@ function previewPet(id, stage) {
     const pet = box.querySelector("#prev-pet");
     pet.onclick = () => {
       pet.classList.remove("hop", "react"); void pet.offsetWidth; pet.classList.add("hop");
-      if (pet.querySelector(".pet-orbit")) { pet.classList.add("react"); clearTimeout(pet._r); pet._r = setTimeout(() => pet.classList.remove("react"), 1300); }
+      if (pet.querySelector(".pet-orbit, .rig")) { pet.classList.add("react"); clearTimeout(pet._r); pet._r = setTimeout(() => pet.classList.remove("react"), 1300); }
     };
     box.querySelectorAll("[data-st]").forEach((b) => (b.onclick = () => draw(box, +b.dataset.st)));
   };

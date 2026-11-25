@@ -884,3 +884,37 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
 @media (prefers-reduced-motion: no-preference) {
   .scene-front .petal.front { animation: petal-fall calc(5s + var(--i) * .6s) linear calc(var(--i) * -.9s) infinite; }
 }
+
+/* ── 部位動作（rigs.json）：待機時翅膀、尾巴輕輕擺；點一下各部位各自動 ── */
+.rig { position: relative; display: block; }
+.rig .rp { position: absolute; display: block; background-size: 100% 100%; background-repeat: no-repeat; image-rendering: pixelated; }
+@media (prefers-reduced-motion: no-preference) {
+  .rig .rp-flapL { animation: idle-flapL 2s ease-in-out infinite; }
+  .rig .rp-flapR { animation: idle-flapR 2s ease-in-out infinite; }
+  .rig .rp-fanL { animation: idle-fanL 4s ease-in-out infinite; }
+  .rig .rp-fanR { animation: idle-fanR 4s ease-in-out infinite; }
+  .rig .rp-wag { animation: idle-wag 2.6s ease-in-out infinite; }
+  .rig .rp-tilt { animation: idle-tilt 8s ease-in-out infinite; }
+  .pet.react .rig .rp-flapL { animation: flapL .95s ease-in-out 1; }
+  .pet.react .rig .rp-flapR { animation: flapR .95s ease-in-out 1; }
+  .pet.react .rig .rp-fanL { animation: fanL 1s cubic-bezier(.3, 1.4, .5, 1) 1; }
+  .pet.react .rig .rp-fanR { animation: fanR 1s cubic-bezier(.3, 1.4, .5, 1) 1; }
+  .pet.react .rig .rp-wag { animation: wag .9s ease-in-out 1; }
+  .pet.react .rig .rp-tilt { animation: tilt 1s ease-in-out 1; }
+  .pet.react .rig .rp-swish { animation: swish 1s ease-in-out 1; }
+  /* 待機：很小的幅度，讓翅膀、尾巴一直有一點生命感 */
+  @keyframes idle-flapL { 0%, 100% { rotate: 0deg; } 50% { rotate: 4deg; } }
+  @keyframes idle-flapR { 0%, 100% { rotate: 0deg; } 50% { rotate: -4deg; } }
+  @keyframes idle-fanL { 0%, 100% { rotate: 0deg; } 50% { rotate: 2.2deg; } }
+  @keyframes idle-fanR { 0%, 100% { rotate: 0deg; } 50% { rotate: -2.2deg; } }
+  @keyframes idle-wag { 0%, 100% { rotate: -3deg; } 50% { rotate: 4deg; } }
+  @keyframes idle-tilt { 0%, 80%, 100% { rotate: 0deg; } 88% { rotate: -2.5deg; } }
+  /* 點一下 */
+  @keyframes flapL { 0%, 100% { rotate: 0deg; } 20% { rotate: 18deg; } 42% { rotate: -6deg; } 64% { rotate: 14deg; } 84% { rotate: -3deg; } }
+  @keyframes flapR { 0%, 100% { rotate: 0deg; } 20% { rotate: -18deg; } 42% { rotate: 6deg; } 64% { rotate: -14deg; } 84% { rotate: 3deg; } }
+  @keyframes fanL { 0%, 100% { rotate: 0deg; } 35% { rotate: 11deg; } 65% { rotate: -2deg; } }
+  @keyframes fanR { 0%, 100% { rotate: 0deg; } 35% { rotate: -11deg; } 65% { rotate: 2deg; } }
+  @keyframes wag { 0%, 100% { rotate: 0deg; } 20% { rotate: 16deg; } 45% { rotate: -12deg; } 70% { rotate: 9deg; } 88% { rotate: -4deg; } }
+  @keyframes tilt { 0%, 100% { rotate: 0deg; } 30% { rotate: -7deg; } 65% { rotate: 4deg; } }
+  @keyframes swish { 0%, 100% { transform: skewX(0); } 30% { transform: skewX(7deg); } 60% { transform: skewX(-5deg); } 82% { transform: skewX(2deg); } }
+}
