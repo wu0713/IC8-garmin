@@ -352,36 +352,36 @@
      "name": "小狐狸",
      "en": "Fox Kit",
      "file": "/characters/fox_spirit/1.png",
-     "w": 75,
-     "h": 67
+     "w": 77,
+     "h": 69
     },
     {
      "name": "三尾狐仙",
      "en": "Three-Tailed Fox Spirit",
      "file": "/characters/fox_spirit/2.png",
-     "w": 85,
-     "h": 131
+     "w": 87,
+     "h": 133
     },
     {
      "name": "六尾魅狐",
      "en": "Six-Tailed Enchantress",
      "file": "/characters/fox_spirit/3.png",
-     "w": 144,
-     "h": 158
+     "w": 146,
+     "h": 160
     },
     {
      "name": "九尾妖狐",
      "en": "Nine-Tailed Seductress",
      "file": "/characters/fox_spirit/4.png",
-     "w": 159,
-     "h": 150
+     "w": 161,
+     "h": 152
     },
     {
      "name": "九尾天狐",
      "en": "Celestial Nine-Tailed Goddess",
      "file": "/characters/fox_spirit/5.png",
-     "w": 163,
-     "h": 162
+     "w": 165,
+     "h": 164
     }
    ]
   },
