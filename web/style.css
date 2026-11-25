@@ -831,3 +831,7 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
   @keyframes aura-flash { 0% { filter: brightness(1); } 25% { filter: brightness(1.8); } 100% { filter: brightness(1); } }
 }
 .pet.floaty .pet-shadow { transform: scaleX(.72); opacity: .6; }
+
+.pick .cell[data-prev] { cursor: zoom-in; }
+.prev-stages { margin-top: 10px; }
+.sheet .stage { border-radius: 8px; }

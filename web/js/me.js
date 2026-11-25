@@ -160,17 +160,48 @@ async function viewPick() {
         <label><input type="radio" name="species" value="${s.id}" ${s.id === cur ? "checked" : ""}>
           <span class="pc"><span class="pc-main"><span class="pc-big"><img src="${s.stages[2].file}" alt=""></span>
               <span><b>${esc(s.name)}</b><small class="muted">${esc(s.blurb)}</small></span></span>
-            <span class="strip">${s.stages.map((st, i) => `<span class="cell"><span class="box"><img src="${st.file}" alt="${esc(st.name)}"></span><small>${esc(st.name)}</small></span>`).join("")}</span></span></label>`).join("")}</div>
+            <span class="strip">${s.stages.map((st, i) => `<span class="cell" data-prev="${s.id}:${i}" role="button" tabindex="0" aria-label="預覽${esc(st.name)}"><span class="box"><img src="${st.file}" alt="${esc(st.name)}"></span><small>${esc(st.name)}</small></span>`).join("")}</span></span></label>`).join("")}</div>
+      <p class="muted" style="margin-top:8px">點任一個階段的小圖，可以預覽牠進化後的樣子和動作。</p>
       <label><span>幫牠取名字（選填，最多 12 字）</span><input type="text" name="nickname" maxlength="12" value="${esc(g.character?.nickname && g.character.nickname !== g.character.stage_name ? g.character.nickname : "")}"></label>
       <button class="btn block" type="submit">${g.character ? "換成這隻" : "就決定是你了"}</button>
     </form>`;
   bindCommon();
+  document.querySelectorAll("[data-prev]").forEach((c) => {
+    const open = (e) => { e.preventDefault(); e.stopPropagation(); const [id, i] = c.dataset.prev.split(":"); previewPet(id, +i); };
+    c.addEventListener("click", open);
+    c.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") open(e); });
+  });
   document.getElementById("pick").onsubmit = async (e) => {
     e.preventDefault();
     const f = new FormData(e.target);
     await busy(e.submitter, () => api("/api/character", { method: "PUT", body: { species: f.get("species"), nickname: f.get("nickname") } }));
     go("#/me");
   };
+}
+
+// 預覽某一隻夥伴的某個階段：完整的場景、特效、浮空和點擊反應（不會改到你現在的夥伴）
+function previewPet(id, stage) {
+  const sp = species(id);
+  const lv = S.chars.stage_levels || [];
+  const draw = (box, i) => {
+    box.querySelector(".prev-body").innerHTML = `
+      <p class="muted">第 ${i + 1} 階段「${esc(sp.stages[i].name)}」${lv[i] ? `，Lv ${lv[i]} 進化` : ""}</p>
+      <div class="stage" style="margin-top:8px"><button class="pet s${i} ${petCls(id, i)}" type="button" id="prev-pet" style="${petSpark(id) ? `--spark:${petSpark(id)}` : ""}" aria-label="跟牠互動">
+        ${petFx(id, i)}<span class="pet-fx" aria-hidden="true"><i></i><i></i><i></i><i></i></span>${charImg(id, i, 200)}<span class="pet-shadow"></span></button></div>
+      <div class="seg prev-stages" role="group" aria-label="階段">${sp.stages.map((_, k) => `<button type="button" data-st="${k}" aria-pressed="${k === i}">${k + 1}</button>`).join("")}</div>
+      <p class="muted" style="margin-top:6px;text-align:center">點牠看看反應</p>`;
+    const pet = box.querySelector("#prev-pet");
+    pet.onclick = () => {
+      pet.classList.remove("hop", "react"); void pet.offsetWidth; pet.classList.add("hop");
+      if (pet.querySelector(".pet-orbit")) { pet.classList.add("react"); clearTimeout(pet._r); pet._r = setTimeout(() => pet.classList.remove("react"), 1300); }
+    };
+    box.querySelectorAll("[data-st]").forEach((b) => (b.onclick = () => draw(box, +b.dataset.st)));
+  };
+  sheet(`<h2>${esc(sp.name)}</h2><div class="prev-body"></div>
+    <div class="btn-row"><button class="btn outline" type="button" id="prev-x">關閉</button></div>`, (box, close) => {
+    draw(box, stage);
+    box.querySelector("#prev-x").onclick = close;
+  });
 }
 
 // ───────────────────── 目標與課表偏好 ─────────────────────
