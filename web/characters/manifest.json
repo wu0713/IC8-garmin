@@ -100,36 +100,36 @@
      "name": "黑暗學徒",
      "en": "Dark Novice",
      "file": "/characters/necromancer/1.png",
-     "w": 104,
-     "h": 113
+     "w": 106,
+     "h": 115
     },
     {
      "name": "盜墓者",
      "en": "Grave Robber",
      "file": "/characters/necromancer/2.png",
-     "w": 129,
-     "h": 121
+     "w": 131,
+     "h": 123
     },
     {
      "name": "靈魂收割者",
      "en": "Soul Reaper",
      "file": "/characters/necromancer/3.png",
-     "w": 200,
-     "h": 146
+     "w": 202,
+     "h": 148
     },
     {
      "name": "死亡使者",
      "en": "Death Bringer",
      "file": "/characters/necromancer/4.png",
-     "w": 180,
-     "h": 173
+     "w": 182,
+     "h": 175
     },
     {
      "name": "死靈君主",
      "en": "Necromancer Lord",
      "file": "/characters/necromancer/5.png",
-     "w": 196,
-     "h": 173
+     "w": 198,
+     "h": 175
     }
    ]
   },

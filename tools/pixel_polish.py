@@ -85,11 +85,11 @@ def drop_tint(a, mask, protect=(), max_sat=70, vmin=70, vmax=222, hue=None):
 
 
 def smooth_tint(a, mask, protect=(), max_sat=90, vmin=70, vmax=228, hue=None, sigma=5.0, lift=1.0, boxes=None,
-                glow=None, mix=0.0, alpha=255):
+                glow=None, mix=0.0, alpha=255, min_sat=0):
     """光芒和棋盤格交錯得太密、挖不乾淨時：不挖，改成把那一片「抹平」成柔和的光（棋盤格紋路消失，形狀保留）。"""
     hsv = np.array(Image.fromarray(a[..., :3]).convert("HSV")).astype(int)
     h = hsv[..., 0] * 360 // 256
-    sel = mask & (hsv[..., 1] <= max_sat) & (hsv[..., 2] >= vmin) & (hsv[..., 2] <= vmax)
+    sel = mask & (hsv[..., 1] <= max_sat) & (hsv[..., 1] >= min_sat) & (hsv[..., 2] >= vmin) & (hsv[..., 2] <= vmax)
     if hue:
         lo, hi = hue
         sel &= ((h >= lo) | (h < hi)) if lo > hi else ((h >= lo) & (h < hi))
@@ -209,6 +209,16 @@ TUNE = {
         4: {"tint": {"hue": (0, 70), "max_sat": 95, "vmin": 40, "vmax": 205, "protect": [(52, 28, 122, 155), (30, 18, 62, 150)]}},
         5: {"holes": False, "smooth": {"protect": [(86, 44, 104, 70), (66, 72, 120, 160)], "max_sat": 95, "vmax": 224, "sigma": 3,
                                        "glow": (255, 236, 190), "mix": 0.55, "alpha": 120}}}},
+    # 死靈法師：第 3 階段紫水晶裡的棋盤格、第 5 階段紫色煙霧裡的棋盤格 → 抹平成半透明紫色靈氣（白色幽靈保留）
+    "necromancer": {"sat": 1.1, "contrast": 1.1, "debris": True, "min_bit": 24, "holes": True, "stages": {
+        3: {"smooth": [{"hue": (225, 320), "max_sat": 200, "vmin": 50, "vmax": 225, "boxes": [(98, 2, 131, 48)], "sigma": 2,
+                        "glow": (150, 90, 230), "mix": 0.3, "alpha": 190},
+                       {"max_sat": 45, "vmin": 80, "vmax": 220, "boxes": [(98, 2, 131, 48)], "sigma": 2,
+                        "glow": (150, 90, 230), "mix": 0.5, "alpha": 150}]},
+        5: {"holes": False, "smooth": [
+            {"hue": (225, 320), "min_sat": 38, "vmin": 35, "vmax": 228, "sigma": 4, "glow": (140, 85, 220), "mix": 0.4, "alpha": 150},
+            {"max_sat": 45, "vmin": 80, "vmax": 215, "protect": [(62, 20, 132, 173), (28, 5, 58, 173), (125, 88, 196, 173)],
+             "sigma": 3, "glow": (150, 90, 230), "mix": 0.5, "alpha": 130}]}}},
     "fox_spirit": {"sat": 1.25, "contrast": 1.08},   # 和服的紅、紫、金更華麗
     # 魅魔：跟九尾狐的粉紅分開 → 粉紅轉成深紫紅、整體暗一點；翅膀和魔力圈裡夾著背景棋盤格
     "succubus": {"sat": 1.2, "contrast": 1.12, "holes": True, "hue": [(296, 8, -30, 0.84)]},

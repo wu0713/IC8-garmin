@@ -894,5 +894,196 @@
     }
    ]
   }
+ },
+ "necromancer": {
+  "1": {
+   "w": 106,
+   "h": 115,
+   "base": "/characters/necromancer/rig/1_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/necromancer/rig/1_head.png",
+     "x": 22,
+     "y": 10,
+     "w": 33,
+     "h": 30,
+     "px": 38,
+     "py": 40,
+     "motion": "tilt"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/necromancer/rig/1_torso.png",
+     "x": 12,
+     "y": 40,
+     "w": 46,
+     "h": 35,
+     "px": 35,
+     "py": 75,
+     "motion": "breath"
+    }
+   ]
+  },
+  "2": {
+   "w": 131,
+   "h": 123,
+   "base": "/characters/necromancer/rig/2_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/necromancer/rig/2_head.png",
+     "x": 42,
+     "y": 2,
+     "w": 39,
+     "h": 36,
+     "px": 60,
+     "py": 38,
+     "motion": "tilt"
+    },
+    {
+     "name": "minion",
+     "file": "/characters/necromancer/rig/2_minion.png",
+     "x": 88,
+     "y": 40,
+     "w": 40,
+     "h": 28,
+     "px": 106,
+     "py": 68,
+     "motion": "nod"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/necromancer/rig/2_torso.png",
+     "x": 20,
+     "y": 38,
+     "w": 62,
+     "h": 40,
+     "px": 50,
+     "py": 78,
+     "motion": "breath"
+    }
+   ]
+  },
+  "3": {
+   "w": 202,
+   "h": 148,
+   "base": "/characters/necromancer/rig/3_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/necromancer/rig/3_head.png",
+     "x": 55,
+     "y": 14,
+     "w": 40,
+     "h": 36,
+     "px": 75,
+     "py": 50,
+     "motion": "tilt"
+    },
+    {
+     "name": "flame",
+     "file": "/characters/necromancer/rig/3_flame.png",
+     "x": 101,
+     "y": 3,
+     "w": 33,
+     "h": 47,
+     "px": 115,
+     "py": 48,
+     "motion": "flicker"
+    },
+    {
+     "name": "minion",
+     "file": "/characters/necromancer/rig/3_minion.png",
+     "x": 128,
+     "y": 45,
+     "w": 25,
+     "h": 27,
+     "px": 140,
+     "py": 72,
+     "motion": "nod"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/necromancer/rig/3_torso.png",
+     "x": 42,
+     "y": 50,
+     "w": 63,
+     "h": 45,
+     "px": 72,
+     "py": 95,
+     "motion": "breath"
+    }
+   ]
+  },
+  "4": {
+   "w": 182,
+   "h": 175,
+   "base": "/characters/necromancer/rig/4_base.png",
+   "parts": [
+    {
+     "name": "minion",
+     "file": "/characters/necromancer/rig/4_minion.png",
+     "x": 128,
+     "y": 58,
+     "w": 28,
+     "h": 24,
+     "px": 142,
+     "py": 82,
+     "motion": "nod"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/necromancer/rig/4_torso.png",
+     "x": 55,
+     "y": 70,
+     "w": 53,
+     "h": 45,
+     "px": 82,
+     "py": 115,
+     "motion": "breath"
+    }
+   ]
+  },
+  "5": {
+   "w": 198,
+   "h": 175,
+   "base": "/characters/necromancer/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/necromancer/rig/5_head.png",
+     "x": 90,
+     "y": 30,
+     "w": 26,
+     "h": 32,
+     "px": 103,
+     "py": 62,
+     "motion": "tilt"
+    },
+    {
+     "name": "beast",
+     "file": "/characters/necromancer/rig/5_beast.png",
+     "x": 158,
+     "y": 92,
+     "w": 35,
+     "h": 44,
+     "px": 162,
+     "py": 112,
+     "motion": "nod"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/necromancer/rig/5_torso.png",
+     "x": 72,
+     "y": 62,
+     "w": 58,
+     "h": 48,
+     "px": 100,
+     "py": 110,
+     "motion": "breath"
+    }
+   ]
+  }
  }
 }

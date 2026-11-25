@@ -177,11 +177,14 @@ const PET_FX = {
   // 馴獸師：森林的綠光，周圍繞著飄葉；人和野獸站在地上（不浮空）
   // 精靈使：水青色的靈光，環繞小光球；最終階段浮空
   spirit: { from: 2, aura: "140,240,215", orb: "wisp", colors: ["#1E6B66", "#5FE0C8", "#F2FFF9"], spark: "#BFFFF0", float: 5, sway: 2 },
+  // 死靈法師：綠色魂火的光暈，環繞小骷髏
+  necromancer: { from: 2, aura: "110,240,150", orb: "skull", colors: ["#1A1424", "#E8E2CF", "#4DFF9A"], spark: "#9BFFC4", sway: 2 },
   beast_tamer: { from: 2, aura: "140,215,100", orb: "leaf", colors: ["#28501C", "#68AE36", "#D2F59A"], spark: "#CFF59A", sway: 2 },
 };
 const ORB_GRID = {
   flame: ["...1...", "..121..", "..121..", ".12221.", ".12321.", "1223321", "1233321", ".12321.", "..111.."],
   bat: ["1.......1", "11.....11", "111.1.111", "111222111", ".1232321.", "..12221..", "...1.1..."],
+  skull: [".11111.", "1222221", "1322231", "1222221", ".12221.", ".12121.", "..111.."],
   wisp: ["..111..", ".12221.", "1233321", "1233321", ".12321.", "..121..", "...1..."],
   leaf: ["....111", "...1221", "..12321", ".123221", "1232211", "122211.", "1111...", "1......"],
 };
@@ -262,6 +265,27 @@ const PET_SCENE = {
       .map(([x, y], i) => `<i class="star" style="left:${(x / 160) * 100}%;top:${(y / 80) * 100}%;--i:${i}"></i>`).join("");
     return `<svg class="scene-art" viewBox="0 0 160 80" preserveAspectRatio="xMidYMax slice" shape-rendering="crispEdges">${s}</svg>${stars}<i class="mist"></i><i class="mist m2"></i>`;
   },
+  // 死靈法師：起霧的墓園，綠色月亮、墓碑、鐵欄杆、枯樹，鬼火飄著、地上綠霧流動
+  necromancer: () => {
+    let s = bands(0, ["#0A0E12", "#0D1318", "#10181D", "#131D22", "#162227", "#19272B", "#1C2C2F", "#1F3132", "#223534", "#253936"], 5);
+    s += pxCircle(36, 16, 9, "#2E5A3E") + pxCircle(36, 16, 8, "#9DE8A8") + pxCircle(33, 13, 2, "#7CCB8A") + pxCircle(39, 19, 2, "#7CCB8A");
+    // 遠方的山丘和教堂剪影
+    for (let x = 0; x < 160; x += 2) { const h = 5 + Math.round(3 * Math.sin(x / 12) + 2 * Math.sin(x / 4.3)); s += PX(x, 46 - h, 2, h, "#0C1614"); }
+    s += PX(110, 24, 16, 20, "#0A1210") + PX(116, 14, 4, 10, "#0A1210") + PX(117, 10, 2, 4, "#0A1210") + PX(115, 11, 6, 1, "#0A1210") + PX(117, 30, 2, 4, "#7CFFAA");
+    // 地面
+    s += PX(0, 46, 160, 34, "#1B2620") + PX(0, 46, 160, 2, "#26362C") + PX(0, 62, 160, 18, "#141C18");
+    // 鐵欄杆
+    for (let x = 0; x < 160; x += 6) s += PX(x, 38, 1, 9, "#0A0F0D") + PX(x, 37, 1, 1, "#3A4A42");
+    s += PX(0, 40, 160, 1, "#0A0F0D") + PX(0, 44, 160, 1, "#0A0F0D");
+    // 墓碑
+    const tomb = (x, y, w, h) => PX(x, y + 2, w, h - 2, "#5E6A66") + PX(x + 1, y, w - 2, 2, "#5E6A66") + PX(x + 1, y + 2, 1, h - 3, "#7D8A85") + PX(x + 2, y + 4, w - 4, 1, "#3C4643") + PX(x - 1, y + h, w + 2, 1, "#0E1412");
+    s += tomb(16, 48, 8, 10) + tomb(30, 52, 6, 8) + tomb(126, 49, 9, 11) + tomb(142, 54, 6, 8) + tomb(104, 58, 7, 9);
+    s += PX(52, 50, 2, 9, "#4E5955") + PX(50, 52, 6, 2, "#4E5955");
+    // 枯樹（右邊）
+    s += PX(150, 20, 3, 28, "#080C0A") + PX(144, 26, 6, 2, "#080C0A") + PX(153, 24, 6, 2, "#080C0A") + PX(142, 23, 2, 3, "#080C0A") + PX(158, 21, 2, 3, "#080C0A");
+    const wisps = Array.from({ length: 6 }, (_, i) => `<i class="firefly ghostfire" style="--i:${i}"></i>`).join("");
+    return `<svg class="scene-art" viewBox="0 0 160 80" preserveAspectRatio="xMidYMax slice" shape-rendering="crispEdges">${s}</svg>${wisps}<i class="mist green"></i><i class="mist green m2"></i>`;
+  },
   // 精靈使：月夜的精靈泉，極光、古樹、發光的蘑菇，螢火慢慢往上飄
   spirit: () => {
     let s = bands(0, ["#0B1430", "#0E1B3B", "#112346", "#142C50", "#17365A", "#1A4062", "#1D4A69", "#20536E", "#235B72", "#266274"], 5);
@@ -330,6 +354,7 @@ const PET_FRONT = {
       `<i class="petal front" style="--i:2"></i><i class="petal front" style="--i:5"></i>`;
   },
   succubus: () => `<i class="mist front"></i><i class="mist front m2"></i>`,
+  necromancer: () => `<i class="mist green front"></i><i class="mist green front m2"></i>`,
   spirit: () => {
     let s = "";
     for (let x = 0; x < 160; x += 3) {
@@ -353,7 +378,7 @@ const petFront = (id) => (PET_FRONT[id] ? `<span class="scene-front" aria-hidden
 
 // 夥伴圖：有拆部位的（rigs.json）用分層組回角色，點擊時頭、翅膀、尾巴、下襬各自動；沒有的用整張圖
 // 圖層順序：翅膀、尾巴、魔力圈在身體後面；上半身、頭在前面。腳留在身體層，不另外動
-const RIG_Z = { wingL: 0, wingR: 0, tail: 0, tailL: 0, tailR: 0, ringL: 0, ringR: 0, torso: 2, head: 3, beast: 2, mane: 2, crystal: 3, wisp: 3, fairy: 3, ghost: 3, flame: 3 };
+const RIG_Z = { wingL: 0, wingR: 0, tail: 0, tailL: 0, tailR: 0, ringL: 0, ringR: 0, torso: 2, head: 3, beast: 2, mane: 2, crystal: 3, wisp: 3, fairy: 3, ghost: 3, flame: 3, minion: 2 };
 function petSprite(id, stage, boxH) {
   const rig = S.rigs?.[id]?.[stage + 1], sp = species(id);
   if (!rig || !sp) return charImg(id, stage, boxH);
