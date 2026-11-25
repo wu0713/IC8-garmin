@@ -32,7 +32,7 @@ async function viewMe() {
     const sp = species(g.character.species);
     const nextLv = g.next_stage_level;
     hero = `<section class="hero" aria-labelledby="pet">
-      <div class="stage"><button class="pet s${g.stage}" id="pet-btn" data-sp="${sp.id}" style="${petSpark(sp.id) ? `--spark:${petSpark(sp.id)}` : ""}" aria-label="跟${esc(g.character.nickname)}互動">
+      <div class="stage"><button class="pet s${g.stage} ${petCls(sp.id, g.stage)}" id="pet-btn" data-sp="${sp.id}" style="${petSpark(sp.id) ? `--spark:${petSpark(sp.id)}` : ""}" aria-label="跟${esc(g.character.nickname)}互動">
         ${petFx(sp.id, g.stage)}<span class="pet-fx" aria-hidden="true"><i></i><i></i><i></i><i></i></span>${charImg(sp.id, g.stage, 200)}<span class="pet-shadow"></span></button></div>
       <div class="hero-info">
         <p class="sp">${esc(sp.name)}，第 ${g.stage + 1} 階段「${esc(g.character.stage_name)}」</p>
@@ -87,7 +87,11 @@ async function viewMe() {
     S.token = null; localStorage.removeItem("ic8_token"); go("#/login");
   };
   const pet = document.getElementById("pet-btn");
-  if (pet) pet.onclick = () => { pet.classList.remove("hop"); void pet.offsetWidth; pet.classList.add("hop"); };
+  // 點夥伴：跳一下；有專屬特效的種族，環繞的小東西會散開再飛回來，加一圈光波
+  if (pet) pet.onclick = () => {
+    pet.classList.remove("hop", "react"); void pet.offsetWidth; pet.classList.add("hop");
+    if (pet.querySelector(".pet-orbit")) { pet.classList.add("react"); clearTimeout(pet._r); pet._r = setTimeout(() => pet.classList.remove("react"), 1300); }
+  };
   if (g.character) celebrate(g);
 }
 

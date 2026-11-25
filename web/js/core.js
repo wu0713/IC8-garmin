@@ -169,8 +169,9 @@ const species = (id) => S.chars?.species.find((s) => s.id === id);
 // ── 夥伴特效：每個種族自己的光暈和環繞小物（從第 from 階段開始；越高階越亮）──
 // 之後其他種族照這個格式加：aura 是光暈的 RGB，orb 是環繞的像素小圖（顏色 3 個：外、中、心）
 const PET_FX = {
-  fox_spirit: { from: 2, aura: "255,105,190", orb: "flame", colors: ["#C2369E", "#FF7AD0", "#FFE6F7"], spark: "#FFB8E6" },
-  succubus: { from: 2, aura: "150,70,230", orb: "bat", colors: ["#1E0B2E", "#6B35B8", "#FF4D7E"], spark: "#C79BFF" },
+  // float：從第幾階段開始浮在空中（不再原地跳）；sway：尾巴、披風微微擺動
+  fox_spirit: { from: 2, aura: "255,105,190", orb: "flame", colors: ["#C2369E", "#FF7AD0", "#FFE6F7"], spark: "#FFB8E6", float: 3, sway: 1 },
+  succubus: { from: 2, aura: "150,70,230", orb: "bat", colors: ["#1E0B2E", "#6B35B8", "#FF4D7E"], spark: "#C79BFF", float: 2, sway: 2 },
 };
 const ORB_GRID = {
   flame: ["...1...", "..121..", "..121..", ".12221.", ".12321.", "1223321", "1233321", ".12321.", "..111.."],
@@ -190,11 +191,17 @@ function petFx(speciesId, stage) {
   const fx = PET_FX[speciesId];
   if (!fx || stage < fx.from) return "";
   const n = stage >= 4 ? 4 : stage >= 3 ? 3 : 2;
-  return `<span class="pet-aura" style="--aura:${fx.aura}" aria-hidden="true"></span>
+  return `<span class="pet-aura" style="--aura:${fx.aura}" aria-hidden="true"></span><span class="pet-wave" style="--aura:${fx.aura}" aria-hidden="true"></span>
     <span class="pet-orbit${stage >= 4 ? " fast" : ""}" style="--aura:${fx.aura}" aria-hidden="true">${Array.from({ length: n }, (_, i) =>
       `<i style="--k:${i};--n:${n}"><b>${pixelOrb(fx.orb, fx.colors)}</b></i>`).join("")}</span>`;
 }
 const petSpark = (speciesId) => PET_FX[speciesId]?.spark || "";
+// 夥伴的動態樣式：浮空、擺動
+function petCls(speciesId, stage) {
+  const fx = PET_FX[speciesId];
+  if (!fx) return "";
+  return [fx.float != null && stage >= fx.float ? "floaty" : "", fx.sway != null && stage >= fx.sway ? "sway" : ""].join(" ").trim();
+}
 
 // scale：同一系列所有階段用同一個倍率，所以越後面的階段畫面上越大
 function charImg(id, stage, boxH = 200, cls = "") {
