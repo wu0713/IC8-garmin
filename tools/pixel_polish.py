@@ -22,11 +22,39 @@ def peel_grey(a, mask, passes=8):
     return mask
 
 
-def polish(path, colors=96, sat=1.12, contrast=1.06):
+def drop_grey_holes(a, mask, min_size=10):
+    """被翅膀、魔力圈包在裡面的大片中性灰（原背景的棋盤格）挖成透明。只給本身沒有灰色部位的角色用。"""
+    rgb = a[..., :3].astype(int)
+    spread = rgb.max(-1) - rgb.min(-1)
+    val = rgb.max(-1)
+    grey = mask & (spread < 22) & (val > 150) & (val < 225)
+    lab, n = ndimage.label(grey, structure=np.ones((3, 3)))
+    if n:
+        sizes = ndimage.sum(grey, lab, range(1, n + 1))
+        for i, sz in enumerate(sizes, 1):
+            if sz >= min_size:
+                mask = mask & ~(lab == i)
+    return mask
+
+
+def shift_hue(img, lo, hi, by, darken=1.0, min_sat=40):
+    """把某段色相（0–360 度）整段轉到別的顏色，例如粉紅轉成紫紅；金髮、膚色不在範圍內就不動。"""
+    hsv = np.array(img.convert("HSV")).astype(int)
+    h = hsv[..., 0] * 360 // 256
+    sel = ((h >= lo) | (h < hi)) if lo > hi else ((h >= lo) & (h < hi))
+    sel &= hsv[..., 1] >= min_sat
+    hsv[..., 0] = np.where(sel, ((h + by) % 360) * 256 // 360, hsv[..., 0])
+    hsv[..., 2] = np.where(sel, (hsv[..., 2] * darken).clip(0, 255), hsv[..., 2])
+    return Image.fromarray(hsv.astype(np.uint8), "HSV").convert("RGB")
+
+
+def polish(path, colors=96, sat=1.12, contrast=1.06, holes=False, hue=None):
     im = Image.open(path).convert("RGBA")
     a = np.array(im)
     mask = a[..., 3] > 0
     mask = peel_grey(a, mask)
+    if holes:
+        mask = drop_grey_holes(a, mask)
     lab, n = ndimage.label(mask)
     if n:
         sizes = ndimage.sum(mask, lab, range(1, n + 1))
@@ -42,6 +70,8 @@ def polish(path, colors=96, sat=1.12, contrast=1.06):
             body |= lab == i
     img = Image.fromarray(a[..., :3], "RGB").filter(ImageFilter.UnsharpMask(radius=1.0, percent=60, threshold=2))
     img = ImageEnhance.Contrast(ImageEnhance.Color(img).enhance(sat)).enhance(contrast)
+    for hs in hue or []:
+        img = shift_hue(img, *hs)
     arr = np.array(img)
     fill = arr[mask]
     arr[~mask] = np.median(fill, axis=0).astype(np.uint8) if len(fill) else 0
@@ -60,6 +90,8 @@ def polish(path, colors=96, sat=1.12, contrast=1.06):
 # 每個種族可以個別調整：sat 彩度、contrast 對比、colors 顏色數
 TUNE = {
     "fox_spirit": {"sat": 1.25, "contrast": 1.08},   # 和服的紅、紫、金更華麗
+    # 魅魔：跟九尾狐的粉紅分開 → 粉紅轉成深紫紅、整體暗一點；翅膀和魔力圈裡夾著背景棋盤格
+    "succubus": {"sat": 1.2, "contrast": 1.12, "holes": True, "hue": [(296, 8, -30, 0.84)]},
 }
 
 

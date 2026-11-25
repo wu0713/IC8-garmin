@@ -226,36 +226,36 @@
      "name": "誘惑者",
      "en": "Temptress",
      "file": "/characters/succubus/1.png",
-     "w": 81,
-     "h": 121
+     "w": 83,
+     "h": 123
     },
     {
      "name": "見習魅魔",
      "en": "Succubus Initiate",
      "file": "/characters/succubus/2.png",
-     "w": 80,
-     "h": 140
+     "w": 82,
+     "h": 142
     },
     {
      "name": "吸血魅魔",
      "en": "Vampiress Succubus",
      "file": "/characters/succubus/3.png",
-     "w": 110,
-     "h": 173
+     "w": 112,
+     "h": 175
     },
     {
      "name": "緋紅繆思",
      "en": "Crimson Muse",
      "file": "/characters/succubus/4.png",
-     "w": 163,
-     "h": 166
+     "w": 165,
+     "h": 168
     },
     {
      "name": "慾望女王",
      "en": "Queen of Desire",
      "file": "/characters/succubus/5.png",
-     "w": 128,
-     "h": 173
+     "w": 130,
+     "h": 175
     }
    ]
   },

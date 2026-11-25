@@ -779,7 +779,9 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
 .pet-orbit { position: absolute; left: 50%; top: 44%; width: 0; height: 0; pointer-events: none; }
 .pet-orbit i { position: absolute; left: 0; top: 0; z-index: 2; translate: 0 0; }
 .pet-orbit i b { display: block; transform: translate(-50%, -50%); }
-.pet-orbit svg { display: block; width: 18px; height: auto; filter: drop-shadow(0 0 4px rgba(255, 120, 210, .9)); }
+.pet-orbit svg { display: block; width: 18px; height: auto; filter: drop-shadow(0 0 4px rgba(var(--aura), .9)); }
+.pet-orbit svg.orb-bat { width: 24px; }
+.pet.s4 .pet-orbit svg.orb-bat { width: 28px; }
 .pet.s4 .pet-orbit svg { width: 22px; }
 .evo-pic { position: relative; display: grid; place-items: center; }
 .evo-pic img { position: relative; z-index: 1; }
@@ -793,6 +795,8 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
   .pet-orbit i { animation: orbit-xy 9s steps(48) infinite; animation-delay: calc(-9s * var(--k) / var(--n)); }
   .pet-orbit.fast i { animation-duration: 6.5s; animation-delay: calc(-6.5s * var(--k) / var(--n)); }
   .pet-orbit i b { animation: flicker .5s steps(2) infinite; }
+  .pet-orbit svg.orb-bat { animation: flap .32s steps(2) infinite; }
+  @keyframes flap { 50% { transform: scaleY(.55); } }
   @keyframes orbit-xy { 0.0% { translate: 112px 0px; z-index: 2; scale: 1.00; } 8.33% { translate: 97px 20px; z-index: 2; scale: 1.09; } 16.67% { translate: 56px 35px; z-index: 2; scale: 1.16; } 25.0% { translate: 0px 40px; z-index: 2; scale: 1.18; } 33.33% { translate: -56px 35px; z-index: 2; scale: 1.16; } 41.67% { translate: -97px 20px; z-index: 2; scale: 1.09; } 50.0% { translate: -112px 0px; z-index: 2; scale: 1.00; } 58.33% { translate: -97px -20px; z-index: 0; scale: 0.91; } 66.67% { translate: -56px -35px; z-index: 0; scale: 0.84; } 75.0% { translate: -0px -40px; z-index: 0; scale: 0.82; } 83.33% { translate: 56px -35px; z-index: 0; scale: 0.84; } 91.67% { translate: 97px -20px; z-index: 0; scale: 0.91; } 100.0% { translate: 112px -0px; z-index: 0; scale: 1.00; } }
   .evo-burst::before { animation: aura-breathe 1.6s ease-in-out 3; }
   .evo-burst i { animation: burst 1.4s cubic-bezier(.2, .8, .3, 1) calc(var(--k) * 40ms) 2 both; }
