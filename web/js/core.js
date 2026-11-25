@@ -187,6 +187,8 @@ const PET_FX = {
   orc: { from: 2, aura: "240,110,50", orb: "rune", colors: ["#2A1A10", "#6B4A2E", "#FF8A2A"], spark: "#FFB070", sway: 3 },
   // 哥布林：黃綠色的光暈，環繞搶來的金幣
   goblin: { from: 2, aura: "190,230,70", orb: "coin", colors: ["#5A3A0A", "#E8B830", "#FFF2A0"], spark: "#FFE27A" },
+  // 聖騎士：聖光的金色光暈，環繞發光的十字星；披風擺動，熾天使型態浮空
+  paladin: { from: 2, aura: "255,215,120", orb: "holy", colors: ["#8A6A1A", "#FFD24A", "#FFFFFF"], spark: "#FFF2B0", float: 5, sway: 4 },
   beast_tamer: { from: 2, aura: "140,215,100", orb: "leaf", colors: ["#28501C", "#68AE36", "#D2F59A"], spark: "#CFF59A", sway: 2 },
 };
 const ORB_GRID = {
@@ -196,6 +198,7 @@ const ORB_GRID = {
   rock: ["..111..", ".12221.", "1222231", "1223321", ".12221.", "..111.."],
   rune: [".11111.", "1222221", "1232321", "1223221", "1232321", "1222221", ".11111."],
   coin: ["..111..", ".12221.", "1223221", "1232321", "1223221", ".12221.", "..111.."],
+  holy: ["...1...", "..121..", "1123211", "1233321", "1123211", "..121..", "...1..."],
   wisp: ["..111..", ".12221.", "1233321", "1233321", ".12321.", "..121..", "...1..."],
   leaf: ["....111", "...1221", "..12321", ".123221", "1232211", "122211.", "1111...", "1......"],
 };
@@ -377,6 +380,28 @@ const PET_SCENE = {
     const drips = [0, 1, 2].map((i) => `<i class="drip" style="--i:${i}"></i>`).join("");
     return `<svg class="scene-art" viewBox="0 0 160 80" preserveAspectRatio="xMidYMax slice" shape-rendering="crispEdges">${s}</svg>${drips}<i class="torch" style="left:13.1%;top:24%"></i><i class="torch" style="left:87.6%;top:26.5%"></i>`;
   },
+  // 聖騎士：大聖堂內部，彩繪玫瑰窗透進聖光、大理石柱、紅毯，光束閃動、光點飄落
+  paladin: () => {
+    let s = bands(0, ["#2A2236", "#30273C", "#372C42", "#3E3248", "#46384E", "#4E3F54", "#57465A", "#5F4D60", "#675466", "#6E5B6A"], 5);
+    // 拱頂
+    for (let x = 0; x < 160; x += 2) { const h = Math.round(10 * Math.cos((x - 80) / 52)); s += PX(x, 0, 2, Math.max(0, 12 - h), "#1E1828"); }
+    // 玫瑰窗
+    s += pxCircle(80, 20, 12, "#2A1E2E") + pxCircle(80, 20, 11, "#4A6AC8");
+    [[0, -7, "#E8C040"], [7, 0, "#D8404A"], [0, 7, "#40A860"], [-7, 0, "#D8404A"], [5, 5, "#E8C040"], [-5, -5, "#40A860"], [5, -5, "#8A5AD0"], [-5, 5, "#8A5AD0"]].forEach(([dx, dy, c]) => (s += pxCircle(80 + dx, 20 + dy, 3, c)));
+    s += pxCircle(80, 20, 3, "#FFF2B0") + PX(79, 9, 2, 22, "#2A1E2E") + PX(69, 19, 22, 2, "#2A1E2E");
+    // 聖光光束
+    s += `<polygon points="72,30 88,30 112,70 48,70" fill="#FFF2C0" opacity=".12"/><polygon points="76,30 84,30 96,70 64,70" fill="#FFF2C0" opacity=".12"/>`;
+    // 大理石柱
+    const col = (x) => PX(x, 6, 10, 42, "#CFC6C0") + PX(x + 2, 6, 2, 42, "#E8E2DC") + PX(x + 7, 6, 2, 42, "#A89E98") + PX(x - 2, 4, 14, 3, "#B8AEA8") + PX(x - 2, 46, 14, 3, "#B8AEA8");
+    s += col(10) + col(36) + col(114) + col(140);
+    // 地面：大理石地板、紅毯
+    s += PX(0, 48, 160, 32, "#BDB2AC") + PX(0, 48, 160, 1, "#D8CEC8");
+    for (let y = 52; y < 80; y += 6) s += PX(0, y, 160, 1, "#A89E98");
+    for (let i = 0; i < 8; i++) s += PX(70 - i * 3, 48 + i * 4, 20 + i * 6, 4, i % 2 ? "#A82A30" : "#B8323A");
+    s += PX(70, 48, 20, 1, "#E8C040");
+    const motes = Array.from({ length: 7 }, (_, i) => `<i class="petal mote" style="--i:${i}"></i>`).join("");
+    return `<svg class="scene-art" viewBox="0 0 160 80" preserveAspectRatio="xMidYMax slice" shape-rendering="crispEdges">${s}</svg>${motes}<i class="godray"></i>`;
+  },
   // 精靈使：月夜的精靈泉，極光、古樹、發光的蘑菇，螢火慢慢往上飄
   spirit: () => {
     let s = bands(0, ["#0B1430", "#0E1B3B", "#112346", "#142C50", "#17365A", "#1A4062", "#1D4A69", "#20536E", "#235B72", "#266274"], 5);
@@ -466,6 +491,12 @@ const PET_FRONT = {
     let s = "";
     for (let x = 0; x < 160; x += 4) { const h = 2 + ((x * 7) % 4); s += PX(x, 10 - h, 4, h, x % 8 ? "#2A221A" : "#3A3026"); }
     s += PX(30, 7, 3, 2, "#E8B830") + PX(112, 8, 3, 2, "#E8B830") + PX(70, 8, 2, 1, "#FFF2A0");
+    return `<svg class="front-art" viewBox="0 0 160 10" preserveAspectRatio="none" shape-rendering="crispEdges">${s}</svg>`;
+  },
+  paladin: () => {
+    let s = PX(0, 6, 160, 4, "#A89E98") + PX(0, 6, 160, 1, "#D8CEC8");
+    for (let x = 0; x < 160; x += 16) s += PX(x, 6, 1, 4, "#8E847E");
+    s += PX(62, 6, 36, 4, "#A82A30") + PX(62, 6, 36, 1, "#E8C040");
     return `<svg class="front-art" viewBox="0 0 160 10" preserveAspectRatio="none" shape-rendering="crispEdges">${s}</svg>`;
   },
   necromancer: () => `<i class="mist green front"></i><i class="mist green front m2"></i>`,

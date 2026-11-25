@@ -1882,5 +1882,229 @@
     }
    ]
   }
+ },
+ "paladin": {
+  "1": {
+   "w": 66,
+   "h": 98,
+   "base": "/characters/paladin/rig/1_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/paladin/rig/1_head.png",
+     "x": 6,
+     "y": 2,
+     "w": 35,
+     "h": 34,
+     "px": 24,
+     "py": 36,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/paladin/rig/1_weapon.png",
+     "x": 44,
+     "y": 8,
+     "w": 22,
+     "h": 50,
+     "px": 44,
+     "py": 52,
+     "motion": "swing"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/paladin/rig/1_torso.png",
+     "x": 6,
+     "y": 36,
+     "w": 40,
+     "h": 30,
+     "px": 24,
+     "py": 66,
+     "motion": "breath"
+    }
+   ]
+  },
+  "2": {
+   "w": 90,
+   "h": 105,
+   "base": "/characters/paladin/rig/2_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/paladin/rig/2_head.png",
+     "x": 24,
+     "y": 2,
+     "w": 30,
+     "h": 34,
+     "px": 38,
+     "py": 36,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/paladin/rig/2_weapon.png",
+     "x": 58,
+     "y": 16,
+     "w": 27,
+     "h": 44,
+     "px": 58,
+     "py": 56,
+     "motion": "swing"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/paladin/rig/2_torso.png",
+     "x": 6,
+     "y": 36,
+     "w": 56,
+     "h": 34,
+     "px": 36,
+     "py": 70,
+     "motion": "breath"
+    }
+   ]
+  },
+  "3": {
+   "w": 109,
+   "h": 113,
+   "base": "/characters/paladin/rig/3_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/paladin/rig/3_head.png",
+     "x": 34,
+     "y": 2,
+     "w": 28,
+     "h": 32,
+     "px": 48,
+     "py": 34,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/paladin/rig/3_weapon.png",
+     "x": 58,
+     "y": 14,
+     "w": 48,
+     "h": 48,
+     "px": 60,
+     "py": 60,
+     "motion": "swing"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/paladin/rig/3_torso.png",
+     "x": 18,
+     "y": 34,
+     "w": 54,
+     "h": 36,
+     "px": 44,
+     "py": 70,
+     "motion": "breath"
+    }
+   ]
+  },
+  "4": {
+   "w": 135,
+   "h": 124,
+   "base": "/characters/paladin/rig/4_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/paladin/rig/4_head.png",
+     "x": 42,
+     "y": 10,
+     "w": 48,
+     "h": 36,
+     "px": 64,
+     "py": 46,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/paladin/rig/4_weapon.png",
+     "x": 90,
+     "y": 66,
+     "w": 41,
+     "h": 40,
+     "px": 90,
+     "py": 74,
+     "motion": "swing"
+    },
+    {
+     "name": "cape",
+     "file": "/characters/paladin/rig/4_cape.png",
+     "x": 2,
+     "y": 60,
+     "w": 38,
+     "h": 54,
+     "px": 38,
+     "py": 62,
+     "motion": "swayL"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/paladin/rig/4_torso.png",
+     "x": 38,
+     "y": 46,
+     "w": 57,
+     "h": 32,
+     "px": 64,
+     "py": 78,
+     "motion": "breath"
+    }
+   ]
+  },
+  "5": {
+   "w": 193,
+   "h": 146,
+   "base": "/characters/paladin/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/paladin/rig/5_head.png",
+     "x": 84,
+     "y": 28,
+     "w": 20,
+     "h": 24,
+     "px": 94,
+     "py": 52,
+     "motion": "tilt"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/paladin/rig/5_torso.png",
+     "x": 72,
+     "y": 52,
+     "w": 46,
+     "h": 33,
+     "px": 95,
+     "py": 85,
+     "motion": "breath"
+    },
+    {
+     "name": "wingL",
+     "file": "/characters/paladin/rig/5_wingL.png",
+     "x": 10,
+     "y": 1,
+     "w": 70,
+     "h": 99,
+     "px": 78,
+     "py": 45,
+     "motion": "flapL"
+    },
+    {
+     "name": "wingR",
+     "file": "/characters/paladin/rig/5_wingR.png",
+     "x": 112,
+     "y": 3,
+     "w": 80,
+     "h": 92,
+     "px": 114,
+     "py": 45,
+     "motion": "flapR"
+    }
+   ]
+  }
  }
 }
