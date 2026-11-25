@@ -704,3 +704,19 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
 .mgroup[open] > summary svg { transform: rotate(180deg); }
 .mgroup[open] > summary { border-radius: 6px 6px 0 0; box-shadow: none; }
 .mgroup[open] > .card { margin-top: -2px; border-radius: 0 0 6px 6px; }
+
+/* ── 摘要頁：手錶狀態列（第二個）＋同步按鈕 ── */
+.strip.dev { grid-template-columns: 1fr auto; padding: 4px 4px 4px 12px; margin-bottom: 14px; cursor: default; }
+.strip.dev .dev-main { all: unset; display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; cursor: pointer; min-height: 44px; min-width: 0; }
+.strip.dev .dev-main:focus-visible, .strip.dev .dev-sync:focus-visible { outline: 3px solid var(--pill); outline-offset: 2px; }
+.strip.dev .dev-main b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.strip.dev small { display: flex; align-items: center; gap: 6px; }
+.strip.dev .dev-sync { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 4px;
+  background: transparent; cursor: pointer; }
+.strip.dev .dev-sync:active { background: rgba(255, 255, 255, .12); }
+.strip.dev .dev-sync svg { width: 22px; height: 22px; stroke: #fff; stroke-width: 2; }
+.strip.dev .dev-sync:disabled { opacity: .75; cursor: progress; }
+@media (prefers-reduced-motion: no-preference) {
+  .dev-sync.spinning svg { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+}

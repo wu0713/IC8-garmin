@@ -84,7 +84,7 @@ function viewLink() {
 }
 
 async function syncNow(btn) {
-  btn && (btn.disabled = true);
+  btn && (btn.disabled = true, btn.classList.add("spinning"));
   toast("同步中…");
   try {
     const before = await api("/api/game");
@@ -95,7 +95,7 @@ async function syncNow(btn) {
     if (s2?.today_activity) { toast(`跑完了！夥伴 +${gained} XP，來看訓練報告`); return go(`#/workout/${encodeURIComponent(s2.today_activity)}`); }
     toast(`同步完成，${r.synced.activities} 筆跑步${gained > 0 ? `，夥伴 +${gained} XP` : ""}${r.garmin_push?.uploaded ? `，${r.garmin_push.uploaded} 堂課已送到手錶` : ""}`);
     render();
-  } catch (x) { toast(x.message); btn && (btn.disabled = false); }
+  } catch (x) { toast(x.message); btn && (btn.disabled = false, btn.classList.remove("spinning")); }
 }
 
 // ───────────────────── 摘要 ─────────────────────
@@ -105,12 +105,16 @@ async function viewSummary() {
   const avatar = d.partner.species ? charThumb(d.partner.species, d.partner.stage) : ico("paw");
 
   $app.innerHTML = `
-    ${appbar("摘要", { actions: `
-      <button class="icon-btn" id="sync" aria-label="立即同步">${ico("sync")}</button>
-      ` })}
-    ${d.last_sync_error ? `<div class="note-card" style="margin-bottom:12px">${ico("bolt")}<span>上次同步失敗：${esc(d.last_sync_error)}。按上面的同步再試一次；一直失敗就到「我的 → 手錶與資料來源」重新連結。</span></div>` : ""}
+    ${appbar("摘要")}
+    ${d.last_sync_error ? `<div class="note-card" style="margin-bottom:12px">${ico("bolt")}<span>上次同步失敗：${esc(d.last_sync_error)}。按手錶那一列的「同步」再試一次；一直失敗就到「我的 → 手錶與資料來源」重新連結。</span></div>` : ""}
 
     ${bc}
+    <div class="strip dev">
+      <button class="dev-main" data-go="#/me/device" aria-label="手錶與資料來源">${ico("watch")}
+        <span><b>${esc(dev?.name || (d.provider === "demo" ? "範例資料" : "Garmin"))}</b>
+          <small><span class="dot ${d.last_sync_error ? "off" : ""}"></span>${d.last_sync_error ? "同步失敗" : d.provider === "demo" ? "範例資料，尚未連結 Garmin" : agoText(d.last_sync)}</small></span></button>
+      <button class="dev-sync" id="sync" aria-label="立即同步" title="立即同步">${ico("sync")}</button>
+    </div>
     <button class="card quest" data-go="${d.today_activity ? `#/workout/${encodeURIComponent(d.today_activity)}` : "#/analysis"}" aria-label="今天的任務：${esc(t.title)}">
       <span class="quest-top">
         <span><span class="tag">今日任務 ${new Date().getMonth() + 1}/${new Date().getDate()}</span>
@@ -139,10 +143,7 @@ async function viewSummary() {
         <span class="val num">${fmt(x.value)} / ${fmt(x.goal)} ${x.unit}</span></div>`).join("")}</div>
     </section>
 
-    <button class="strip" data-go="#/me/device" style="margin-top:14px">${ico("watch")}
-      <span><b>${esc(dev?.name || (d.provider === "demo" ? "範例資料" : "Garmin"))}</b>
-        <small>${d.provider === "demo" ? "範例資料，尚未連結你的 Garmin" : agoText(d.last_sync)}</small></span>
-      <span class="chip"><span class="dot ${d.last_sync_error ? "off" : ""}"></span>${d.last_sync_error ? "同步失敗" : "已連線"}</span></button>`;
+`;
   bindCommon();
   document.getElementById("sync").onclick = (e) => syncNow(e.currentTarget);
 }
