@@ -741,3 +741,8 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
   .confetti i { animation: fall 2.4s ease-in 0s 2 both; }
   @keyframes fall { 0% { opacity: 1; transform: translateY(0) rotate(0); } 100% { opacity: .9; transform: translateY(105vh) rotate(540deg); } }
 }
+
+/* ── 分享圖卡 ── */
+.share-prev { margin: 12px 0; text-align: center; min-height: 200px; display: grid; place-items: center; }
+.share-prev img { width: 100%; max-width: 280px; border: 2px solid var(--ink); border-radius: 8px; box-shadow: 4px 4px 0 var(--ink); }
+.toggle-row small { display: block; color: var(--ink-3); font-size: .75rem; font-weight: 400; }

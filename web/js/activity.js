@@ -158,7 +158,7 @@ async function viewWorkout(id) {
   const sec = Math.round(w.minutes * 60);
   const zMax = Math.max(1, ...w.zones.map((z) => z.minutes));
   $app.innerHTML = `
-    ${appbar("跑步", { back: true })}
+    ${appbar("跑步", { back: true, actions: `<button class="icon-btn" id="share" aria-label="分享這一趟" title="分享">${ico("share")}</button>` })}
     <div class="device" style="grid-template-columns:48px 1fr;margin-bottom:12px">
       <span class="watch" style="width:48px;height:48px;background:var(--surface-hi);color:var(--c-run)">${ico("run")}</span>
       <span><b style="font-size:1.375rem">${esc(w.name)}</b><small>${w.date.replaceAll("-", "/")} ${st ? `${hm(st)} – ${hm(end)}` : ""}</small></span>
@@ -203,6 +203,7 @@ async function viewWorkout(id) {
     <div class="card warm" style="margin-top:12px;display:flex;gap:12px;align-items:center">${ico("watch")}
       <span><small class="muted" style="display:block">資料來源</small>${esc(w.device || "Garmin")}</span></div>`;
   bindCommon();
+  document.getElementById("share").onclick = () => openShareCard(w);
   if (w.fatigue) bindOptions("fat", w.fatigue.options);
 }
 

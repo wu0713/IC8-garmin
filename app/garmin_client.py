@@ -120,13 +120,17 @@ def parse_series(details: dict) -> dict:
     t = col("sumDuration") or col("sumElapsedDuration")
     hr, spd = col("directHeartRate"), col("directSpeed")
     ele, cad = col("directElevation"), col("directRunCadence")
+    lat, lon = col("directLatitude"), col("directLongitude")   # 分享圖卡畫路線用（只存形狀，不畫地圖）
     pts = []
     for k in range(len(rows)):
         if t[k] is None:
             continue
-        pts.append({"t": round(t[k]), "hr": hr[k] and round(hr[k]),
-                    "pace": round(1000 / spd[k]) if spd[k] and spd[k] > 0.5 else None,
-                    "ele": ele[k] and round(ele[k], 1), "cad": cad[k] and round(cad[k])})
+        pt = {"t": round(t[k]), "hr": hr[k] and round(hr[k]),
+              "pace": round(1000 / spd[k]) if spd[k] and spd[k] > 0.5 else None,
+              "ele": ele[k] and round(ele[k], 1), "cad": cad[k] and round(cad[k])}
+        if lat[k] is not None and lon[k] is not None:
+            pt["lat"], pt["lon"] = round(lat[k], 5), round(lon[k], 5)
+        pts.append(pt)
     # 降到最多 300 點，手機畫圖比較順
     step = max(1, len(pts) // 300)
     return {"points": pts[::step]}
@@ -449,8 +453,11 @@ class DemoGarmin:
             if tempo and 0.25 < f < 0.8:
                 hr += 8
                 p -= 25
+            ang = f * 2 * math.pi   # 範例路線：繞一圈河濱公園的形狀
             pts.append({"t": t, "hr": round(hr), "pace": round(p), "ele": round(20 + 8 * math.sin(f * 6), 1),
-                        "cad": round(166 + rnd.uniform(-4, 4))})
+                        "cad": round(166 + rnd.uniform(-4, 4)),
+                        "lat": round(25.05 + 0.012 * math.sin(ang) + 0.003 * math.sin(3 * ang), 5),
+                        "lon": round(121.5 + 0.02 * math.cos(ang) + 0.002 * math.cos(5 * ang), 5)})
             t += max(10, dur // 240)
         return {"points": pts}
 
