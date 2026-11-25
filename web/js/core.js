@@ -277,8 +277,8 @@ const PET_FRONT = {
 const petFront = (id) => (PET_FRONT[id] ? `<span class="scene-front" aria-hidden="true">${PET_FRONT[id]()}</span>` : "");
 
 // 夥伴圖：有拆部位的（rigs.json）用分層組回角色，點擊時頭、翅膀、尾巴、下襬各自動；沒有的用整張圖
-// 圖層順序：翅膀、尾巴、魔力圈在身體後面；下襬、頭在身體前面
-const RIG_Z = { wingL: 0, wingR: 0, tail: 0, tailL: 0, tailR: 0, ringL: 0, ringR: 0, lower: 2, head: 3 };
+// 圖層順序：翅膀、尾巴、魔力圈在身體後面；上半身、頭在前面。腳留在身體層，不另外動
+const RIG_Z = { wingL: 0, wingR: 0, tail: 0, tailL: 0, tailR: 0, ringL: 0, ringR: 0, torso: 2, head: 3 };
 function petSprite(id, stage, boxH) {
   const rig = S.rigs?.[id]?.[stage + 1], sp = species(id);
   if (!rig || !sp) return charImg(id, stage, boxH);

@@ -26,6 +26,17 @@
      "px": 37,
      "py": 85,
      "motion": "wag"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/succubus/rig/1_torso.png",
+     "x": 18,
+     "y": 47,
+     "w": 58,
+     "h": 29,
+     "px": 50,
+     "py": 76,
+     "motion": "breath"
     }
    ]
   },
@@ -55,6 +66,17 @@
      "px": 41,
      "py": 92,
      "motion": "wag"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/succubus/rig/2_torso.png",
+     "x": 26,
+     "y": 57,
+     "w": 55,
+     "h": 35,
+     "px": 55,
+     "py": 92,
+     "motion": "breath"
     }
    ]
   },
@@ -97,15 +119,15 @@
      "motion": "flapR"
     },
     {
-     "name": "lower",
-     "file": "/characters/succubus/rig/3_lower.png",
-     "x": 26,
-     "y": 118,
-     "w": 55,
-     "h": 56,
-     "px": 60,
-     "py": 118,
-     "motion": "swish"
+     "name": "torso",
+     "file": "/characters/succubus/rig/3_torso.png",
+     "x": 33,
+     "y": 57,
+     "w": 59,
+     "h": 53,
+     "px": 63,
+     "py": 110,
+     "motion": "breath"
     }
    ]
   },
@@ -148,15 +170,15 @@
      "motion": "flapR"
     },
     {
-     "name": "lower",
-     "file": "/characters/succubus/rig/4_lower.png",
-     "x": 30,
-     "y": 108,
-     "w": 105,
-     "h": 60,
+     "name": "torso",
+     "file": "/characters/succubus/rig/4_torso.png",
+     "x": 60,
+     "y": 47,
+     "w": 56,
+     "h": 53,
      "px": 88,
-     "py": 108,
-     "motion": "swish"
+     "py": 100,
+     "motion": "breath"
     }
    ]
   },
@@ -199,15 +221,15 @@
      "motion": "fanR"
     },
     {
-     "name": "lower",
-     "file": "/characters/succubus/rig/5_lower.png",
-     "x": 10,
-     "y": 105,
-     "w": 110,
-     "h": 70,
-     "px": 65,
-     "py": 105,
-     "motion": "swish"
+     "name": "torso",
+     "file": "/characters/succubus/rig/5_torso.png",
+     "x": 46,
+     "y": 58,
+     "w": 48,
+     "h": 42,
+     "px": 70,
+     "py": 100,
+     "motion": "breath"
     }
    ]
   }
@@ -268,6 +290,17 @@
      "px": 50,
      "py": 70,
      "motion": "fanL"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/fox_spirit/rig/2_torso.png",
+     "x": 50,
+     "y": 46,
+     "w": 35,
+     "h": 49,
+     "px": 64,
+     "py": 95,
+     "motion": "breath"
     }
    ]
   },
@@ -310,15 +343,15 @@
      "motion": "fanR"
     },
     {
-     "name": "lower",
-     "file": "/characters/fox_spirit/rig/3_lower.png",
-     "x": 30,
-     "y": 125,
-     "w": 85,
-     "h": 33,
-     "px": 85,
-     "py": 125,
-     "motion": "swish"
+     "name": "torso",
+     "file": "/characters/fox_spirit/rig/3_torso.png",
+     "x": 62,
+     "y": 60,
+     "w": 48,
+     "h": 58,
+     "px": 86,
+     "py": 118,
+     "motion": "breath"
     }
    ]
   },
@@ -359,6 +392,17 @@
      "px": 112,
      "py": 85,
      "motion": "fanR"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/fox_spirit/rig/4_torso.png",
+     "x": 62,
+     "y": 58,
+     "w": 50,
+     "h": 47,
+     "px": 87,
+     "py": 105,
+     "motion": "breath"
     }
    ]
   },
@@ -401,15 +445,15 @@
      "motion": "fanR"
     },
     {
-     "name": "lower",
-     "file": "/characters/fox_spirit/rig/5_lower.png",
+     "name": "torso",
+     "file": "/characters/fox_spirit/rig/5_torso.png",
      "x": 64,
-     "y": 118,
+     "y": 58,
      "w": 38,
-     "h": 44,
+     "h": 60,
      "px": 83,
      "py": 118,
-     "motion": "swish"
+     "motion": "breath"
     }
    ]
   }

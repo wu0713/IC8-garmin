@@ -894,14 +894,16 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
   .rig .rp-fanL { animation: idle-fanL 4s ease-in-out infinite; }
   .rig .rp-fanR { animation: idle-fanR 4s ease-in-out infinite; }
   .rig .rp-wag { animation: idle-wag 2.6s ease-in-out infinite; }
-  .rig .rp-tilt { animation: idle-tilt 8s ease-in-out infinite; }
+  .rig .rp-tilt { animation: idle-tilt 8s ease-in-out infinite, head-ride 4s ease-in-out infinite; }
+  /* 上半身呼吸：以腰為軸，吸氣時肩膀、胸口一起微微上抬、身體稍微變寬；頭跟著起伏。腳在身體層，不動 */
+  .rig .rp-breath { animation: torso-breath 4s ease-in-out infinite; }
+  .pet.react .rig .rp-breath { animation: shrug .9s ease-in-out 1; }
   .pet.react .rig .rp-flapL { animation: flapL .95s ease-in-out 1; }
   .pet.react .rig .rp-flapR { animation: flapR .95s ease-in-out 1; }
   .pet.react .rig .rp-fanL { animation: fanL 1s cubic-bezier(.3, 1.4, .5, 1) 1; }
   .pet.react .rig .rp-fanR { animation: fanR 1s cubic-bezier(.3, 1.4, .5, 1) 1; }
   .pet.react .rig .rp-wag { animation: wag .9s ease-in-out 1; }
   .pet.react .rig .rp-tilt { animation: tilt 1s ease-in-out 1; }
-  .pet.react .rig .rp-swish { animation: swish 1s ease-in-out 1; }
   /* 待機：很小的幅度，讓翅膀、尾巴一直有一點生命感 */
   @keyframes idle-flapL { 0%, 100% { rotate: 0deg; } 50% { rotate: 4deg; } }
   @keyframes idle-flapR { 0%, 100% { rotate: 0deg; } 50% { rotate: -4deg; } }
@@ -915,6 +917,17 @@ ol.steps { margin: 0; padding-left: 1.4em; font-size: .9375rem; line-height: 1.7
   @keyframes fanL { 0%, 100% { rotate: 0deg; } 35% { rotate: 11deg; } 65% { rotate: -2deg; } }
   @keyframes fanR { 0%, 100% { rotate: 0deg; } 35% { rotate: -11deg; } 65% { rotate: 2deg; } }
   @keyframes wag { 0%, 100% { rotate: 0deg; } 20% { rotate: 16deg; } 45% { rotate: -12deg; } 70% { rotate: 9deg; } 88% { rotate: -4deg; } }
-  @keyframes tilt { 0%, 100% { rotate: 0deg; } 30% { rotate: -7deg; } 65% { rotate: 4deg; } }
-  @keyframes swish { 0%, 100% { transform: skewX(0); } 30% { transform: skewX(7deg); } 60% { transform: skewX(-5deg); } 82% { transform: skewX(2deg); } }
+  @keyframes tilt { 0%, 100% { rotate: 0deg; translate: 0 0; } 30% { rotate: -7deg; translate: 0 -2px; } 65% { rotate: 4deg; translate: 0 0; } }
+  @keyframes head-ride { 0%, 100% { translate: 0 0; } 50% { translate: 0 -1.5px; } }
+  @keyframes torso-breath { 0%, 100% { scale: 1 1; } 50% { scale: 1.012 1.03; } }
+  @keyframes shrug { 0%, 100% { scale: 1 1; translate: 0 0; } 30% { scale: 1.02 1.04; translate: 0 -2px; } 60% { scale: .995 .99; translate: 0 0; } }
+}
+
+/* 有拆部位的角色：整張圖不再伸縮、彎曲（會帶動腳），呼吸交給上半身那一層；漂浮、點擊跳一下照常 */
+@media (prefers-reduced-motion: no-preference) {
+  .pet .wavy.rig { animation: idle-hop 8s ease-in-out infinite; }
+  .pet.sway .wavy.rig { animation: idle-hop 8s ease-in-out infinite; }
+  .pet.floaty .wavy.rig, .pet.floaty.sway .wavy.rig { animation: hover 4s steps(15, jump-none) infinite alternate; }
+  .pet.hop .wavy.rig { animation: hop .6s cubic-bezier(.3, 1.6, .5, 1) 1; }
+  .pet.floaty.hop .wavy.rig { animation: lift .7s cubic-bezier(.3, 1.4, .5, 1) 1; }
 }
