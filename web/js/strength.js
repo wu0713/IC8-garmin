@@ -26,11 +26,11 @@ async function viewStrength(ds, routine) {
       : `<button class="btn block" id="done" style="margin-top:4px">${ico("check")}全部做完了（+${r.xp} 經驗值）</button>`}`;
   bindCommon();
   const q = (id) => document.getElementById(id);
-  if (q("done")) q("done").onclick = (e) => busy(e.currentTarget, async () => {
+  if (q("done")) q("done").onclick = (e) => act(e.currentTarget, async () => {
     await api(`/api/strength/${ds}`, { method: "POST", body: { routine: r.id, done: true } });
     toast(`完成！夥伴 +${r.xp} 經驗值`); viewStrength(ds, r.id);
   });
-  if (q("undo")) q("undo").onclick = (e) => busy(e.currentTarget, async () => {
+  if (q("undo")) q("undo").onclick = (e) => act(e.currentTarget, async () => {
     await api(`/api/strength/${ds}`, { method: "POST", body: { routine: r.id, done: false } }); viewStrength(ds, r.id);
   });
   document.querySelectorAll(".st-timer").forEach((b) => (b.onclick = () => {

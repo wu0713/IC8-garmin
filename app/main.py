@@ -17,7 +17,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import analysis, apple_ingest, auth, coach, briefs, file_import, db, game, pet_voice, plan_import, planner, push, runner, season, strength, sync, views
+from . import analysis, apple_ingest, auth, coach, briefs, file_import, db, game, pet_voice, plan_import, planner, push, runner, season, strength, sync, views, progress
 from .config import ALLOW_DEMO, INVITE_CODE, POLL_HOURS, POLL_MINUTES, PUBLIC_BASE_URL, SYNC_HOURS, TZ, WEB_DIR
 from .garmin_client import MfaRequired, RealGarmin, today_local
 from .ics import build_ics
@@ -324,7 +324,7 @@ def do_sync(full: bool = False, user=Depends(auth.current_user)):
     try:
         r = sync.sync_user(user["id"], full=full)
     except Exception as e:
-        raise HTTPException(502, f"同步失敗：{e}")
+        raise HTTPException(502, sync.friendly_error(e))
     return {"ok": True, "synced": r.get("synced"), "garmin_push": r.get("garmin_push")}
 
 
@@ -589,6 +589,13 @@ def put_character(body: CharacterIn, user=Depends(auth.current_user)):
 def get_summary(user=Depends(auth.current_user)):
     _need_link(user)
     return views.summary(user["id"])
+
+
+@app.get("/api/progress")
+def get_progress(user=Depends(auth.current_user)):
+    if user["provider"] == "none":
+        return {"points": []}
+    return progress.prediction(user["id"])
 
 
 @app.get("/api/metric/{key}")
@@ -892,6 +899,29 @@ def delete_override(date: str, user=Depends(auth.current_user)):
     with db.tx() as c:
         c.execute("DELETE FROM plan_overrides WHERE user_id=? AND date=?", (user["id"], date))
         c.execute("UPDATE checkins SET skip=0 WHERE user_id=? AND date=?", (user["id"], date))
+    return views.this_week(user["id"])
+
+
+class BusyIn(BaseModel):
+    on: bool = True
+
+
+@app.post("/api/week/busy")
+def busy_week(body: BusyIn, user=Depends(auth.current_user)):
+    """一鍵「這週很忙」：從今天到週日加一個出差／旅行行程（跑量打六折、這週不算進基線），再按一次就取消。"""
+    _need_link(user)
+    today = today_local()
+    sunday = today + timedelta(days=6 - today.weekday())
+    w0 = today - timedelta(days=today.weekday())
+    prefs = db.get_prefs(user["id"])
+    events = [e for e in (prefs.get("events") or [])
+              if not (e.get("name") == views.BUSY_NAME and e.get("type") == "travel" and w0.isoformat() <= e["date"] <= sunday.isoformat())]
+    if body.on:
+        events.append({"type": "travel", "name": views.BUSY_NAME, "date": today.isoformat(), "end_date": sunday.isoformat(),
+                       "distance_km": None, "target_time": ""})
+    prefs["events"] = sorted(events, key=lambda e: e["date"])
+    db.save_prefs(user["id"], prefs)
+    sync.replan(user["id"])
     return views.this_week(user["id"])
 
 

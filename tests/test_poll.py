@@ -106,3 +106,10 @@ def test_poll_all_respects_hours_and_backs_off(user, monkeypatch):
     assert calls == [user]                              # 還在退避時間內，不再打 Garmin
     sync.poll_all(now=day + timedelta(minutes=25))
     assert calls == [user, user]                        # 過了 20 分鐘才再試
+
+
+def test_friendly_error_messages():
+    assert "限制" in sync.friendly_error(Exception("429 Too Many Requests"))
+    assert "重新連結" in sync.friendly_error(Exception("401 Client Error: Unauthorized"))
+    assert "連不到" in sync.friendly_error(TimeoutError("read timed out"))
+    assert "稍後" in sync.friendly_error(ValueError("weird"))

@@ -1,0 +1,2525 @@
+{
+ "succubus": {
+  "1": {
+   "w": 83,
+   "h": 123,
+   "base": "/characters/succubus/rig/1_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/succubus/rig/1_head.png",
+     "x": 30,
+     "y": 2,
+     "w": 52,
+     "h": 45,
+     "px": 52,
+     "py": 47,
+     "motion": "tilt"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/succubus/rig/1_tail.png",
+     "x": 7,
+     "y": 64,
+     "w": 30,
+     "h": 33,
+     "px": 37,
+     "py": 85,
+     "motion": "wag"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/succubus/rig/1_torso.png",
+     "x": 18,
+     "y": 47,
+     "w": 58,
+     "h": 29,
+     "px": 50,
+     "py": 76,
+     "motion": "breath"
+    }
+   ]
+  },
+  "2": {
+   "w": 82,
+   "h": 142,
+   "base": "/characters/succubus/rig/2_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/succubus/rig/2_head.png",
+     "x": 28,
+     "y": 4,
+     "w": 53,
+     "h": 53,
+     "px": 55,
+     "py": 57,
+     "motion": "tilt"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/succubus/rig/2_tail.png",
+     "x": 2,
+     "y": 85,
+     "w": 39,
+     "h": 36,
+     "px": 41,
+     "py": 92,
+     "motion": "wag"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/succubus/rig/2_torso.png",
+     "x": 26,
+     "y": 57,
+     "w": 55,
+     "h": 35,
+     "px": 55,
+     "py": 92,
+     "motion": "breath"
+    }
+   ]
+  },
+  "3": {
+   "w": 112,
+   "h": 175,
+   "base": "/characters/succubus/rig/3_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/succubus/rig/3_head.png",
+     "x": 38,
+     "y": 13,
+     "w": 45,
+     "h": 44,
+     "px": 63,
+     "py": 57,
+     "motion": "tilt"
+    },
+    {
+     "name": "wingL",
+     "file": "/characters/succubus/rig/3_wingL.png",
+     "x": 4,
+     "y": 58,
+     "w": 29,
+     "h": 51,
+     "px": 33,
+     "py": 64,
+     "motion": "flapL"
+    },
+    {
+     "name": "wingR",
+     "file": "/characters/succubus/rig/3_wingR.png",
+     "x": 92,
+     "y": 79,
+     "w": 7,
+     "h": 26,
+     "px": 92,
+     "py": 70,
+     "motion": "flapR"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/succubus/rig/3_torso.png",
+     "x": 33,
+     "y": 57,
+     "w": 59,
+     "h": 53,
+     "px": 63,
+     "py": 110,
+     "motion": "breath"
+    }
+   ]
+  },
+  "4": {
+   "w": 165,
+   "h": 168,
+   "base": "/characters/succubus/rig/4_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/succubus/rig/4_head.png",
+     "x": 66,
+     "y": 7,
+     "w": 44,
+     "h": 40,
+     "px": 88,
+     "py": 47,
+     "motion": "tilt"
+    },
+    {
+     "name": "wingL",
+     "file": "/characters/succubus/rig/4_wingL.png",
+     "x": 14,
+     "y": 18,
+     "w": 46,
+     "h": 90,
+     "px": 60,
+     "py": 42,
+     "motion": "flapL"
+    },
+    {
+     "name": "wingR",
+     "file": "/characters/succubus/rig/4_wingR.png",
+     "x": 116,
+     "y": 18,
+     "w": 45,
+     "h": 102,
+     "px": 116,
+     "py": 42,
+     "motion": "flapR"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/succubus/rig/4_torso.png",
+     "x": 60,
+     "y": 47,
+     "w": 56,
+     "h": 53,
+     "px": 88,
+     "py": 100,
+     "motion": "breath"
+    }
+   ]
+  },
+  "5": {
+   "w": 130,
+   "h": 175,
+   "base": "/characters/succubus/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/succubus/rig/5_head.png",
+     "x": 52,
+     "y": 22,
+     "w": 38,
+     "h": 38,
+     "px": 70,
+     "py": 60,
+     "motion": "tilt"
+    },
+    {
+     "name": "ringL",
+     "file": "/characters/succubus/rig/5_ringL.png",
+     "x": 2,
+     "y": 8,
+     "w": 44,
+     "h": 92,
+     "px": 46,
+     "py": 50,
+     "motion": "fanL"
+    },
+    {
+     "name": "ringR",
+     "file": "/characters/succubus/rig/5_ringR.png",
+     "x": 94,
+     "y": 12,
+     "w": 27,
+     "h": 88,
+     "px": 94,
+     "py": 50,
+     "motion": "fanR"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/succubus/rig/5_torso.png",
+     "x": 46,
+     "y": 58,
+     "w": 48,
+     "h": 42,
+     "px": 70,
+     "py": 100,
+     "motion": "breath"
+    }
+   ]
+  }
+ },
+ "fox_spirit": {
+  "1": {
+   "w": 77,
+   "h": 69,
+   "base": "/characters/fox_spirit/rig/1_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/fox_spirit/rig/1_head.png",
+     "x": 36,
+     "y": 1,
+     "w": 39,
+     "h": 41,
+     "px": 52,
+     "py": 40,
+     "motion": "tilt"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/fox_spirit/rig/1_tail.png",
+     "x": 4,
+     "y": 18,
+     "w": 32,
+     "h": 48,
+     "px": 36,
+     "py": 52,
+     "motion": "wag"
+    }
+   ]
+  },
+  "2": {
+   "w": 87,
+   "h": 133,
+   "base": "/characters/fox_spirit/rig/2_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/fox_spirit/rig/2_head.png",
+     "x": 48,
+     "y": 8,
+     "w": 34,
+     "h": 38,
+     "px": 64,
+     "py": 46,
+     "motion": "tilt"
+    },
+    {
+     "name": "tailL",
+     "file": "/characters/fox_spirit/rig/2_tailL.png",
+     "x": 7,
+     "y": 39,
+     "w": 43,
+     "h": 73,
+     "px": 50,
+     "py": 70,
+     "motion": "fanL"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/fox_spirit/rig/2_torso.png",
+     "x": 50,
+     "y": 46,
+     "w": 35,
+     "h": 49,
+     "px": 64,
+     "py": 95,
+     "motion": "breath"
+    }
+   ]
+  },
+  "3": {
+   "w": 146,
+   "h": 160,
+   "base": "/characters/fox_spirit/rig/3_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/fox_spirit/rig/3_head.png",
+     "x": 70,
+     "y": 15,
+     "w": 30,
+     "h": 45,
+     "px": 86,
+     "py": 60,
+     "motion": "tilt"
+    },
+    {
+     "name": "tailL",
+     "file": "/characters/fox_spirit/rig/3_tailL.png",
+     "x": 8,
+     "y": 42,
+     "w": 54,
+     "h": 83,
+     "px": 62,
+     "py": 80,
+     "motion": "fanL"
+    },
+    {
+     "name": "tailR",
+     "file": "/characters/fox_spirit/rig/3_tailR.png",
+     "x": 110,
+     "y": 60,
+     "w": 17,
+     "h": 60,
+     "px": 110,
+     "py": 80,
+     "motion": "fanR"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/fox_spirit/rig/3_torso.png",
+     "x": 62,
+     "y": 60,
+     "w": 48,
+     "h": 58,
+     "px": 86,
+     "py": 118,
+     "motion": "breath"
+    }
+   ]
+  },
+  "4": {
+   "w": 161,
+   "h": 152,
+   "base": "/characters/fox_spirit/rig/4_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/fox_spirit/rig/4_head.png",
+     "x": 70,
+     "y": 4,
+     "w": 34,
+     "h": 54,
+     "px": 87,
+     "py": 58,
+     "motion": "tilt"
+    },
+    {
+     "name": "tailL",
+     "file": "/characters/fox_spirit/rig/4_tailL.png",
+     "x": 6,
+     "y": 11,
+     "w": 56,
+     "h": 136,
+     "px": 62,
+     "py": 85,
+     "motion": "fanL"
+    },
+    {
+     "name": "tailR",
+     "file": "/characters/fox_spirit/rig/4_tailR.png",
+     "x": 112,
+     "y": 10,
+     "w": 47,
+     "h": 137,
+     "px": 112,
+     "py": 85,
+     "motion": "fanR"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/fox_spirit/rig/4_torso.png",
+     "x": 62,
+     "y": 58,
+     "w": 50,
+     "h": 47,
+     "px": 87,
+     "py": 105,
+     "motion": "breath"
+    }
+   ]
+  },
+  "5": {
+   "w": 165,
+   "h": 164,
+   "base": "/characters/fox_spirit/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/fox_spirit/rig/5_head.png",
+     "x": 66,
+     "y": 2,
+     "w": 34,
+     "h": 56,
+     "px": 83,
+     "py": 58,
+     "motion": "tilt"
+    },
+    {
+     "name": "tailL",
+     "file": "/characters/fox_spirit/rig/5_tailL.png",
+     "x": 2,
+     "y": 18,
+     "w": 62,
+     "h": 132,
+     "px": 64,
+     "py": 90,
+     "motion": "fanL"
+    },
+    {
+     "name": "tailR",
+     "file": "/characters/fox_spirit/rig/5_tailR.png",
+     "x": 102,
+     "y": 15,
+     "w": 62,
+     "h": 135,
+     "px": 102,
+     "py": 90,
+     "motion": "fanR"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/fox_spirit/rig/5_torso.png",
+     "x": 64,
+     "y": 58,
+     "w": 38,
+     "h": 60,
+     "px": 83,
+     "py": 118,
+     "motion": "breath"
+    }
+   ]
+  }
+ },
+ "beast_tamer": {
+  "1": {
+   "w": 120,
+   "h": 103,
+   "base": "/characters/beast_tamer/rig/1_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/beast_tamer/rig/1_head.png",
+     "x": 36,
+     "y": 16,
+     "w": 35,
+     "h": 32,
+     "px": 53,
+     "py": 48,
+     "motion": "tilt"
+    },
+    {
+     "name": "crystal",
+     "file": "/characters/beast_tamer/rig/1_crystal.png",
+     "x": 79,
+     "y": 24,
+     "w": 20,
+     "h": 32,
+     "px": 89,
+     "py": 40,
+     "motion": "bob"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/beast_tamer/rig/1_tail.png",
+     "x": 3,
+     "y": 61,
+     "w": 17,
+     "h": 31,
+     "px": 20,
+     "py": 86,
+     "motion": "wag"
+    },
+    {
+     "name": "beast",
+     "file": "/characters/beast_tamer/rig/1_beast.png",
+     "x": 80,
+     "y": 61,
+     "w": 20,
+     "h": 19,
+     "px": 86,
+     "py": 80,
+     "motion": "nod"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/beast_tamer/rig/1_torso.png",
+     "x": 33,
+     "y": 48,
+     "w": 39,
+     "h": 36,
+     "px": 53,
+     "py": 84,
+     "motion": "breath"
+    }
+   ]
+  },
+  "2": {
+   "w": 155,
+   "h": 117,
+   "base": "/characters/beast_tamer/rig/2_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/beast_tamer/rig/2_head.png",
+     "x": 54,
+     "y": 16,
+     "w": 30,
+     "h": 28,
+     "px": 68,
+     "py": 44,
+     "motion": "tilt"
+    },
+    {
+     "name": "beast",
+     "file": "/characters/beast_tamer/rig/2_beast.png",
+     "x": 118,
+     "y": 52,
+     "w": 31,
+     "h": 44,
+     "px": 118,
+     "py": 78,
+     "motion": "nod"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/beast_tamer/rig/2_torso.png",
+     "x": 46,
+     "y": 44,
+     "w": 40,
+     "h": 30,
+     "px": 66,
+     "py": 74,
+     "motion": "breath"
+    }
+   ]
+  },
+  "3": {
+   "w": 176,
+   "h": 165,
+   "base": "/characters/beast_tamer/rig/3_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/beast_tamer/rig/3_head.png",
+     "x": 58,
+     "y": 37,
+     "w": 32,
+     "h": 31,
+     "px": 74,
+     "py": 68,
+     "motion": "tilt"
+    },
+    {
+     "name": "mane",
+     "file": "/characters/beast_tamer/rig/3_mane.png",
+     "x": 98,
+     "y": 54,
+     "w": 59,
+     "h": 38,
+     "px": 125,
+     "py": 92,
+     "motion": "flicker"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/beast_tamer/rig/3_torso.png",
+     "x": 40,
+     "y": 68,
+     "w": 55,
+     "h": 40,
+     "px": 68,
+     "py": 108,
+     "motion": "breath"
+    }
+   ]
+  },
+  "4": {
+   "w": 225,
+   "h": 157,
+   "base": "/characters/beast_tamer/rig/4_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/beast_tamer/rig/4_head.png",
+     "x": 84,
+     "y": 20,
+     "w": 36,
+     "h": 37,
+     "px": 102,
+     "py": 56,
+     "motion": "tilt"
+    },
+    {
+     "name": "beast",
+     "file": "/characters/beast_tamer/rig/4_beast.png",
+     "x": 150,
+     "y": 75,
+     "w": 47,
+     "h": 57,
+     "px": 152,
+     "py": 100,
+     "motion": "nod"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/beast_tamer/rig/4_torso.png",
+     "x": 56,
+     "y": 57,
+     "w": 69,
+     "h": 53,
+     "px": 92,
+     "py": 110,
+     "motion": "breath"
+    }
+   ]
+  },
+  "5": {
+   "w": 214,
+   "h": 165,
+   "base": "/characters/beast_tamer/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/beast_tamer/rig/5_head.png",
+     "x": 82,
+     "y": 26,
+     "w": 40,
+     "h": 36,
+     "px": 102,
+     "py": 62,
+     "motion": "tilt"
+    },
+    {
+     "name": "beast",
+     "file": "/characters/beast_tamer/rig/5_beast.png",
+     "x": 165,
+     "y": 85,
+     "w": 38,
+     "h": 47,
+     "px": 170,
+     "py": 108,
+     "motion": "nod"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/beast_tamer/rig/5_tail.png",
+     "x": 20,
+     "y": 103,
+     "w": 22,
+     "h": 29,
+     "px": 42,
+     "py": 126,
+     "motion": "wag"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/beast_tamer/rig/5_torso.png",
+     "x": 85,
+     "y": 62,
+     "w": 47,
+     "h": 43,
+     "px": 106,
+     "py": 105,
+     "motion": "breath"
+    }
+   ]
+  }
+ },
+ "spirit": {
+  "1": {
+   "w": 77,
+   "h": 96,
+   "base": "/characters/spirit/rig/1_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/spirit/rig/1_head.png",
+     "x": 8,
+     "y": 4,
+     "w": 36,
+     "h": 36,
+     "px": 26,
+     "py": 40,
+     "motion": "tilt"
+    },
+    {
+     "name": "wisp",
+     "file": "/characters/spirit/rig/1_wisp.png",
+     "x": 51,
+     "y": 7,
+     "w": 22,
+     "h": 32,
+     "px": 61,
+     "py": 22,
+     "motion": "bob"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/spirit/rig/1_torso.png",
+     "x": 3,
+     "y": 40,
+     "w": 43,
+     "h": 38,
+     "px": 24,
+     "py": 78,
+     "motion": "breath"
+    }
+   ]
+  },
+  "2": {
+   "w": 125,
+   "h": 126,
+   "base": "/characters/spirit/rig/2_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/spirit/rig/2_head.png",
+     "x": 22,
+     "y": 23,
+     "w": 38,
+     "h": 35,
+     "px": 40,
+     "py": 58,
+     "motion": "tilt"
+    },
+    {
+     "name": "fairy",
+     "file": "/characters/spirit/rig/2_fairy.png",
+     "x": 72,
+     "y": 3,
+     "w": 42,
+     "h": 51,
+     "px": 92,
+     "py": 30,
+     "motion": "bob"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/spirit/rig/2_torso.png",
+     "x": 16,
+     "y": 58,
+     "w": 46,
+     "h": 40,
+     "px": 38,
+     "py": 98,
+     "motion": "breath"
+    }
+   ]
+  },
+  "3": {
+   "w": 143,
+   "h": 162,
+   "base": "/characters/spirit/rig/3_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/spirit/rig/3_head.png",
+     "x": 42,
+     "y": 35,
+     "w": 36,
+     "h": 37,
+     "px": 60,
+     "py": 72,
+     "motion": "tilt"
+    },
+    {
+     "name": "fairy",
+     "file": "/characters/spirit/rig/3_fairy.png",
+     "x": 100,
+     "y": 28,
+     "w": 37,
+     "h": 64,
+     "px": 118,
+     "py": 60,
+     "motion": "bob"
+    },
+    {
+     "name": "flame",
+     "file": "/characters/spirit/rig/3_flame.png",
+     "x": 78,
+     "y": 21,
+     "w": 22,
+     "h": 71,
+     "px": 90,
+     "py": 90,
+     "motion": "flicker"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/spirit/rig/3_torso.png",
+     "x": 38,
+     "y": 72,
+     "w": 47,
+     "h": 40,
+     "px": 62,
+     "py": 112,
+     "motion": "breath"
+    }
+   ]
+  },
+  "4": {
+   "w": 170,
+   "h": 158,
+   "base": "/characters/spirit/rig/4_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/spirit/rig/4_head.png",
+     "x": 65,
+     "y": 32,
+     "w": 40,
+     "h": 40,
+     "px": 85,
+     "py": 72,
+     "motion": "tilt"
+    },
+    {
+     "name": "ghost",
+     "file": "/characters/spirit/rig/4_ghost.png",
+     "x": 118,
+     "y": 20,
+     "w": 49,
+     "h": 92,
+     "px": 140,
+     "py": 100,
+     "motion": "bob"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/spirit/rig/4_torso.png",
+     "x": 55,
+     "y": 72,
+     "w": 63,
+     "h": 40,
+     "px": 86,
+     "py": 112,
+     "motion": "breath"
+    }
+   ]
+  },
+  "5": {
+   "w": 171,
+   "h": 162,
+   "base": "/characters/spirit/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/spirit/rig/5_head.png",
+     "x": 84,
+     "y": 44,
+     "w": 22,
+     "h": 28,
+     "px": 95,
+     "py": 72,
+     "motion": "tilt"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/spirit/rig/5_torso.png",
+     "x": 66,
+     "y": 72,
+     "w": 54,
+     "h": 40,
+     "px": 93,
+     "py": 112,
+     "motion": "breath"
+    }
+   ]
+  }
+ },
+ "necromancer": {
+  "1": {
+   "w": 106,
+   "h": 115,
+   "base": "/characters/necromancer/rig/1_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/necromancer/rig/1_head.png",
+     "x": 22,
+     "y": 10,
+     "w": 33,
+     "h": 30,
+     "px": 38,
+     "py": 40,
+     "motion": "tilt"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/necromancer/rig/1_torso.png",
+     "x": 12,
+     "y": 40,
+     "w": 46,
+     "h": 35,
+     "px": 35,
+     "py": 75,
+     "motion": "breath"
+    }
+   ]
+  },
+  "2": {
+   "w": 131,
+   "h": 123,
+   "base": "/characters/necromancer/rig/2_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/necromancer/rig/2_head.png",
+     "x": 42,
+     "y": 2,
+     "w": 39,
+     "h": 36,
+     "px": 60,
+     "py": 38,
+     "motion": "tilt"
+    },
+    {
+     "name": "minion",
+     "file": "/characters/necromancer/rig/2_minion.png",
+     "x": 88,
+     "y": 40,
+     "w": 40,
+     "h": 28,
+     "px": 106,
+     "py": 68,
+     "motion": "nod"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/necromancer/rig/2_torso.png",
+     "x": 20,
+     "y": 38,
+     "w": 62,
+     "h": 40,
+     "px": 50,
+     "py": 78,
+     "motion": "breath"
+    }
+   ]
+  },
+  "3": {
+   "w": 202,
+   "h": 148,
+   "base": "/characters/necromancer/rig/3_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/necromancer/rig/3_head.png",
+     "x": 55,
+     "y": 14,
+     "w": 40,
+     "h": 36,
+     "px": 75,
+     "py": 50,
+     "motion": "tilt"
+    },
+    {
+     "name": "flame",
+     "file": "/characters/necromancer/rig/3_flame.png",
+     "x": 101,
+     "y": 3,
+     "w": 33,
+     "h": 47,
+     "px": 115,
+     "py": 48,
+     "motion": "flicker"
+    },
+    {
+     "name": "minion",
+     "file": "/characters/necromancer/rig/3_minion.png",
+     "x": 128,
+     "y": 45,
+     "w": 25,
+     "h": 27,
+     "px": 140,
+     "py": 72,
+     "motion": "nod"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/necromancer/rig/3_torso.png",
+     "x": 42,
+     "y": 50,
+     "w": 63,
+     "h": 45,
+     "px": 72,
+     "py": 95,
+     "motion": "breath"
+    }
+   ]
+  },
+  "4": {
+   "w": 182,
+   "h": 175,
+   "base": "/characters/necromancer/rig/4_base.png",
+   "parts": [
+    {
+     "name": "minion",
+     "file": "/characters/necromancer/rig/4_minion.png",
+     "x": 128,
+     "y": 58,
+     "w": 28,
+     "h": 24,
+     "px": 142,
+     "py": 82,
+     "motion": "nod"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/necromancer/rig/4_torso.png",
+     "x": 55,
+     "y": 70,
+     "w": 53,
+     "h": 45,
+     "px": 82,
+     "py": 115,
+     "motion": "breath"
+    }
+   ]
+  },
+  "5": {
+   "w": 198,
+   "h": 175,
+   "base": "/characters/necromancer/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/necromancer/rig/5_head.png",
+     "x": 90,
+     "y": 30,
+     "w": 26,
+     "h": 32,
+     "px": 103,
+     "py": 62,
+     "motion": "tilt"
+    },
+    {
+     "name": "beast",
+     "file": "/characters/necromancer/rig/5_beast.png",
+     "x": 158,
+     "y": 92,
+     "w": 35,
+     "h": 44,
+     "px": 162,
+     "py": 112,
+     "motion": "nod"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/necromancer/rig/5_torso.png",
+     "x": 72,
+     "y": 62,
+     "w": 58,
+     "h": 48,
+     "px": 100,
+     "py": 110,
+     "motion": "breath"
+    }
+   ]
+  }
+ },
+ "golem": {
+  "1": {
+   "w": 60,
+   "h": 61,
+   "base": "/characters/golem/rig/1_base.png",
+   "parts": [
+    {
+     "name": "torso",
+     "file": "/characters/golem/rig/1_torso.png",
+     "x": 8,
+     "y": 7,
+     "w": 44,
+     "h": 33,
+     "px": 30,
+     "py": 48,
+     "motion": "breath"
+    }
+   ]
+  },
+  "2": {
+   "w": 113,
+   "h": 95,
+   "base": "/characters/golem/rig/2_base.png",
+   "parts": [
+    {
+     "name": "tail",
+     "file": "/characters/golem/rig/2_tail.png",
+     "x": 18,
+     "y": 7,
+     "w": 22,
+     "h": 13,
+     "px": 30,
+     "py": 20,
+     "motion": "wag"
+    },
+    {
+     "name": "tailR",
+     "file": "/characters/golem/rig/2_tailR.png",
+     "x": 66,
+     "y": 4,
+     "w": 21,
+     "h": 16,
+     "px": 75,
+     "py": 20,
+     "motion": "wag"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/golem/rig/2_torso.png",
+     "x": 12,
+     "y": 20,
+     "w": 82,
+     "h": 42,
+     "px": 52,
+     "py": 76,
+     "motion": "breath"
+    }
+   ]
+  },
+  "3": {
+   "w": 158,
+   "h": 133,
+   "base": "/characters/golem/rig/3_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/golem/rig/3_head.png",
+     "x": 40,
+     "y": 6,
+     "w": 76,
+     "h": 66,
+     "px": 78,
+     "py": 72,
+     "motion": "tilt"
+    }
+   ]
+  },
+  "4": {
+   "w": 141,
+   "h": 152,
+   "base": "/characters/golem/rig/4_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/golem/rig/4_head.png",
+     "x": 60,
+     "y": 8,
+     "w": 46,
+     "h": 47,
+     "px": 83,
+     "py": 55,
+     "motion": "tilt"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/golem/rig/4_torso.png",
+     "x": 38,
+     "y": 55,
+     "w": 88,
+     "h": 40,
+     "px": 83,
+     "py": 95,
+     "motion": "breath"
+    }
+   ]
+  },
+  "5": {
+   "w": 177,
+   "h": 165,
+   "base": "/characters/golem/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/golem/rig/5_head.png",
+     "x": 36,
+     "y": 13,
+     "w": 97,
+     "h": 57,
+     "px": 88,
+     "py": 70,
+     "motion": "tilt"
+    },
+    {
+     "name": "armL",
+     "file": "/characters/golem/rig/5_armL.png",
+     "x": 23,
+     "y": 82,
+     "w": 33,
+     "h": 70,
+     "px": 50,
+     "py": 86,
+     "motion": "swayL"
+    },
+    {
+     "name": "armR",
+     "file": "/characters/golem/rig/5_armR.png",
+     "x": 118,
+     "y": 82,
+     "w": 27,
+     "h": 68,
+     "px": 124,
+     "py": 86,
+     "motion": "swayR"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/golem/rig/5_torso.png",
+     "x": 55,
+     "y": 70,
+     "w": 65,
+     "h": 50,
+     "px": 88,
+     "py": 120,
+     "motion": "breath"
+    }
+   ]
+  }
+ },
+ "demon": {
+  "1": {
+   "w": 110,
+   "h": 96,
+   "base": "/characters/demon/rig/1_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/demon/rig/1_head.png",
+     "x": 36,
+     "y": 6,
+     "w": 38,
+     "h": 34,
+     "px": 55,
+     "py": 40,
+     "motion": "tilt"
+    },
+    {
+     "name": "wingL",
+     "file": "/characters/demon/rig/1_wingL.png",
+     "x": 2,
+     "y": 12,
+     "w": 34,
+     "h": 40,
+     "px": 34,
+     "py": 30,
+     "motion": "flapL"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/demon/rig/1_torso.png",
+     "x": 30,
+     "y": 40,
+     "w": 42,
+     "h": 22,
+     "px": 50,
+     "py": 62,
+     "motion": "breath"
+    }
+   ]
+  },
+  "2": {
+   "w": 122,
+   "h": 117,
+   "base": "/characters/demon/rig/2_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/demon/rig/2_head.png",
+     "x": 50,
+     "y": 10,
+     "w": 44,
+     "h": 38,
+     "px": 70,
+     "py": 48,
+     "motion": "tilt"
+    },
+    {
+     "name": "wingL",
+     "file": "/characters/demon/rig/2_wingL.png",
+     "x": 4,
+     "y": 15,
+     "w": 46,
+     "h": 59,
+     "px": 48,
+     "py": 30,
+     "motion": "flapL"
+    },
+    {
+     "name": "wingR",
+     "file": "/characters/demon/rig/2_wingR.png",
+     "x": 94,
+     "y": 15,
+     "w": 26,
+     "h": 59,
+     "px": 96,
+     "py": 30,
+     "motion": "flapR"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/demon/rig/2_tail.png",
+     "x": 25,
+     "y": 74,
+     "w": 23,
+     "h": 22,
+     "px": 46,
+     "py": 85,
+     "motion": "wag"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/demon/rig/2_torso.png",
+     "x": 48,
+     "y": 48,
+     "w": 48,
+     "h": 30,
+     "px": 70,
+     "py": 78,
+     "motion": "breath"
+    }
+   ]
+  },
+  "3": {
+   "w": 138,
+   "h": 156,
+   "base": "/characters/demon/rig/3_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/demon/rig/3_head.png",
+     "x": 40,
+     "y": 6,
+     "w": 58,
+     "h": 42,
+     "px": 70,
+     "py": 48,
+     "motion": "tilt"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/demon/rig/3_torso.png",
+     "x": 28,
+     "y": 48,
+     "w": 82,
+     "h": 42,
+     "px": 70,
+     "py": 90,
+     "motion": "breath"
+    }
+   ]
+  },
+  "4": {
+   "w": 138,
+   "h": 156,
+   "base": "/characters/demon/rig/4_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/demon/rig/4_head.png",
+     "x": 40,
+     "y": 6,
+     "w": 58,
+     "h": 42,
+     "px": 70,
+     "py": 48,
+     "motion": "tilt"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/demon/rig/4_torso.png",
+     "x": 28,
+     "y": 48,
+     "w": 82,
+     "h": 42,
+     "px": 70,
+     "py": 90,
+     "motion": "breath"
+    }
+   ]
+  },
+  "5": {
+   "w": 156,
+   "h": 156,
+   "base": "/characters/demon/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/demon/rig/5_head.png",
+     "x": 50,
+     "y": 8,
+     "w": 50,
+     "h": 37,
+     "px": 75,
+     "py": 45,
+     "motion": "tilt"
+    },
+    {
+     "name": "cape",
+     "file": "/characters/demon/rig/5_cape.png",
+     "x": 108,
+     "y": 60,
+     "w": 46,
+     "h": 89,
+     "px": 110,
+     "py": 62,
+     "motion": "swayR"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/demon/rig/5_torso.png",
+     "x": 44,
+     "y": 45,
+     "w": 64,
+     "h": 43,
+     "px": 76,
+     "py": 88,
+     "motion": "breath"
+    }
+   ]
+  }
+ },
+ "orc": {
+  "1": {
+   "w": 82,
+   "h": 83,
+   "base": "/characters/orc/rig/1_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/orc/rig/1_head.png",
+     "x": 10,
+     "y": 4,
+     "w": 36,
+     "h": 34,
+     "px": 28,
+     "py": 38,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/orc/rig/1_weapon.png",
+     "x": 46,
+     "y": 18,
+     "w": 26,
+     "h": 34,
+     "px": 47,
+     "py": 50,
+     "motion": "swing"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/orc/rig/1_torso.png",
+     "x": 8,
+     "y": 38,
+     "w": 42,
+     "h": 24,
+     "px": 28,
+     "py": 62,
+     "motion": "breath"
+    }
+   ]
+  },
+  "2": {
+   "w": 118,
+   "h": 107,
+   "base": "/characters/orc/rig/2_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/orc/rig/2_head.png",
+     "x": 22,
+     "y": 8,
+     "w": 40,
+     "h": 34,
+     "px": 42,
+     "py": 42,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/orc/rig/2_weapon.png",
+     "x": 72,
+     "y": 37,
+     "w": 40,
+     "h": 35,
+     "px": 73,
+     "py": 62,
+     "motion": "swing"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/orc/rig/2_torso.png",
+     "x": 12,
+     "y": 42,
+     "w": 60,
+     "h": 38,
+     "px": 40,
+     "py": 80,
+     "motion": "breath"
+    }
+   ]
+  },
+  "3": {
+   "w": 150,
+   "h": 124,
+   "base": "/characters/orc/rig/3_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/orc/rig/3_head.png",
+     "x": 48,
+     "y": 4,
+     "w": 40,
+     "h": 38,
+     "px": 68,
+     "py": 42,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/orc/rig/3_weapon.png",
+     "x": 100,
+     "y": 43,
+     "w": 47,
+     "h": 46,
+     "px": 100,
+     "py": 72,
+     "motion": "swing"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/orc/rig/3_torso.png",
+     "x": 14,
+     "y": 42,
+     "w": 86,
+     "h": 48,
+     "px": 60,
+     "py": 90,
+     "motion": "breath"
+    }
+   ]
+  },
+  "4": {
+   "w": 169,
+   "h": 145,
+   "base": "/characters/orc/rig/4_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/orc/rig/4_head.png",
+     "x": 58,
+     "y": 2,
+     "w": 60,
+     "h": 50,
+     "px": 86,
+     "py": 52,
+     "motion": "tilt"
+    },
+    {
+     "name": "armL",
+     "file": "/characters/orc/rig/4_armL.png",
+     "x": 4,
+     "y": 27,
+     "w": 36,
+     "h": 71,
+     "px": 36,
+     "py": 86,
+     "motion": "swayL"
+    },
+    {
+     "name": "armR",
+     "file": "/characters/orc/rig/4_armR.png",
+     "x": 124,
+     "y": 27,
+     "w": 39,
+     "h": 71,
+     "px": 128,
+     "py": 86,
+     "motion": "swayR"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/orc/rig/4_torso.png",
+     "x": 40,
+     "y": 52,
+     "w": 84,
+     "h": 48,
+     "px": 86,
+     "py": 100,
+     "motion": "breath"
+    }
+   ]
+  },
+  "5": {
+   "w": 182,
+   "h": 156,
+   "base": "/characters/orc/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/orc/rig/5_head.png",
+     "x": 60,
+     "y": 18,
+     "w": 48,
+     "h": 40,
+     "px": 84,
+     "py": 58,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/orc/rig/5_weapon.png",
+     "x": 118,
+     "y": 1,
+     "w": 60,
+     "h": 91,
+     "px": 124,
+     "py": 90,
+     "motion": "swing"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/orc/rig/5_torso.png",
+     "x": 20,
+     "y": 58,
+     "w": 98,
+     "h": 52,
+     "px": 80,
+     "py": 110,
+     "motion": "breath"
+    }
+   ]
+  }
+ },
+ "goblin": {
+  "1": {
+   "w": 82,
+   "h": 83,
+   "base": "/characters/goblin/rig/1_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/goblin/rig/1_head.png",
+     "x": 2,
+     "y": 3,
+     "w": 52,
+     "h": 35,
+     "px": 28,
+     "py": 38,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/goblin/rig/1_weapon.png",
+     "x": 50,
+     "y": 22,
+     "w": 24,
+     "h": 34,
+     "px": 50,
+     "py": 50,
+     "motion": "swing"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/goblin/rig/1_torso.png",
+     "x": 8,
+     "y": 38,
+     "w": 42,
+     "h": 24,
+     "px": 28,
+     "py": 62,
+     "motion": "breath"
+    }
+   ]
+  },
+  "2": {
+   "w": 89,
+   "h": 98,
+   "base": "/characters/goblin/rig/2_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/goblin/rig/2_head.png",
+     "x": 8,
+     "y": 2,
+     "w": 54,
+     "h": 38,
+     "px": 34,
+     "py": 40,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/goblin/rig/2_weapon.png",
+     "x": 64,
+     "y": 31,
+     "w": 25,
+     "h": 29,
+     "px": 64,
+     "py": 58,
+     "motion": "swing"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/goblin/rig/2_torso.png",
+     "x": 12,
+     "y": 40,
+     "w": 52,
+     "h": 32,
+     "px": 36,
+     "py": 72,
+     "motion": "breath"
+    }
+   ]
+  },
+  "3": {
+   "w": 95,
+   "h": 117,
+   "base": "/characters/goblin/rig/3_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/goblin/rig/3_head.png",
+     "x": 11,
+     "y": 2,
+     "w": 53,
+     "h": 40,
+     "px": 36,
+     "py": 42,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/goblin/rig/3_weapon.png",
+     "x": 66,
+     "y": 48,
+     "w": 25,
+     "h": 30,
+     "px": 66,
+     "py": 64,
+     "motion": "swing"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/goblin/rig/3_torso.png",
+     "x": 8,
+     "y": 42,
+     "w": 58,
+     "h": 40,
+     "px": 36,
+     "py": 82,
+     "motion": "breath"
+    }
+   ]
+  },
+  "4": {
+   "w": 101,
+   "h": 126,
+   "base": "/characters/goblin/rig/4_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/goblin/rig/4_head.png",
+     "x": 14,
+     "y": 2,
+     "w": 50,
+     "h": 40,
+     "px": 38,
+     "py": 42,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/goblin/rig/4_weapon.png",
+     "x": 70,
+     "y": 49,
+     "w": 30,
+     "h": 33,
+     "px": 70,
+     "py": 66,
+     "motion": "swing"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/goblin/rig/4_torso.png",
+     "x": 8,
+     "y": 42,
+     "w": 62,
+     "h": 44,
+     "px": 36,
+     "py": 86,
+     "motion": "breath"
+    }
+   ]
+  },
+  "5": {
+   "w": 163,
+   "h": 165,
+   "base": "/characters/goblin/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/goblin/rig/5_head.png",
+     "x": 52,
+     "y": 14,
+     "w": 60,
+     "h": 38,
+     "px": 80,
+     "py": 52,
+     "motion": "tilt"
+    },
+    {
+     "name": "weapon",
+     "file": "/characters/goblin/rig/5_weapon.png",
+     "x": 118,
+     "y": 12,
+     "w": 32,
+     "h": 68,
+     "px": 124,
+     "py": 72,
+     "motion": "swing"
+    },
+    {
+     "name": "beast",
+     "file": "/characters/goblin/rig/5_beast.png",
+     "x": 132,
+     "y": 70,
+     "w": 28,
+     "h": 48,
+     "px": 134,
+     "py": 95,
+     "motion": "nod"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/goblin/rig/5_tail.png",
+     "x": 1,
+     "y": 106,
+     "w": 45,
+     "h": 24,
+     "px": 42,
+     "py": 115,
+     "motion": "wag"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/goblin/rig/5_torso.png",
+     "x": 48,
+     "y": 52,
+     "w": 72,
+     "h": 38,
+     "px": 84,
+     "py": 90,
+     "motion": "breath"
+    }
+   ]
+  }
+ },
+ "paladin": {
+  "1": {
+   "w": 66,
+   "h": 98,
+   "base": "/characters/paladin/rig/1_base.png",
+   "parts": [
+    {
+     "name": "weapon",
+     "file": "/characters/paladin/rig/1_weapon.png",
+     "x": 40,
+     "y": 8,
+     "w": 26,
+     "h": 52,
+     "px": 44,
+     "py": 52,
+     "motion": "swing"
+    },
+    {
+     "name": "head",
+     "file": "/characters/paladin/rig/1_head.png",
+     "x": 6,
+     "y": 2,
+     "w": 34,
+     "h": 34,
+     "px": 24,
+     "py": 36,
+     "motion": "tilt"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/paladin/rig/1_torso.png",
+     "x": 6,
+     "y": 36,
+     "w": 34,
+     "h": 30,
+     "px": 24,
+     "py": 66,
+     "motion": "breath"
+    }
+   ]
+  },
+  "2": {
+   "w": 90,
+   "h": 105,
+   "base": "/characters/paladin/rig/2_base.png",
+   "parts": [
+    {
+     "name": "weapon",
+     "file": "/characters/paladin/rig/2_weapon.png",
+     "x": 50,
+     "y": 16,
+     "w": 35,
+     "h": 50,
+     "px": 56,
+     "py": 58,
+     "motion": "swing"
+    },
+    {
+     "name": "head",
+     "file": "/characters/paladin/rig/2_head.png",
+     "x": 24,
+     "y": 2,
+     "w": 26,
+     "h": 34,
+     "px": 38,
+     "py": 36,
+     "motion": "tilt"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/paladin/rig/2_torso.png",
+     "x": 6,
+     "y": 36,
+     "w": 44,
+     "h": 34,
+     "px": 30,
+     "py": 70,
+     "motion": "breath"
+    }
+   ]
+  },
+  "3": {
+   "w": 109,
+   "h": 113,
+   "base": "/characters/paladin/rig/3_base.png",
+   "parts": [
+    {
+     "name": "weapon",
+     "file": "/characters/paladin/rig/3_weapon.png",
+     "x": 50,
+     "y": 8,
+     "w": 58,
+     "h": 62,
+     "px": 56,
+     "py": 62,
+     "motion": "swing"
+    },
+    {
+     "name": "head",
+     "file": "/characters/paladin/rig/3_head.png",
+     "x": 34,
+     "y": 2,
+     "w": 22,
+     "h": 32,
+     "px": 48,
+     "py": 34,
+     "motion": "tilt"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/paladin/rig/3_torso.png",
+     "x": 18,
+     "y": 34,
+     "w": 32,
+     "h": 36,
+     "px": 34,
+     "py": 70,
+     "motion": "breath"
+    }
+   ]
+  },
+  "4": {
+   "w": 135,
+   "h": 124,
+   "base": "/characters/paladin/rig/4_base.png",
+   "parts": [
+    {
+     "name": "weapon",
+     "file": "/characters/paladin/rig/4_weapon.png",
+     "x": 84,
+     "y": 62,
+     "w": 47,
+     "h": 46,
+     "px": 88,
+     "py": 72,
+     "motion": "swing"
+    },
+    {
+     "name": "head",
+     "file": "/characters/paladin/rig/4_head.png",
+     "x": 42,
+     "y": 10,
+     "w": 48,
+     "h": 36,
+     "px": 64,
+     "py": 46,
+     "motion": "tilt"
+    },
+    {
+     "name": "cape",
+     "file": "/characters/paladin/rig/4_cape.png",
+     "x": 2,
+     "y": 60,
+     "w": 38,
+     "h": 54,
+     "px": 38,
+     "py": 62,
+     "motion": "swayL"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/paladin/rig/4_torso.png",
+     "x": 40,
+     "y": 46,
+     "w": 44,
+     "h": 32,
+     "px": 62,
+     "py": 78,
+     "motion": "breath"
+    }
+   ]
+  },
+  "5": {
+   "w": 193,
+   "h": 146,
+   "base": "/characters/paladin/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/paladin/rig/5_head.png",
+     "x": 84,
+     "y": 28,
+     "w": 20,
+     "h": 24,
+     "px": 94,
+     "py": 52,
+     "motion": "tilt"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/paladin/rig/5_torso.png",
+     "x": 78,
+     "y": 52,
+     "w": 40,
+     "h": 33,
+     "px": 97,
+     "py": 85,
+     "motion": "breath"
+    },
+    {
+     "name": "wingL",
+     "file": "/characters/paladin/rig/5_wingL.png",
+     "x": 14,
+     "y": 1,
+     "w": 66,
+     "h": 69,
+     "px": 78,
+     "py": 45,
+     "motion": "flapL"
+    },
+    {
+     "name": "wingR",
+     "file": "/characters/paladin/rig/5_wingR.png",
+     "x": 112,
+     "y": 3,
+     "w": 80,
+     "h": 92,
+     "px": 114,
+     "py": 45,
+     "motion": "flapR"
+    }
+   ]
+  }
+ },
+ "sea_dragon": {
+  "1": {
+   "w": 92,
+   "h": 94,
+   "base": "/characters/sea_dragon/rig/1_base.png",
+   "parts": [
+    {
+     "name": "tail",
+     "file": "/characters/sea_dragon/rig/1_tail.png",
+     "x": 25,
+     "y": 60,
+     "w": 27,
+     "h": 33,
+     "px": 40,
+     "py": 64,
+     "motion": "wag"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/sea_dragon/rig/1_torso.png",
+     "x": 15,
+     "y": 9,
+     "w": 70,
+     "h": 51,
+     "px": 50,
+     "py": 60,
+     "motion": "breath"
+    }
+   ]
+  },
+  "2": {
+   "w": 123,
+   "h": 79,
+   "base": "/characters/sea_dragon/rig/2_base.png",
+   "parts": [
+    {
+     "name": "tail",
+     "file": "/characters/sea_dragon/rig/2_tail.png",
+     "x": 1,
+     "y": 17,
+     "w": 43,
+     "h": 53,
+     "px": 42,
+     "py": 40,
+     "motion": "wag"
+    },
+    {
+     "name": "beast",
+     "file": "/characters/sea_dragon/rig/2_beast.png",
+     "x": 86,
+     "y": 13,
+     "w": 34,
+     "h": 57,
+     "px": 88,
+     "py": 40,
+     "motion": "nod"
+    }
+   ]
+  },
+  "3": {
+   "w": 134,
+   "h": 132,
+   "base": "/characters/sea_dragon/rig/3_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/sea_dragon/rig/3_head.png",
+     "x": 90,
+     "y": 1,
+     "w": 38,
+     "h": 69,
+     "px": 95,
+     "py": 55,
+     "motion": "tilt"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/sea_dragon/rig/3_tail.png",
+     "x": 96,
+     "y": 80,
+     "w": 34,
+     "h": 47,
+     "px": 100,
+     "py": 95,
+     "motion": "wag"
+    }
+   ]
+  },
+  "4": {
+   "w": 150,
+   "h": 140,
+   "base": "/characters/sea_dragon/rig/4_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/sea_dragon/rig/4_head.png",
+     "x": 85,
+     "y": 2,
+     "w": 48,
+     "h": 53,
+     "px": 95,
+     "py": 50,
+     "motion": "tilt"
+    },
+    {
+     "name": "cloudL",
+     "file": "/characters/sea_dragon/rig/4_cloudL.png",
+     "x": 9,
+     "y": 12,
+     "w": 37,
+     "h": 30,
+     "px": 25,
+     "py": 25,
+     "motion": "drift"
+    },
+    {
+     "name": "cloudR",
+     "file": "/characters/sea_dragon/rig/4_cloudR.png",
+     "x": 94,
+     "y": 104,
+     "w": 52,
+     "h": 34,
+     "px": 120,
+     "py": 120,
+     "motion": "drift"
+    }
+   ]
+  },
+  "5": {
+   "w": 162,
+   "h": 152,
+   "base": "/characters/sea_dragon/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/sea_dragon/rig/5_head.png",
+     "x": 70,
+     "y": 8,
+     "w": 60,
+     "h": 66,
+     "px": 100,
+     "py": 72,
+     "motion": "tilt"
+    },
+    {
+     "name": "cloudL",
+     "file": "/characters/sea_dragon/rig/5_cloudL.png",
+     "x": 2,
+     "y": 4,
+     "w": 60,
+     "h": 44,
+     "px": 30,
+     "py": 25,
+     "motion": "drift"
+    },
+    {
+     "name": "cloudR",
+     "file": "/characters/sea_dragon/rig/5_cloudR.png",
+     "x": 130,
+     "y": 13,
+     "w": 27,
+     "h": 37,
+     "px": 136,
+     "py": 30,
+     "motion": "drift"
+    }
+   ]
+  }
+ },
+ "flame_dragon": {
+  "1": {
+   "w": 50,
+   "h": 65,
+   "base": "/characters/flame_dragon/rig/1_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/flame_dragon/rig/1_head.png",
+     "x": 4,
+     "y": 6,
+     "w": 40,
+     "h": 28,
+     "px": 25,
+     "py": 34,
+     "motion": "tilt"
+    }
+   ]
+  },
+  "2": {
+   "w": 176,
+   "h": 83,
+   "base": "/characters/flame_dragon/rig/2_base.png",
+   "parts": [
+    {
+     "name": "flame",
+     "file": "/characters/flame_dragon/rig/2_flame.png",
+     "x": 132,
+     "y": 28,
+     "w": 44,
+     "h": 39,
+     "px": 134,
+     "py": 48,
+     "motion": "flicker"
+    },
+    {
+     "name": "beast",
+     "file": "/characters/flame_dragon/rig/2_beast.png",
+     "x": 96,
+     "y": 10,
+     "w": 36,
+     "h": 41,
+     "px": 100,
+     "py": 40,
+     "motion": "nod"
+    },
+    {
+     "name": "wingL",
+     "file": "/characters/flame_dragon/rig/2_wingL.png",
+     "x": 4,
+     "y": 2,
+     "w": 92,
+     "h": 38,
+     "px": 80,
+     "py": 35,
+     "motion": "flapL"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/flame_dragon/rig/2_tail.png",
+     "x": 2,
+     "y": 36,
+     "w": 42,
+     "h": 36,
+     "px": 40,
+     "py": 50,
+     "motion": "wag"
+    }
+   ]
+  },
+  "3": {
+   "w": 196,
+   "h": 133,
+   "base": "/characters/flame_dragon/rig/3_base.png",
+   "parts": [
+    {
+     "name": "beast",
+     "file": "/characters/flame_dragon/rig/3_beast.png",
+     "x": 115,
+     "y": 20,
+     "w": 47,
+     "h": 62,
+     "px": 118,
+     "py": 60,
+     "motion": "nod"
+    },
+    {
+     "name": "flame",
+     "file": "/characters/flame_dragon/rig/3_flame.png",
+     "x": 112,
+     "y": 88,
+     "w": 81,
+     "h": 44,
+     "px": 116,
+     "py": 110,
+     "motion": "flicker"
+    },
+    {
+     "name": "wingL",
+     "file": "/characters/flame_dragon/rig/3_wingL.png",
+     "x": 1,
+     "y": 2,
+     "w": 95,
+     "h": 58,
+     "px": 90,
+     "py": 45,
+     "motion": "flapL"
+    },
+    {
+     "name": "wingR",
+     "file": "/characters/flame_dragon/rig/3_wingR.png",
+     "x": 128,
+     "y": 8,
+     "w": 45,
+     "h": 44,
+     "px": 130,
+     "py": 40,
+     "motion": "flapR"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/flame_dragon/rig/3_tail.png",
+     "x": 26,
+     "y": 84,
+     "w": 60,
+     "h": 45,
+     "px": 80,
+     "py": 95,
+     "motion": "wag"
+    }
+   ]
+  },
+  "4": {
+   "w": 195,
+   "h": 145,
+   "base": "/characters/flame_dragon/rig/4_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/flame_dragon/rig/4_head.png",
+     "x": 100,
+     "y": 1,
+     "w": 36,
+     "h": 49,
+     "px": 117,
+     "py": 50,
+     "motion": "tilt"
+    },
+    {
+     "name": "wingL",
+     "file": "/characters/flame_dragon/rig/4_wingL.png",
+     "x": 8,
+     "y": 4,
+     "w": 92,
+     "h": 58,
+     "px": 98,
+     "py": 45,
+     "motion": "flapL"
+    },
+    {
+     "name": "wingR",
+     "file": "/characters/flame_dragon/rig/4_wingR.png",
+     "x": 136,
+     "y": 2,
+     "w": 54,
+     "h": 60,
+     "px": 138,
+     "py": 40,
+     "motion": "flapR"
+    },
+    {
+     "name": "torso",
+     "file": "/characters/flame_dragon/rig/4_torso.png",
+     "x": 96,
+     "y": 50,
+     "w": 54,
+     "h": 60,
+     "px": 120,
+     "py": 110,
+     "motion": "breath"
+    }
+   ]
+  },
+  "5": {
+   "w": 231,
+   "h": 134,
+   "base": "/characters/flame_dragon/rig/5_base.png",
+   "parts": [
+    {
+     "name": "head",
+     "file": "/characters/flame_dragon/rig/5_head.png",
+     "x": 98,
+     "y": 11,
+     "w": 32,
+     "h": 34,
+     "px": 114,
+     "py": 45,
+     "motion": "tilt"
+    },
+    {
+     "name": "flame",
+     "file": "/characters/flame_dragon/rig/5_flame.png",
+     "x": 126,
+     "y": 45,
+     "w": 98,
+     "h": 87,
+     "px": 130,
+     "py": 55,
+     "motion": "flicker"
+    },
+    {
+     "name": "wingL",
+     "file": "/characters/flame_dragon/rig/5_wingL.png",
+     "x": 8,
+     "y": 1,
+     "w": 90,
+     "h": 69,
+     "px": 96,
+     "py": 35,
+     "motion": "flapL"
+    },
+    {
+     "name": "wingR",
+     "file": "/characters/flame_dragon/rig/5_wingR.png",
+     "x": 130,
+     "y": 1,
+     "w": 86,
+     "h": 44,
+     "px": 132,
+     "py": 35,
+     "motion": "flapR"
+    },
+    {
+     "name": "tail",
+     "file": "/characters/flame_dragon/rig/5_tail.png",
+     "x": 47,
+     "y": 84,
+     "w": 63,
+     "h": 38,
+     "px": 100,
+     "py": 90,
+     "motion": "wag"
+    }
+   ]
+  }
+ }
+}

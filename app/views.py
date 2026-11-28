@@ -5,7 +5,7 @@ import json
 from datetime import date, datetime, timedelta
 from statistics import mean
 
-from . import analysis, auth, coach, db, game, metrics, strength, sync
+from . import analysis, auth, coach, db, game, metrics, strength, sync, progress
 from .config import TZ
 from .garmin_client import DemoGarmin, RealGarmin, today_local
 from .metrics import fmt_pace
@@ -228,6 +228,7 @@ def summary(user_id: int) -> dict:
         "device": device, "provider": user["provider"], "last_sync": user["last_sync"],
         "last_sync_error": user["last_sync_error"], "rings": rings, "today": dash["plan"]["days"][0],
         "strength_today": _strength_today(user_id, today, dash["plan"]["days"][0]),
+        "new_pbs": progress.recent_pbs(user_id, days=3),
         "ask_intro": _ask_intro(user_id, today),
         "plan_hold": bool(dash["plan"].get("hold")), "plan_provisional": dash["plan"].get("provisional") and {
             "time": dash["plan"].get("provisional_time")},
@@ -653,7 +654,17 @@ def this_week(user_id: int) -> dict:
             "imported": pl.get("imported"),
             "stoploss": pl.get("stoploss") or [], "next_checkpoint": pl.get("next_checkpoint"), "check": pl.get("check"),
             "readiness": dash["readiness"], "notes": pl["notes"], "tips": tips,
-            "checkin": dash.get("checkin")}
+            "checkin": dash.get("checkin"), "busy": busy_week_on(user_id, today)}
+
+
+BUSY_NAME = "這週很忙"
+
+
+def busy_week_on(user_id: int, today: date) -> bool:
+    """這週是不是按過「這週很忙」（存成本週的出差／旅行行程，跑量打六折）。"""
+    w0 = today - timedelta(days=today.weekday())
+    return any(e.get("name") == BUSY_NAME and e.get("type") == "travel" and e["date"] >= w0.isoformat()
+               and e["date"] <= (w0 + timedelta(days=6)).isoformat() for e in db.get_prefs(user_id).get("events") or [])
 
 
 def week_tips(days, done, planned_n, missed, too_hard, planned_km, actual_km, dash, today):

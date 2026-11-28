@@ -32,8 +32,8 @@ async function viewMe() {
     const sp = species(g.character.species);
     const nextLv = g.next_stage_level;
     hero = `<section class="hero" aria-labelledby="pet">
-      <div class="stage"><button class="pet s${g.stage}" id="pet-btn" aria-label="跟${esc(g.character.nickname)}互動">
-        <span class="pet-fx" aria-hidden="true"><i></i><i></i><i></i><i></i></span>${charImg(sp.id, g.stage, 200)}<span class="pet-shadow"></span></button></div>
+      <div class="stage ${sceneCls(sp.id)}" data-scene="${sp.id}">${petScene(sp.id)}<button class="pet s${g.stage} ${petCls(sp.id, g.stage)}" id="pet-btn" data-sp="${sp.id}" style="${petSpark(sp.id) ? `--spark:${petSpark(sp.id)}` : ""}" aria-label="跟${esc(g.character.nickname)}互動">
+        ${petFx(sp.id, g.stage)}<span class="pet-fx" aria-hidden="true"><i></i><i></i><i></i><i></i></span>${petSprite(sp.id, g.stage, 200)}<span class="pet-shadow"></span></button>${petFront(sp.id)}</div>
       <div class="hero-info">
         <p class="sp">${esc(sp.name)}，第 ${g.stage + 1} 階段「${esc(g.character.stage_name)}」</p>
         <h2 id="pet">${esc(g.character.nickname)}</h2>
@@ -87,7 +87,11 @@ async function viewMe() {
     S.token = null; localStorage.removeItem("ic8_token"); go("#/login");
   };
   const pet = document.getElementById("pet-btn");
-  if (pet) pet.onclick = () => { pet.classList.remove("hop"); void pet.offsetWidth; pet.classList.add("hop"); };
+  // 點夥伴：跳一下；有專屬特效的種族，環繞的小東西會散開再飛回來，加一圈光波
+  if (pet) pet.onclick = () => {
+    pet.classList.remove("hop", "react"); void pet.offsetWidth; pet.classList.add("hop");
+    if (pet.querySelector(".pet-orbit, .rig")) { pet.classList.add("react"); clearTimeout(pet._r); pet._r = setTimeout(() => pet.classList.remove("react"), 1300); }
+  };
   if (g.character) celebrate(g);
 }
 
@@ -101,7 +105,10 @@ function celebrate(g) {
   const evolved = g.stage > prev.stage;
   const ov = document.createElement("div");
   ov.className = "levelup"; ov.setAttribute("role", "dialog"); ov.setAttribute("aria-label", evolved ? "進化" : "升級");
-  ov.innerHTML = `<div class="card">${charImg(g.character.species, g.stage, 180)}
+  const burst = evolved && PET_FX[g.character.species]
+    ? `<span class="evo-burst" style="--aura:${PET_FX[g.character.species].aura}" aria-hidden="true">${Array.from({ length: 10 }, (_, i) =>
+      `<i style="--k:${i}">${pixelOrb(PET_FX[g.character.species].orb, PET_FX[g.character.species].colors)}</i>`).join("")}</span>` : "";
+  ov.innerHTML = `<div class="card"><div class="evo-pic">${burst}${charImg(g.character.species, g.stage, 180)}</div>
     <h2>${evolved ? `進化成「${esc(g.character.stage_name)}」！` : "升級了！"}</h2>
     <p class="num" style="font-size:1.25rem;margin:4px 0 14px">Lv ${prev.level} → <b style="font-size:1.75rem;color:var(--c-run)">${g.level}</b></p>
     <button class="btn" type="button">太棒了</button></div>`;
@@ -153,17 +160,48 @@ async function viewPick() {
         <label><input type="radio" name="species" value="${s.id}" ${s.id === cur ? "checked" : ""}>
           <span class="pc"><span class="pc-main"><span class="pc-big"><img src="${s.stages[2].file}" alt=""></span>
               <span><b>${esc(s.name)}</b><small class="muted">${esc(s.blurb)}</small></span></span>
-            <span class="strip">${s.stages.map((st, i) => `<span class="cell"><span class="box"><img src="${st.file}" alt="${esc(st.name)}"></span><small>${esc(st.name)}</small></span>`).join("")}</span></span></label>`).join("")}</div>
+            <span class="strip">${s.stages.map((st, i) => `<span class="cell" data-prev="${s.id}:${i}" role="button" tabindex="0" aria-label="預覽${esc(st.name)}"><span class="box"><img src="${st.file}" alt="${esc(st.name)}"></span><small>${esc(st.name)}</small></span>`).join("")}</span></span></label>`).join("")}</div>
+      <p class="muted" style="margin-top:8px">點任一個階段的小圖，可以預覽牠進化後的樣子和動作。</p>
       <label><span>幫牠取名字（選填，最多 12 字）</span><input type="text" name="nickname" maxlength="12" value="${esc(g.character?.nickname && g.character.nickname !== g.character.stage_name ? g.character.nickname : "")}"></label>
       <button class="btn block" type="submit">${g.character ? "換成這隻" : "就決定是你了"}</button>
     </form>`;
   bindCommon();
+  document.querySelectorAll("[data-prev]").forEach((c) => {
+    const open = (e) => { e.preventDefault(); e.stopPropagation(); const [id, i] = c.dataset.prev.split(":"); previewPet(id, +i); };
+    c.addEventListener("click", open);
+    c.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") open(e); });
+  });
   document.getElementById("pick").onsubmit = async (e) => {
     e.preventDefault();
     const f = new FormData(e.target);
     await busy(e.submitter, () => api("/api/character", { method: "PUT", body: { species: f.get("species"), nickname: f.get("nickname") } }));
     go("#/me");
   };
+}
+
+// 預覽某一隻夥伴的某個階段：完整的場景、特效、浮空和點擊反應（不會改到你現在的夥伴）
+function previewPet(id, stage) {
+  const sp = species(id);
+  const lv = S.chars.stage_levels || [];
+  const draw = (box, i) => {
+    box.querySelector(".prev-body").innerHTML = `
+      <p class="muted">第 ${i + 1} 階段「${esc(sp.stages[i].name)}」${lv[i] ? `，Lv ${lv[i]} 進化` : ""}</p>
+      <div class="stage ${sceneCls(id)}" data-scene="${id}" style="margin-top:8px">${petScene(id)}<button class="pet s${i} ${petCls(id, i)}" type="button" id="prev-pet" style="${petSpark(id) ? `--spark:${petSpark(id)}` : ""}" aria-label="跟牠互動">
+        ${petFx(id, i)}<span class="pet-fx" aria-hidden="true"><i></i><i></i><i></i><i></i></span>${petSprite(id, i, 200)}<span class="pet-shadow"></span></button>${petFront(id)}</div>
+      <div class="seg prev-stages" role="group" aria-label="階段">${sp.stages.map((_, k) => `<button type="button" data-st="${k}" aria-pressed="${k === i}">${k + 1}</button>`).join("")}</div>
+      <p class="muted" style="margin-top:6px;text-align:center">點牠看看反應</p>`;
+    const pet = box.querySelector("#prev-pet");
+    pet.onclick = () => {
+      pet.classList.remove("hop", "react"); void pet.offsetWidth; pet.classList.add("hop");
+      if (pet.querySelector(".pet-orbit, .rig")) { pet.classList.add("react"); clearTimeout(pet._r); pet._r = setTimeout(() => pet.classList.remove("react"), 1300); }
+    };
+    box.querySelectorAll("[data-st]").forEach((b) => (b.onclick = () => draw(box, +b.dataset.st)));
+  };
+  sheet(`<h2>${esc(sp.name)}</h2><div class="prev-body"></div>
+    <div class="btn-row"><button class="btn outline" type="button" id="prev-x">關閉</button></div>`, (box, close) => {
+    draw(box, stage);
+    box.querySelector("#prev-x").onclick = close;
+  });
 }
 
 // ───────────────────── 目標與課表偏好 ─────────────────────
@@ -439,8 +477,8 @@ async function viewDevice() {
   bindCommon();
   const q = (id) => document.getElementById(id);
   if (q("sync")) q("sync").onclick = (e) => syncNow(e.currentTarget);
-  if (q("full")) q("full").onclick = (e) => busy(e.currentTarget, async () => { await api("/api/sync?full=true", { method: "POST" }); toast("已重新抓取"); render(); });
-  if (q("diag")) q("diag").onclick = (e) => busy(e.currentTarget, async () => {
+  if (q("full")) q("full").onclick = (e) => act(e.currentTarget, async () => { await api("/api/sync?full=true", { method: "POST" }); toast("已重新抓取"); render(); });
+  if (q("diag")) q("diag").onclick = (e) => act(e.currentTarget, async () => {
     try {
       const r = await api("/api/garmin/diagnose");
       q("diag-out").innerHTML = `<ul class="list" style="margin-top:8px">${r.checks.map((c) => `<li class="row" style="cursor:default;grid-template-columns:1fr auto;min-height:48px">
@@ -452,12 +490,12 @@ async function viewDevice() {
   const drawTest = () => {
     const id = localStorage.getItem("ic8_test_workout");
     if (id && q("ptest-out") && !q("ptest-out").innerHTML) q("ptest-out").innerHTML = `<button class="btn outline block" id="pdel">刪除測試課</button>`;
-    if (q("pdel")) q("pdel").onclick = (e) => busy(e.currentTarget, async () => {
+    if (q("pdel")) q("pdel").onclick = (e) => act(e.currentTarget, async () => {
       try { await api(`/api/garmin/push-test/${id}`, { method: "DELETE" }); localStorage.removeItem("ic8_test_workout"); q("ptest-out").innerHTML = `<p class="muted" style="margin-top:8px">已從 Garmin Connect 刪除測試課。</p>`; }
       catch (x) { toast(x.message); }
     });
   };
-  if (q("ptest")) { drawTest(); q("ptest").onclick = (e) => busy(e.currentTarget, async () => {
+  if (q("ptest")) { drawTest(); q("ptest").onclick = (e) => act(e.currentTarget, async () => {
     try {
       const r = await api("/api/garmin/push-test", { method: "POST" });
       localStorage.setItem("ic8_test_workout", r.workout_id);

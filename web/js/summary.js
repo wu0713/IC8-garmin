@@ -76,15 +76,15 @@ function viewLink() {
     try { await busy(e.submitter, () => api("/api/garmin/mfa", { method: "POST", body: Object.fromEntries(new FormData(e.target)) })); await after(); }
     catch (x) { err.textContent = x.message; err.hidden = false; }
   };
-  document.getElementById("apple").onclick = (e) => busy(e.currentTarget, async () => {
+  document.getElementById("apple").onclick = (e) => act(e.currentTarget, async () => {
     await api("/api/apple/link", { method: "POST" }); S.me.provider = "apple"; go("#/me/apple");
   });
   const demo = document.getElementById("demo");
-  if (demo) demo.onclick = () => busy(demo, async () => { await api("/api/garmin/demo", { method: "POST" }); await after(); });
+  if (demo) demo.onclick = () => act(demo, async () => { await api("/api/garmin/demo", { method: "POST" }); await after(); });
 }
 
 async function syncNow(btn) {
-  btn && (btn.disabled = true);
+  btn && (btn.disabled = true, btn.classList.add("spinning"));
   toast("同步中…");
   try {
     const before = await api("/api/game");
@@ -95,7 +95,7 @@ async function syncNow(btn) {
     if (s2?.today_activity) { toast(`跑完了！夥伴 +${gained} XP，來看訓練報告`); return go(`#/workout/${encodeURIComponent(s2.today_activity)}`); }
     toast(`同步完成，${r.synced.activities} 筆跑步${gained > 0 ? `，夥伴 +${gained} XP` : ""}${r.garmin_push?.uploaded ? `，${r.garmin_push.uploaded} 堂課已送到手錶` : ""}`);
     render();
-  } catch (x) { toast(x.message); btn && (btn.disabled = false); }
+  } catch (x) { toast(x.message); btn && (btn.disabled = false, btn.classList.remove("spinning")); }
 }
 
 // ───────────────────── 摘要 ─────────────────────
@@ -105,12 +105,16 @@ async function viewSummary() {
   const avatar = d.partner.species ? charThumb(d.partner.species, d.partner.stage) : ico("paw");
 
   $app.innerHTML = `
-    ${appbar("摘要", { actions: `
-      <button class="icon-btn" id="sync" aria-label="立即同步">${ico("sync")}</button>
-      ` })}
-    ${d.last_sync_error ? `<div class="note-card" style="margin-bottom:12px">${ico("bolt")}<span>上次同步失敗：${esc(d.last_sync_error)}。按上面的同步再試一次；一直失敗就到「我的 → 手錶與資料來源」重新連結。</span></div>` : ""}
+    ${appbar("摘要")}
+    ${d.last_sync_error ? `<div class="note-card" style="margin-bottom:12px">${ico("bolt")}<span>上次同步失敗：${esc(d.last_sync_error)}。按手錶那一列的「同步」再試一次；一直失敗就到「我的 → 手錶與資料來源」重新連結。</span></div>` : ""}
 
     ${bc}
+    <div class="strip dev">
+      <button class="dev-main" data-go="#/me/device" aria-label="手錶與資料來源">${ico("watch")}
+        <span><b>${esc(dev?.name || (d.provider === "demo" ? "範例資料" : "Garmin"))}</b>
+          <small><span class="dot ${d.last_sync_error ? "off" : ""}"></span>${d.last_sync_error ? "同步失敗" : d.provider === "demo" ? "範例資料，尚未連結 Garmin" : agoText(d.last_sync)}</small></span></button>
+      <button class="dev-sync" id="sync" aria-label="立即同步" title="立即同步">${ico("sync")}</button>
+    </div>
     <button class="card quest" data-go="${d.today_activity ? `#/workout/${encodeURIComponent(d.today_activity)}` : "#/analysis"}" aria-label="今天的任務：${esc(t.title)}">
       <span class="quest-top">
         <span><span class="tag">今日任務 ${new Date().getMonth() + 1}/${new Date().getDate()}</span>
@@ -139,23 +143,72 @@ async function viewSummary() {
         <span class="val num">${fmt(x.value)} / ${fmt(x.goal)} ${x.unit}</span></div>`).join("")}</div>
     </section>
 
-    <button class="strip" data-go="#/me/device" style="margin-top:14px">${ico("watch")}
-      <span><b>${esc(dev?.name || (d.provider === "demo" ? "範例資料" : "Garmin"))}</b>
-        <small>${d.provider === "demo" ? "範例資料，尚未連結你的 Garmin" : agoText(d.last_sync)}</small></span>
-      <span class="chip"><span class="dot ${d.last_sync_error ? "off" : ""}"></span>${d.last_sync_error ? "同步失敗" : "已連線"}</span></button>`;
+`;
   bindCommon();
   document.getElementById("sync").onclick = (e) => syncNow(e.currentTarget);
+  celebratePB(d.new_pbs);
 }
 
 // ───────────────────── 指標 ─────────────────────
+const secFmt = (s) => { s = Math.round(s); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
+  return h ? `${h}:${String(m).padStart(2, "0")}:${String(x).padStart(2, "0")}` : `${m}:${String(x).padStart(2, "0")}`; };
+
+// 圖表軸上用短一點的格式：超過一小時只寫到分（1:44），不到一小時寫分秒（49:13）
+const axisTime = (s) => (s >= 3600 ? `${Math.floor(s / 3600)}:${String(Math.round((s % 3600) / 60)).padStart(2, "0")}` : secFmt(s));
+
+// 預估比賽成績：每週一個點，越上面越快；有目標時間就畫一條綠色虛線
+function progressCard(pg) {
+  const pts = (pg?.points || []).map((p) => ({ label: `${+p.date.slice(5, 7)}/${+p.date.slice(8)}`, value: p.seconds }));
+  if (!pts.some((p) => p.value)) return "";
+  const ch = pg.change_s;
+  const delta = ch == null || Math.abs(ch) < 5 ? `跟 ${pg.weeks} 週前差不多`
+    : ch < 0 ? `比 ${pg.weeks} 週前<b style="color:var(--ok)">快了 ${secFmt(-ch)}</b>` : `比 ${pg.weeks} 週前慢了 ${secFmt(ch)}`;
+  const now = pts.filter((p) => p.value).pop().value;
+  const gap = pg.target_s ? now - pg.target_s : null;
+  return `<section class="card progress-card" aria-labelledby="pgh">
+    <div class="section-head" style="margin:0"><h2 id="pgh" style="display:flex;gap:6px;align-items:center">${ico("trophy")}預估${esc(pg.race_label)}成績</h2>
+      ${pg.target ? `<span class="muted">目標 ${esc(pg.target)}</span>` : ""}</div>
+    <p class="pg-now num">${esc(pg.now)}</p>
+    <p class="muted">${delta}${gap != null ? (gap <= 0 ? "，已經跑得出目標成績 🎉" : `，離目標還差 ${secFmt(gap)}`) : ""}</p>
+    ${lineChart(pts, { color: "var(--c-run)", h: 170, invert: true, yfmt: axisTime, goal: pg.target_s, goalLabel: pg.target_s ? "目標" : "" })}
+    <p class="muted" style="margin-top:4px">用近 120 天裡最快的一趟（3–10 公里）推算，越上面越快。</p>
+  </section>`;
+}
+
+// 破個人紀錄：每一筆只慶祝一次
+function celebratePB(pbs) {
+  if (!pbs?.length) return;
+  const key = `ic8_pb_seen_${S.me?.username || ""}`;
+  let seen = [];
+  try { seen = JSON.parse(localStorage.getItem(key)) || []; } catch {}
+  const pb = pbs.find((p) => !seen.includes(p.id));
+  if (!pb) return;
+  try { localStorage.setItem(key, JSON.stringify([...seen, pb.id].slice(-50))); } catch {}
+  const ov = document.createElement("div");
+  ov.className = "levelup pb-pop"; ov.setAttribute("role", "dialog"); ov.setAttribute("aria-label", "破個人紀錄");
+  ov.innerHTML = `<div class="confetti" aria-hidden="true">${Array.from({ length: 28 }, (_, i) => `<i style="--i:${i};left:${Math.round(Math.random() * 98)}%;animation-delay:${Math.round(Math.random() * 900)}ms"></i>`).join("")}</div>
+    <div class="card"><p class="pb-tag">${ico("trophy")}新的個人紀錄</p>
+    <h2>${esc(pb.label)}</h2>
+    <p class="pb-val num">${esc(pb.value)}</p>
+    <p class="muted">${pb.prev ? `之前是 ${esc(pb.prev)}，${esc(pb.gain)}！` : "第一次跑完這個距離！"}</p>
+    <div class="btn-row" style="justify-content:center;margin-top:14px">
+      <button class="btn" type="button" data-pbgo>看這一趟</button><button class="btn outline" type="button" data-pbok>太棒了</button></div></div>`;
+  document.body.append(ov);
+  const close = () => ov.remove();
+  ov.querySelector("[data-pbok]").onclick = close;
+  ov.querySelector("[data-pbgo]").onclick = () => { close(); go(`#/workout/${encodeURIComponent(pb.activity_id)}`); };
+  ov.querySelector("[data-pbok]").focus();
+}
+
 async function viewMetrics() {
-  const d = await api("/api/summary");
+  const [d, pg] = await Promise.all([api("/api/summary"), api("/api/progress").catch(() => null)]);
   const listMode = localStorage.getItem("ic8_cards") === "list";
   $app.innerHTML = `
     ${appbar("指標", { actions: `
       <button class="icon-btn" id="mode" aria-label="${listMode ? "格狀顯示" : "清單顯示"}">${ico(listMode ? "grid" : "list")}</button>
       <button class="text-btn" id="edit">編輯</button>` })}
-    <p class="muted" style="margin-bottom:10px">點任一張卡片看週、月、6 個月、年的趨勢。按「編輯」選要顯示哪些、調整順序。</p>
+    ${progressCard(pg)}
+    <p class="muted" style="margin:14px 0 10px">點任一張卡片看週、月、6 個月、年的趨勢。按「編輯」選要顯示哪些、調整順序。</p>
       <div class="metrics ${listMode ? "list" : ""}">
         ${d.cards.map((c) => c.key === "partner" ? `
           <button class="mcard partner" style="--mc:var(--pill)" data-go="${c.species ? "#/me" : "#/me/pick"}">
@@ -191,14 +244,16 @@ function editDashboard(d) {
   sheet(`<h2>編輯指標</h2><p class="muted">勾選要顯示的卡片，用箭頭調整順序。</p><ul class="edit-list" style="margin-top:8px"></ul>
     <div class="btn-row"><button class="btn" id="save">儲存</button><button class="btn outline" id="reset">恢復預設</button></div>`, (box, close) => {
     draw(box);
-    box.querySelector("#save").onclick = async () => {
+    const save = box.querySelector("#save");
+    save.onclick = () => act(save, async () => {
       await api("/api/prefs", { method: "PUT", body: { dashboard: order.filter((k) => on.has(k)) } });
       close(); toast("已更新指標"); viewMetrics();
-    };
-    box.querySelector("#reset").onclick = async () => {
+    });
+    const rs = box.querySelector("#reset");
+    rs.onclick = () => act(rs, async () => {
       await api("/api/prefs", { method: "PUT", body: { dashboard: S.meta.default_cards } });
       close(); viewMetrics();
-    };
+    });
   });
 }
 
